@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Camera, CameraOff, CircleDot, FileDown } from "lucide-react";
-import { paintAscii, renderAscii, frameToText, colsForWidth, type AsciiFrame } from "@/lib/ascii";
+import { Camera, CameraOff, CircleDot, FileDown, FileImage } from "lucide-react";
+import { frameToPngBlob, paintAscii, renderAscii, frameToText, colsForWidth, type AsciiFrame } from "@/lib/ascii";
 import { useToast } from "@/hooks/use-toast";
 
 /**
@@ -28,10 +28,18 @@ export function AsciiCamFeed() {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [grid, setGrid] = useState({ cols: 0, rows: 0 });
   const [fps, setFps] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const { toast } = useToast();
 
   const live = state === "live";
+
+  // REC elapsed clock — mm:ss since the stream went live (reset in start())
+  useEffect(() => {
+    if (!live) return;
+    const id = window.setInterval(() => setElapsed((s) => s + 1), 1000);
+    return () => window.clearInterval(id);
+  }, [live]);
 
   // render loop — glyph-pipeline the camera at ~TARGET_FPS
   useEffect(() => {
@@ -111,6 +119,7 @@ export function AsciiCamFeed() {
         audio: false,
       });
       setStream(s);
+      setElapsed(0);
       setState("live");
       toast({ title: "CAM ONLINE", description: "glyph pipeline engaged — local only" });
     } catch (err) {
@@ -152,22 +161,41 @@ export function AsciiCamFeed() {
     };
   }, [stop]);
 
-  const snapshot = useCallback(() => {
-    const frame = frameRef.current;
-    if (!frame || !frame.lines.length) {
-      toast({ title: "NO FRAME", description: "enable the cam first", variant: "destructive" });
-      return;
-    }
-    const text = frameToText(frame, { label: "CAM_00.LIVE", mode: mode.toUpperCase() });
-    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `nexus-cam_${new Date().toISOString().replace(/[:.]/g, "-")}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast({ title: "FRAME CAPTURED", description: `${frame.cols}×${frame.rows} glyphs → .txt` });
-  }, [mode, toast]);
+  const snapshot = useCallback(
+    (format: "txt" | "png") => {
+      const frame = frameRef.current;
+      if (!frame || !frame.lines.length) {
+        toast({ title: "NO FRAME", description: "enable the cam first", variant: "destructive" });
+        return;
+      }
+      if (format === "png") {
+        void frameToPngBlob(frame, { label: "CAM_00.LIVE", mode: mode.toUpperCase() }).then((blob) => {
+          if (!blob) {
+            toast({ title: "PRINT FAILED", description: "encoder returned nothing", variant: "destructive" });
+            return;
+          }
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `nexus-cam_${new Date().toISOString().replace(/[:.]/g, "-")}.print.png`;
+          a.click();
+          URL.revokeObjectURL(url);
+          toast({ title: "PRINT SPOOLED", description: `${frame.cols}×${frame.rows} glyphs → .png` });
+        });
+        return;
+      }
+      const text = frameToText(frame, { label: "CAM_00.LIVE", mode: mode.toUpperCase() });
+      const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `nexus-cam_${new Date().toISOString().replace(/[:.]/g, "-")}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: "FRAME CAPTURED", description: `${frame.cols}×${frame.rows} glyphs → .txt` });
+    },
+    [mode, toast]
+  );
 
   return (
     <figure className="group relative flex h-full flex-col overflow-hidden rounded-md border border-dashed border-primary/30 bg-card">
@@ -270,7 +298,7 @@ export function AsciiCamFeed() {
         {live && (
           <span className="pointer-events-none absolute left-2.5 top-2.5 flex items-center gap-1.5 rounded-sm bg-[#050a06]/80 px-1.5 py-1 font-mono text-[9px] tracking-[0.2em] text-primary/90 backdrop-blur-sm">
             <CircleDot className="h-2.5 w-2.5 animate-pulse" />
-            REC
+            REC {String(Math.floor(elapsed / 60)).padStart(2, "0")}:{String(elapsed % 60).padStart(2, "0")}
           </span>
         )}
       </div>
@@ -284,14 +312,24 @@ export function AsciiCamFeed() {
         </span>
         <div className="flex shrink-0 items-center gap-2">
           {live && (
-            <button
-              onClick={snapshot}
-              aria-label="Capture current cam frame as plain-text ASCII"
-              title="capture frame → .txt"
-              className="rounded-sm border border-transparent p-1 text-muted-foreground transition-all hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
-            >
-              <FileDown className="h-3.5 w-3.5" />
-            </button>
+            <>
+              <button
+                onClick={() => snapshot("txt")}
+                aria-label="Capture current cam frame as plain-text ASCII"
+                title="capture frame → .txt"
+                className="rounded-sm border border-transparent p-1 text-muted-foreground transition-all hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
+              >
+                <FileDown className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={() => snapshot("png")}
+                aria-label="Print current cam frame as a PNG typographic print"
+                title="print frame → .png"
+                className="rounded-sm border border-transparent p-1 text-muted-foreground transition-all hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
+              >
+                <FileImage className="h-3.5 w-3.5" />
+              </button>
+            </>
           )}
           {live ? (
             <button

@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, CalendarPlus, ListOrdered, MapPin, ScanLine, Share2, Timer, Users } from "lucide-react";
 import { AsciiBanner } from "@/components/ascii/ascii-banner";
+import { AsciiImage } from "@/components/ascii/ascii-image";
+import { AsciiLightbox, type LightboxShot } from "@/components/ascii/ascii-lightbox";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -38,6 +40,49 @@ interface ScheduleItem {
   time: string;
   title: string;
   detail?: string;
+}
+
+/**
+ * Per-event ASCII poster — every event gets its own photo piped through the
+ * glyph engine inside the full-brief dialog (ASCII.POSTER panel). Falls back
+ * gracefully for slugs without a poster yet.
+ */
+const POSTERS: Record<string, LightboxShot> = {
+  "nexus-hack-5.0": {
+    src: "/media/poster-hack.png",
+    label: "NEXUS_HACK_5.0.POSTER",
+    caption: "the hackathon arena at midnight",
+  },
+  "rover-build-sprint": {
+    src: "/media/poster-rover.png",
+    label: "ROVER_SPRINT.POSTER",
+    caption: "rover on the mini obstacle course",
+  },
+  "intro-to-transformers": {
+    src: "/media/poster-transformers.png",
+    label: "TRANSFORMERS.POSTER",
+    caption: "attention maps on the whiteboard",
+  },
+  "cloud-native-sunday": {
+    src: "/media/poster-k8s.png",
+    label: "K8S_PLAYGROUND.POSTER",
+    caption: "orchestration dashboards on the projector",
+  },
+  "founders-firechat": {
+    src: "/media/poster-firechat.png",
+    label: "FIRECHAT.POSTER",
+    caption: "founders fireside, warm amber",
+  },
+  "android-from-zero": {
+    src: "/media/poster-android.png",
+    label: "ANDROID_ZERO.POSTER",
+    caption: "jetpack compose live build",
+  },
+  "cyber-night-ctf": {
+    src: "/media/poster-ctf.png",
+    label: "CYBERNIGHT_CTF.POSTER",
+    caption: "the ctf lab — green terminals everywhere",
+  },
 }
 
 /** Parse the DB-backed run-of-show JSON defensively. */
@@ -428,6 +473,7 @@ export function EventsSection() {
   const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
   const [dialogEv, setDialogEv] = useState<EventDTO | null>(null);
   const [detailEv, setDetailEv] = useState<EventDTO | null>(null);
+  const [posterLightbox, setPosterLightbox] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -628,7 +674,15 @@ export function EventsSection() {
       </Dialog>
 
       {/* full-brief dialog */}
-      <Dialog open={!!detailEv} onOpenChange={(o) => !o && setDetailEv(null)}>
+      <Dialog
+        open={!!detailEv}
+        onOpenChange={(o) => {
+          if (!o) {
+            setDetailEv(null);
+            setPosterLightbox(false);
+          }
+        }}
+      >
         <DialogContent className="thin-scroll max-h-[85vh] overflow-y-auto border-border bg-card p-0 sm:max-w-lg">
           <DialogHeader className="border-b border-border/70 bg-secondary/40 px-5 py-3">
             <DialogTitle className="sr-only">{detailEv?.title}</DialogTitle>
@@ -676,6 +730,21 @@ export function EventsSection() {
                   {detailEv.venue}
                 </span>
               </div>
+
+              {/* ASCII.POSTER — this event's still, live through the glyph engine */}
+              {(() => {
+                const poster = POSTERS[detailEv.slug];
+                if (!poster) return null;
+                return (
+                  <div className="poster-frame mt-4 overflow-hidden rounded-md">
+                    <AsciiImage
+                      {...poster}
+                      compact
+                      onExpand={() => setPosterLightbox(true)}
+                    />
+                  </div>
+                );
+              })()}
 
               {(() => {
                 const items = parseSchedule(detailEv.schedule);
@@ -753,6 +822,16 @@ export function EventsSection() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* poster lightbox — sits above the brief dialog (z-90, capture-phase ESC) */}
+      {posterLightbox && detailEv && POSTERS[detailEv.slug] && (
+        <AsciiLightbox
+          shots={[POSTERS[detailEv.slug]]}
+          index={0}
+          onClose={() => setPosterLightbox(false)}
+          onNavigate={() => {}}
+        />
+      )}
     </section>
   );
 }

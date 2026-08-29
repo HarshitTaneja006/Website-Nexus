@@ -156,6 +156,28 @@ export function CommandPalette({
               <span className="ml-auto text-[10px] text-muted-foreground/60">./{e.hint}</span>
             </CommandItem>
           ))}
+          <CommandItem
+            value="dump hero frame txt artifact glyphs"
+            onSelect={() =>
+              run(() => window.dispatchEvent(new CustomEvent("nexus:hero-dump", { detail: { format: "txt" } })))
+            }
+            className="gap-3 text-xs"
+          >
+            <span className="text-primary/60">⤓</span>
+            <span className="font-bold tracking-widest">DUMP FRAME.TXT</span>
+            <span className="ml-auto text-[10px] text-muted-foreground/60">./live engine grid → artifact</span>
+          </CommandItem>
+          <CommandItem
+            value="print hero frame png typographic"
+            onSelect={() =>
+              run(() => window.dispatchEvent(new CustomEvent("nexus:hero-dump", { detail: { format: "png" } })))
+            }
+            className="gap-3 text-xs"
+          >
+            <span className="text-primary/60">⤓</span>
+            <span className="font-bold tracking-widest">PRINT FRAME.PNG</span>
+            <span className="ml-auto text-[10px] text-muted-foreground/60">./glyph grid → typographic print</span>
+          </CommandItem>
         </CommandGroup>
         <CommandSeparator />
         <CommandGroup heading="ACTIONS">

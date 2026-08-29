@@ -17,11 +17,16 @@ interface AsciiImageProps {
   label: string;
   caption: string;
   onExpand?: () => void;
+  /**
+   * compact: poster mode — no mode tabs, no blend slider. Just the live
+   * glyph render, the .TXT dump and the expand affordance (event dialogs).
+   */
+  compact?: boolean;
 }
 
 const MODES: AsciiMode[] = ["ascii", "pixel", "photo"];
 
-export function AsciiImage({ src, label, caption, onExpand }: AsciiImageProps) {
+export function AsciiImage({ src, label, caption, onExpand, compact = false }: AsciiImageProps) {
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
@@ -118,23 +123,30 @@ export function AsciiImage({ src, label, caption, onExpand }: AsciiImageProps) {
         <span className="truncate font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
           {label}
         </span>
-        <div className="flex items-center gap-1" role="tablist" aria-label={`${label} render mode`}>
-          {MODES.map((m) => (
-            <button
-              key={m}
-              role="tab"
-              aria-selected={mode === m}
-              onClick={() => setMode(m)}
-              className={`rounded-sm px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider transition-colors ${
-                mode === m
-                  ? "bg-primary/15 text-primary"
-                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-              }`}
-            >
-              {m}
-            </button>
-          ))}
-        </div>
+        {!compact && (
+          <div className="flex items-center gap-1" role="tablist" aria-label={`${label} render mode`}>
+            {MODES.map((m) => (
+              <button
+                key={m}
+                role="tab"
+                aria-selected={mode === m}
+                onClick={() => setMode(m)}
+                className={`rounded-sm px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider transition-colors ${
+                  mode === m
+                    ? "bg-primary/15 text-primary"
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                }`}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+        )}
+        {compact && (
+          <span className="font-mono text-[9px] tracking-[0.25em] text-primary/60" aria-hidden="true">
+            ASCII.POSTER
+          </span>
+        )}
       </figcaption>
 
       {/* render surface */}
@@ -197,18 +209,20 @@ export function AsciiImage({ src, label, caption, onExpand }: AsciiImageProps) {
           >
             <FileDown className="h-3.5 w-3.5" />
           </button>
-          <input
-            type="range"
-            min={0}
-            max={100}
-            value={mix}
-            onChange={(e) => setMix(Number(e.target.value))}
-            onMouseUp={() => {
-              if (mode === "photo" && mix > 0) setMode("ascii");
-            }}
-            aria-label={`ASCII to photo blend for ${label}`}
-            className="h-1 w-24 cursor-pointer appearance-none rounded bg-border accent-[#4ade80]"
-          />
+          {!compact && (
+            <input
+              type="range"
+              min={0}
+              max={100}
+              value={mix}
+              onChange={(e) => setMix(Number(e.target.value))}
+              onMouseUp={() => {
+                if (mode === "photo" && mix > 0) setMode("ascii");
+              }}
+              aria-label={`ASCII to photo blend for ${label}`}
+              className="h-1 w-24 cursor-pointer appearance-none rounded bg-border accent-[#4ade80]"
+            />
+          )}
         </div>
       </div>
     </figure>

@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { frameToPngBlob, frameToText, type AsciiFrame } from "@/lib/ascii";
 
 /**
  * AsciiCanvas — real-time animated ASCII scenes on a plain canvas.
@@ -42,6 +44,7 @@ export function AsciiCanvas({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const pointer = useRef({ x: -1, y: -1, down: false, vx: 0, vy: 0 });
+  const { toast } = useToast();
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -77,6 +80,15 @@ export function AsciiCanvas({
     let camState: "off" | "requesting" | "live" | "error" = "off";
     let camMsg = "";
     let camNoiseT = 0;
+
+    // snapshot support — remembers which buffer the last paint used so a
+    // FRAME DUMP can serialize the exact grid on screen (zero per-frame cost)
+    type LastPaint =
+      | { kind: "grid" }
+      | { kind: "donut"; zbuf: Float32Array; lbuf: Int8Array }
+      | { kind: "noise" }
+      | null;
+    let lastPaint: LastPaint = null;
 
     // precomputed trig tables for the donut
     const TH = 90;
@@ -123,6 +135,7 @@ export function AsciiCanvas({
 
     // -------- painting helpers (run-length grouped fillText) --------
     function paintGrid() {
+      lastPaint = { kind: "grid" };
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, cols * charW, rows * lineH);
       ctx.font = `${fontSize}px var(--font-geist-mono), ui-monospace, monospace`;
@@ -165,6 +178,7 @@ export function AsciiCanvas({
     }
 
     function paintDonut(zbuf: Float32Array, lbuf: Int8Array) {
+      lastPaint = { kind: "donut", zbuf, lbuf };
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, cols * charW, rows * lineH);
       ctx.font = `${fontSize}px var(--font-geist-mono), ui-monospace, monospace`;
@@ -308,6 +322,7 @@ export function AsciiCanvas({
 
     // ---- cam preset: noise screens + live feed sampling ----
     function paintNoiseScreen(lines: string[], sub = "") {
+      lastPaint = { kind: "noise" };
       camNoiseT += 0.16;
       for (let i = 0; i < bright.length; i++) {
         bright[i] = Math.random() < 0.08 ? 0.10 + Math.random() * 0.10 : 0;
@@ -502,6 +517,82 @@ export function AsciiCanvas({
     window.addEventListener("pointerup", onUp);
     wrap2.addEventListener("pointerleave", onLeave);
 
+    // ---- FRAME DUMP — serialize the exact glyph grid on screen ----
+    // hero.tsx dispatches nexus:hero-dump {format}; the engine answers with a
+    // .txt artifact (or a PNG typographic print). Works for every preset —
+    // rain/wave sample `bright`, donut re-uses the last z/l buffers, and the
+    // offline cam politely refuses.
+    const buildFrame = (): AsciiFrame | null => {
+      if (!cols || !rows) return null;
+      if (preset === "cam" && camState !== "live") return null;
+      const lines: string[] = [];
+      const colors: (string | null)[][] = [];
+      if (preset === "donut" && lastPaint?.kind === "donut") {
+        const { zbuf, lbuf } = lastPaint;
+        for (let y = 0; y < rows; y++) {
+          let line = "";
+          for (let x = 0; x < cols; x++) {
+            const idx = y * cols + x;
+            line += zbuf[idx] > 0 ? DONUT_CHARS[Math.max(0, Math.min(11, lbuf[idx]))] : " ";
+          }
+          lines.push(line);
+          colors.push(new Array(cols).fill(null));
+        }
+      } else {
+        for (let y = 0; y < rows; y++) {
+          let line = "";
+          for (let x = 0; x < cols; x++) {
+            const v = bright[y * cols + x];
+            line += v > 0.045 ? GLYPHS[Math.min(GLYPHS.length - 1, (v * GLYPHS.length) | 0)] : " ";
+          }
+          lines.push(line);
+          colors.push(new Array(cols).fill(null));
+        }
+      }
+      return { lines, colors, cols, rows };
+    };
+
+    const download = (blob: Blob, name: string) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    const onDump = (e: Event) => {
+      const format = (e as CustomEvent<{ format?: "txt" | "png" }>).detail?.format ?? "txt";
+      const frame = buildFrame();
+      if (!frame || !frame.lines.length) {
+        toast({
+          title: "NO SIGNAL",
+          description:
+            preset === "cam"
+              ? "the cam feed is offline — nothing to dump yet."
+              : "engine still warming up — try again in a second.",
+          variant: "destructive",
+        });
+        return;
+      }
+      const label = `HERO_${preset.toUpperCase()}`;
+      if (format === "png") {
+        void frameToPngBlob(frame, { label, mode: preset.toUpperCase() }).then((blob) => {
+          if (!blob) {
+            toast({ title: "PRINT FAILED", description: "encoder returned nothing", variant: "destructive" });
+            return;
+          }
+          download(blob, `nexus-${label.toLowerCase()}.print.png`);
+          toast({ title: "PRINT SPOOLED", description: `${frame.cols}×${frame.rows} glyphs → .png` });
+        });
+      } else {
+        const text = frameToText(frame, { label, mode: preset.toUpperCase() });
+        download(new Blob([text], { type: "text/plain;charset=utf-8" }), `nexus-${label.toLowerCase()}.txt`);
+        toast({ title: "FRAME DUMPED", description: `${frame.cols}×${frame.rows} glyphs → .txt` });
+      }
+    };
+    window.addEventListener("nexus:hero-dump", onDump);
+
     return () => {
       cancelAnimationFrame(raf);
       cleanupTimers.forEach((id) => window.clearTimeout(id));
@@ -513,8 +604,9 @@ export function AsciiCanvas({
       wrap2.removeEventListener("pointerdown", onDown);
       window.removeEventListener("pointerup", onUp);
       wrap2.removeEventListener("pointerleave", onLeave);
+      window.removeEventListener("nexus:hero-dump", onDump);
     };
-  }, [preset, fg, accent, fontSize, speed]);
+  }, [preset, fg, accent, fontSize, speed, toast]);
 
   return (
     <div ref={wrapRef} className={`relative overflow-hidden ${className}`} aria-hidden="true">

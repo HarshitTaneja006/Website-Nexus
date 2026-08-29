@@ -158,6 +158,26 @@ export function Hero() {
             LIVE GLYPH FEED — CAMERA PERMISSION REQUIRED
           </span>
         )}
+        {/* frame dump — serialize the live engine grid to .txt / print .png */}
+        <div className="mt-1.5 flex items-center gap-1.5">
+          <span className="font-mono text-[9px] tracking-[0.25em] text-muted-foreground/70">
+            FRAME_DUMP:
+          </span>
+          <div className="flex overflow-hidden rounded-sm border border-border bg-card/70 backdrop-blur-sm">
+            {(["txt", "png"] as const).map((fmt) => (
+              <button
+                key={fmt}
+                onClick={() =>
+                  window.dispatchEvent(new CustomEvent("nexus:hero-dump", { detail: { format: fmt } }))
+                }
+                title={fmt === "txt" ? "dump current glyph grid → .txt artifact" : "print current glyph grid → .png typographic print"}
+                className="px-2.5 py-1 font-mono text-[9px] uppercase tracking-widest text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/70"
+              >
+                .{fmt}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* main content */}

@@ -126,17 +126,29 @@ export function AsciiLightbox({
   }, [ready, paint]);
 
   // keyboard controls + scroll lock
+  // capture-phase: when the lightbox sits ABOVE a Radix dialog (event-brief
+  // poster), Escape/Arrows must be consumed here — otherwise the dialog
+  // beneath would close in the same keystroke.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-      if (e.key === "ArrowRight") onNavigate((index + 1) % shots.length);
-      if (e.key === "ArrowLeft") onNavigate((index - 1 + shots.length) % shots.length);
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        onClose();
+      }
+      if (e.key === "ArrowRight") {
+        e.stopPropagation();
+        onNavigate((index + 1) % shots.length);
+      }
+      if (e.key === "ArrowLeft") {
+        e.stopPropagation();
+        onNavigate((index - 1 + shots.length) % shots.length);
+      }
     };
-    window.addEventListener("keydown", onKey);
+    window.addEventListener("keydown", onKey, true);
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
-      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keydown", onKey, true);
       document.body.style.overflow = prevOverflow;
     };
   }, [index, shots.length, onClose, onNavigate]);
