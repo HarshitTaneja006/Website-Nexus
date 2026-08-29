@@ -11,9 +11,11 @@ import { useEffect, useRef } from "react";
  *  - rain  : phosphor glyph rain (terminal default)
  *  - donut : the classic spinning torus (donut.c math), live in ASCII
  *  - wave  : interference field — sine waves carved into characters
+ *  - cam   : CAMERA FEED → live ASCII (getUserMedia, permission-gated;
+ *            graceful phosphor-noise fallback when denied / unsupported)
  */
 
-export type AsciiPreset = "rain" | "donut" | "wave";
+export type AsciiPreset = "rain" | "donut" | "wave" | "cam";
 
 interface AsciiCanvasProps {
   preset?: AsciiPreset;
@@ -65,6 +67,16 @@ export function AsciiCanvas({
     let drops: { x: number; y: number; v: number }[] = [];
     let A = 0.7;
     let B = 0.35;
+
+    // ---- cam preset state ----
+    const cleanupTimers: number[] = [];
+    let camVideo: HTMLVideoElement | null = null;
+    let camStream: MediaStream | null = null;
+    let camOff: HTMLCanvasElement | null = null;
+    let camOffCtx: CanvasRenderingContext2D | null = null;
+    let camState: "off" | "requesting" | "live" | "error" = "off";
+    let camMsg = "";
+    let camNoiseT = 0;
 
     // precomputed trig tables for the donut
     const TH = 90;
@@ -294,6 +306,126 @@ export function AsciiCanvas({
       paintDonut(zbuf, lbuf);
     }
 
+    // ---- cam preset: noise screens + live feed sampling ----
+    function paintNoiseScreen(lines: string[], sub = "") {
+      camNoiseT += 0.16;
+      for (let i = 0; i < bright.length; i++) {
+        bright[i] = Math.random() < 0.08 ? 0.10 + Math.random() * 0.10 : 0;
+      }
+      paintGrid();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.font = `bold ${Math.round(fontSize * 1.25)}px var(--font-geist-mono), ui-monospace, monospace`;
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = `rgba(${fg},0.85)`;
+      const cx = (cols * charW) / 2;
+      const cy = (rows * lineH) / 2;
+      const lh = fontSize * 1.7;
+      const startY = cy - ((lines.length - 1) * lh) / 2 - (sub ? lh * 0.5 : 0);
+      ctx.textAlign = "center";
+      lines.forEach((l, i) => ctx.fillText(l, cx, startY + i * lh));
+      if (sub) {
+        ctx.font = `${fontSize}px var(--font-geist-mono), ui-monospace, monospace`;
+        ctx.fillStyle = `rgba(${accent},0.75)`;
+        ctx.fillText(sub, cx, startY + lines.length * lh);
+      }
+      ctx.textAlign = "start";
+    }
+
+    function drawCamFrame() {
+      if (!camVideo || !camOff || !camOffCtx) return;
+      if (camVideo.readyState < 2 || camVideo.videoWidth === 0) return;
+      // downsample video into the glyph grid (mirrored, selfie-style)
+      camOff.width = cols;
+      camOff.height = rows;
+      camOffCtx.save();
+      camOffCtx.scale(-1, 1);
+      camOffCtx.drawImage(camVideo, -cols, 0, cols, rows);
+      camOffCtx.restore();
+      let data: Uint8ClampedArray;
+      try {
+        data = camOffCtx.getImageData(0, 0, cols, rows).data;
+      } catch {
+        return;
+      }
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+          const p = (y * cols + x) * 4;
+          const lum =
+            (0.2126 * data[p] + 0.7152 * data[p + 1] + 0.0722 * data[p + 2]) / 255;
+          // gamma up so dark rooms still render structure
+          const v = Math.pow(lum, 0.82);
+          bright[y * cols + x] = Math.max(0, Math.min(1.15, v * 1.18));
+        }
+      }
+      paintGrid();
+    }
+
+    async function startCam() {
+      camState = "requesting";
+      if (!navigator.mediaDevices?.getUserMedia) {
+        camState = "error";
+        camMsg = "NO CAMERA API";
+        return;
+      }
+      try {
+        camStream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 640 }, height: { ideal: 480 } },
+          audio: false,
+        });
+        const v = document.createElement("video");
+        v.muted = true;
+        v.playsInline = true;
+        v.srcObject = camStream;
+        await v.play();
+        camVideo = v;
+        camOff = document.createElement("canvas");
+        camOffCtx = camOff.getContext("2d", { willReadFrequently: true });
+        camState = "live";
+      } catch (err) {
+        camState = "error";
+        const name = err instanceof DOMException ? err.name : "";
+        camMsg =
+          name === "NotAllowedError"
+            ? "PERMISSION DENIED"
+            : name === "NotFoundError" || name === "OverconstrainedError"
+              ? "NO CAMERA FOUND"
+              : "CAMERA OFFLINE";
+      }
+    }
+
+    function stopCam() {
+      camStream?.getTracks().forEach((tr) => tr.stop());
+      camStream = null;
+      if (camVideo) {
+        camVideo.srcObject = null;
+        camVideo = null;
+      }
+      camOff = null;
+      camOffCtx = null;
+      camState = "off";
+    }
+
+    let camAcc = 0;
+    function drawCam(dt: number) {
+      if (camState === "requesting") {
+        paintNoiseScreen(["REQ CAMERA ACCESS…", "ACCEPT THE BROWSER PROMPT"], "live glyph feed once granted");
+        return;
+      }
+      if (camState === "error") {
+        paintNoiseScreen(["▚ CAM SIGNAL LOST ▚", camMsg || "CAMERA OFFLINE"], "switch back to RAIN / WAVE / DONUT");
+        return;
+      }
+      if (camState !== "live") {
+        paintNoiseScreen(["CAM BOOTING…"]);
+        return;
+      }
+      // throttle the feed to ~15fps for a chunky CRT cadence
+      camAcc += dt;
+      if (camAcc < 1 / 15) return;
+      camAcc = 0;
+      drawCamFrame();
+    }
+
     function frame(now: number) {
       raf = requestAnimationFrame(frame);
       const dt = Math.min(0.05, (now - last) / 1000);
@@ -301,6 +433,7 @@ export function AsciiCanvas({
       if (!running || !visible) return;
       if (preset === "rain") drawRain(dt);
       else if (preset === "donut") drawDonut(dt);
+      else if (preset === "cam") drawCam(dt);
       else drawWave(dt);
     }
 
@@ -314,9 +447,22 @@ export function AsciiCanvas({
     });
     ro.observe(wrap);
 
+    let camStarted = false;
+    if (preset === "cam") {
+      camStarted = true;
+      void startCam();
+    }
+
     if (reduced) {
       if (preset === "donut") drawDonut(0.2);
-      else drawWave(0);
+      else if (preset === "cam") {
+        // single static frame once the feed (or the fallback) settles
+        const id = window.setTimeout(() => {
+          if (camState === "live") drawCamFrame();
+          else paintNoiseScreen(["▚ CAM SIGNAL LOST ▚", camMsg || "CAMERA OFFLINE"], "reduced motion: static frame");
+        }, 900);
+        cleanupTimers.push(id);
+      } else drawWave(0);
     } else {
       raf = requestAnimationFrame(frame);
     }
@@ -358,6 +504,8 @@ export function AsciiCanvas({
 
     return () => {
       cancelAnimationFrame(raf);
+      cleanupTimers.forEach((id) => window.clearTimeout(id));
+      if (camStarted) stopCam();
       ro.disconnect();
       io.disconnect();
       document.removeEventListener("visibilitychange", onVis);

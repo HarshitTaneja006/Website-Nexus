@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, KeyRound, Lock, RefreshCcw } from "lucide-react";
+import { ChevronDown, KeyRound, Lock, Radio, RefreshCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 /**
@@ -18,6 +18,7 @@ interface Stats {
     rsvps: number;
     joinRequests: number;
     events: number;
+    subscribers: number;
     featuredEvent: string | null;
     presence: { count: number | null; peak: number | null };
   };
@@ -30,6 +31,7 @@ interface Stats {
     count: number;
     attendees: { name: string; email: string; at: string }[];
   }[];
+  subscribers: { email: string; source: string; at: string }[];
   joinRequests: { name: string; email: string; branch: string; year: string; interest: string; createdAt: string }[];
 }
 
@@ -94,7 +96,7 @@ export function OpsConsole() {
             NEXUS//OPS — RESTRICTED SHELL
           </DialogTitle>
           <DialogDescription className="text-[10px] tracking-widest text-muted-foreground">
-            rsvp ledger · attendee names · join feed · presence peak
+            rsvp ledger · attendee names · join feed · wire subscribers · presence peak
           </DialogDescription>
         </DialogHeader>
 
@@ -137,11 +139,12 @@ export function OpsConsole() {
         ) : (
           <div className="px-5 py-4">
             {/* stat tiles */}
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
               {[
                 { label: "RSVPS", value: stats.totals.rsvps },
                 { label: "JOINS", value: stats.totals.joinRequests },
                 { label: "EVENTS", value: stats.totals.events },
+                { label: "WIRE SUBS", value: stats.totals.subscribers },
                 {
                   label: "PEAK GRID",
                   value: stats.totals.presence.peak == null ? "—" : stats.totals.presence.peak,
@@ -213,6 +216,44 @@ export function OpsConsole() {
                   );
                 })}
               </ul>
+            </div>
+
+            {/* wire subscribers */}
+            <div className="mt-5">
+              <p className="flex items-center justify-between text-[10px] tracking-[0.25em] text-muted-foreground">
+                <span className="flex items-center gap-2">
+                  <span className="led" aria-hidden="true" />
+                  SIGNAL.WIRE / LATEST {stats.subscribers.length}
+                </span>
+                <span className="tabular-nums text-primary/70">{stats.totals.subscribers} TOTAL</span>
+              </p>
+              {stats.subscribers.length === 0 ? (
+                <p className="mt-2 border border-dashed border-border/60 px-3 py-4 text-center text-[10px] tracking-widest text-muted-foreground/60">
+                  wire silent — drop the footer signup link
+                </p>
+              ) : (
+                <ul className="thin-scroll mt-2 max-h-36 space-y-1 overflow-y-auto pr-1">
+                  {stats.subscribers.map((s, i) => (
+                    <li
+                      key={`${s.email}-${i}`}
+                      className="flex items-center justify-between gap-2 border border-border/50 bg-background/50 px-3 py-1.5 text-[10px]"
+                    >
+                      <span className="flex min-w-0 items-center gap-2">
+                        <Radio className="h-3 w-3 shrink-0 text-primary/60" aria-hidden="true" />
+                        <span className="truncate tracking-wider text-foreground/85">{s.email}</span>
+                      </span>
+                      <span className="flex shrink-0 items-center gap-2 text-muted-foreground/60">
+                        <span className="rounded-sm bg-secondary/60 px-1.5 py-0.5 text-[9px] tracking-widest">
+                          {s.source.toUpperCase()}
+                        </span>
+                        <span className="tabular-nums">
+                          {new Date(s.at).toLocaleDateString("en-GB", { timeZone: "Asia/Calcutta" })}
+                        </span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
 
             {/* join feed */}

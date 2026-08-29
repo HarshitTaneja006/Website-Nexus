@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const [events, joinTotal, joinRequests, rsvpRows, presence] = await Promise.all([
+    const [events, joinTotal, joinRequests, rsvpRows, subTotal, subscribers, presence] = await Promise.all([
       db.event.findMany({
         orderBy: { startsAt: "desc" },
         select: {
@@ -71,6 +71,12 @@ export async function GET(req: NextRequest) {
         orderBy: { createdAt: "desc" },
         take: 120,
         select: { name: true, email: true, eventId: true, createdAt: true },
+      }),
+      db.subscriber.count(),
+      db.subscriber.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 10,
+        select: { email: true, source: true, createdAt: true },
       }),
       presenceStats(),
     ]);
@@ -101,10 +107,16 @@ export async function GET(req: NextRequest) {
           rsvps: rsvpsByEvent.reduce((s, e) => s + e.count, 0),
           joinRequests: joinTotal,
           events: events.length,
+          subscribers: subTotal,
           featuredEvent: events.find((e) => e.featured)?.title ?? null,
           presence: presence,
         },
         rsvpsByEvent,
+        subscribers: subscribers.map((s) => ({
+          email: maskEmail(s.email),
+          source: s.source,
+          at: s.createdAt.toISOString(),
+        })),
         joinRequests: joinRequests.map((j) => ({
           name: j.name,
           email: maskEmail(j.email),

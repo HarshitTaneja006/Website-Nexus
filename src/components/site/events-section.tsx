@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, CalendarPlus, MapPin, ScanLine, Share2, Timer, Users } from "lucide-react";
+import { CalendarDays, CalendarPlus, ListOrdered, MapPin, ScanLine, Share2, Timer, Users } from "lucide-react";
 import { AsciiBanner } from "@/components/ascii/ascii-banner";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,7 +30,30 @@ export interface EventDTO {
   endsAt: string | null;
   tags: string;
   featured: boolean;
+  schedule?: string | null;
   rsvpCount: number;
+}
+
+interface ScheduleItem {
+  time: string;
+  title: string;
+  detail?: string;
+}
+
+/** Parse the DB-backed run-of-show JSON defensively. */
+function parseSchedule(raw: string | null | undefined): ScheduleItem[] {
+  if (!raw) return [];
+  try {
+    const arr = JSON.parse(raw) as unknown;
+    if (!Array.isArray(arr)) return [];
+    return arr.filter(
+      (it): it is ScheduleItem =>
+        !!it && typeof it === "object" && typeof (it as ScheduleItem).time === "string" &&
+        typeof (it as ScheduleItem).title === "string"
+    );
+  } catch {
+    return [];
+  }
 }
 
 const fmtDay = new Intl.DateTimeFormat("en-GB", { day: "2-digit", timeZone: "Asia/Calcutta" });
@@ -92,6 +115,49 @@ function FlagshipCountdown({ target, title }: { target: string; title: string })
       >
         ▸ FLAGSHIP
       </a>
+    </div>
+  );
+}
+
+/** RUN OF SHOW — terminal timeline rendered inside the full-brief dialog. */
+function ScheduleTimeline({ items }: { items: ScheduleItem[] }) {
+  return (
+    <div className="mt-5">
+      <p className="flex items-center gap-2 font-mono text-[10px] tracking-[0.3em] text-primary">
+        <ListOrdered className="h-3.5 w-3.5" />
+        RUN_OF_SHOW
+        <span className="text-muted-foreground/50">· {items.length} SEGMENTS</span>
+      </p>
+      <ol className="relative mt-3 space-y-0 border-l border-primary/20 pl-0">
+        {items.map((it, i) => (
+          <li key={`${it.time}-${i}`} className="group relative flex gap-3 pb-4 pl-5 last:pb-0">
+            {/* node */}
+            <span
+              aria-hidden="true"
+              className="absolute -left-[4.5px] top-1 h-[9px] w-[9px] rotate-45 border border-primary/50 bg-background transition-colors group-hover:border-primary group-hover:bg-primary/70"
+            />
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                <span className="font-mono text-[10px] font-bold tabular-nums tracking-wider text-amber-300/90">
+                  {it.time}
+                </span>
+                <span className="font-mono text-xs font-bold tracking-wider text-foreground">
+                  {it.title}
+                </span>
+              </div>
+              {it.detail && (
+                <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">{it.detail}</p>
+              )}
+            </div>
+            <span
+              aria-hidden="true"
+              className="hidden shrink-0 font-mono text-[9px] text-muted-foreground/30 group-hover:text-primary/50 sm:block"
+            >
+              {String(i + 1).padStart(2, "0")}
+            </span>
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }
@@ -173,6 +239,12 @@ function EventCard({
             <MapPin className="h-3 w-3 text-primary/60" />
             {ev.venue}
           </span>
+          {parseSchedule(ev.schedule).length > 0 && (
+            <span className="flex items-center gap-1.5 text-primary/60 transition-colors group-hover:text-primary/90">
+              <ListOrdered className="h-3 w-3" />
+              RUN OF SHOW
+            </span>
+          )}
         </div>
 
         <div className="mt-4 flex items-center justify-between gap-3 border-t border-border/50 pt-4">
@@ -604,6 +676,11 @@ export function EventsSection() {
                   {detailEv.venue}
                 </span>
               </div>
+
+              {(() => {
+                const items = parseSchedule(detailEv.schedule);
+                return items.length > 0 ? <ScheduleTimeline items={items} /> : null;
+              })()}
 
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {detailEv.tags.split(",").map((t) => (

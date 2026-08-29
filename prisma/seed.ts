@@ -95,8 +95,15 @@ async function main() {
       create: e,
     })
   }
+
+  // apply run-of-show schedules (single source of truth: seed-schedules.ts)
+  const { schedules } = await import('./seed-schedules')
+  for (const [slug, schedule] of Object.entries(schedules)) {
+    await db.event.updateMany({ where: { slug }, data: { schedule: JSON.stringify(schedule) } })
+  }
+
   const count = await db.event.count()
-  console.log(`seeded events, total: ${count}`)
+  console.log(`seeded events (with schedules), total: ${count}`)
 }
 
 main()

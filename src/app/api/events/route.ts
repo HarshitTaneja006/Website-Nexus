@@ -24,6 +24,7 @@ export async function GET() {
         endsAt: e.endsAt ? e.endsAt.toISOString() : null,
         tags: e.tags,
         featured: e.featured,
+        schedule: e.schedule,
         rsvpCount: e._count.rsvps,
       })),
     });

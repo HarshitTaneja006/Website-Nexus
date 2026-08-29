@@ -34,7 +34,7 @@ const SECTIONS = [
   { href: "#join", label: "JOIN", hint: "transmit application" },
 ];
 
-const ENGINES = ["rain", "wave", "donut"] as const;
+const ENGINES = ["rain", "wave", "donut", "cam"] as const;
 
 export function CommandPalette({
   open,
@@ -106,7 +106,14 @@ export function CommandPalette({
   const groups = useMemo(
     () => [
       { title: "NAVIGATE", items: SECTIONS },
-      { title: "ASCII ENGINE", items: ENGINES.map((e) => ({ label: e.toUpperCase(), hint: `hero preset: ${e}`, engine: e })) },
+      {
+        title: "ASCII ENGINE",
+        items: ENGINES.map((e) => ({
+          label: e.toUpperCase(),
+          hint: e === "cam" ? "live webcam → ascii feed" : `hero preset: ${e}`,
+          engine: e,
+        })),
+      },
     ],
     []
   );

@@ -76,7 +76,7 @@ export function Hero() {
   useEffect(() => {
     const onEngine = (e: Event) => {
       const p = (e as CustomEvent).detail;
-      if (p === "rain" || p === "wave" || p === "donut") setPreset(p);
+      if (p === "rain" || p === "wave" || p === "donut" || p === "cam") setPreset(p);
     };
     window.addEventListener("nexus:engine", onEngine);
     return () => window.removeEventListener("nexus:engine", onEngine);
@@ -103,7 +103,10 @@ export function Hero() {
       {/* ascii background */}
       <div
         className="pointer-events-none absolute inset-0 -z-10 transition-opacity duration-700"
-        style={{ opacity: preset === "donut" ? 0.55 : preset === "wave" ? 0.34 : 0.3 }}
+        style={{
+          opacity:
+            preset === "donut" ? 0.55 : preset === "cam" ? 0.85 : preset === "wave" ? 0.34 : 0.3,
+        }}
       >
         <AsciiCanvas
           key={preset}
@@ -136,19 +139,25 @@ export function Hero() {
       <div className="absolute right-4 bottom-24 z-10 hidden flex-col items-end gap-1.5 sm:flex md:right-8">
         <span className="font-mono text-[9px] tracking-[0.25em] text-muted-foreground">BG_ENGINE:</span>
         <div className="flex overflow-hidden rounded-sm border border-border bg-card/70 backdrop-blur-sm">
-          {(["rain", "wave", "donut"] as AsciiPreset[]).map((p) => (
+          {(["rain", "wave", "donut", "cam"] as AsciiPreset[]).map((p) => (
             <button
               key={p}
               onClick={() => setPreset(p)}
               aria-pressed={preset === p}
-              className={`px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest transition-colors ${
+              title={p === "cam" ? "live webcam → ascii feed (permission-gated)" : `hero preset: ${p}`}
+              className={`px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/70 ${
                 preset === p ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {p}
+              {p === "cam" ? "◉ cam" : p}
             </button>
           ))}
         </div>
+        {preset === "cam" && (
+          <span className="font-mono text-[9px] tracking-[0.2em] text-amber-300/80">
+            LIVE GLYPH FEED — CAMERA PERMISSION REQUIRED
+          </span>
+        )}
       </div>
 
       {/* main content */}

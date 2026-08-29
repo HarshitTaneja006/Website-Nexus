@@ -18,6 +18,7 @@ model Event {
   endsAt      DateTime?
   tags        String   // comma separated
   featured    Boolean  @default(false)
+  schedule    String?  // JSON array of { time, title, detail? } — run-of-show timeline
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   rsvps       Rsvp[]
