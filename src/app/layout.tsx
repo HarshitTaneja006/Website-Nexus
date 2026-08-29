@@ -20,6 +20,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://nexus-website-inky.vercel.app"),
   title: "NEXUS — Innovate. Lead. Build.",
   description:
     "NEXUS is the student tech collective of VIT Chennai. A redesigned terminal-grade home: scroll-driven flight, live ASCII engines, events, news and more.",

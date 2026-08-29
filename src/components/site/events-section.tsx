@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, MapPin, Timer, Users } from "lucide-react";
+import { CalendarDays, CalendarPlus, MapPin, Share2, Timer, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useReveal } from "@/components/site/use-reveal";
+import { downloadIcs, shareEvent } from "@/lib/event-share";
 
 export interface EventDTO {
   id: string;
@@ -165,21 +166,74 @@ function EventCard({
         </div>
 
         <div className="mt-4 flex items-center justify-between gap-3 border-t border-border/50 pt-4">
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex min-w-0 flex-wrap gap-1.5">
             {ev.tags.split(",").slice(0, 3).map((t) => (
               <span key={t} className="font-mono text-[9px] text-primary/50">
                 #{t.trim()}
               </span>
             ))}
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => onRsvp(ev)}
-            className="h-8 border-primary/40 px-4 font-mono text-[10px] tracking-widest text-primary hover:bg-primary/15 hover:text-primary"
-          >
-            RSVP_
-          </Button>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <Button
+              size="sm"
+              variant="ghost"
+              aria-label={`Share ${ev.title}`}
+              title="share invite"
+              onClick={async () => {
+                const res = await shareEvent({
+                  slug: ev.slug,
+                  title: ev.title,
+                  description: ev.description,
+                });
+                toast({
+                  title: res.ok
+                    ? res.via === "share"
+                      ? "SIGNAL BEAMED"
+                      : "COPIED TO CLIPBOARD"
+                    : "SIGNAL BLOCKED",
+                  description: res.message,
+                  variant: res.ok ? undefined : "destructive",
+                });
+              }}
+              className="h-8 px-2.5 font-mono text-[10px] tracking-widest text-muted-foreground hover:bg-primary/10 hover:text-primary"
+            >
+              <Share2 className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">SHARE</span>
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              aria-label={`Download ${ev.title} as calendar file`}
+              title="add to calendar (.ics)"
+              onClick={() => {
+                downloadIcs({
+                  uid: ev.id,
+                  slug: ev.slug,
+                  title: ev.title,
+                  description: ev.description,
+                  venue: ev.venue,
+                  startsAt: ev.startsAt,
+                  endsAt: ev.endsAt,
+                });
+                toast({
+                  title: "CALENDAR PATCHED",
+                  description: `${ev.slug}.ics downloaded — see you there.`,
+                });
+              }}
+              className="h-8 px-2.5 font-mono text-[10px] tracking-widest text-muted-foreground hover:bg-primary/10 hover:text-primary"
+            >
+              <CalendarPlus className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">.ICS</span>
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onRsvp(ev)}
+              className="h-8 border-primary/40 px-4 font-mono text-[10px] tracking-widest text-primary hover:bg-primary/15 hover:text-primary"
+            >
+              RSVP_
+            </Button>
+          </div>
         </div>
       </div>
     </article>

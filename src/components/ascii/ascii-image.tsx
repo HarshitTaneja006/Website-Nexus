@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Expand } from "lucide-react";
 import { paintAscii, renderAscii, colsForWidth, type AsciiMode, type AsciiFrame } from "@/lib/ascii";
 
 /**
@@ -14,11 +15,12 @@ interface AsciiImageProps {
   src: string;
   label: string;
   caption: string;
+  onExpand?: () => void;
 }
 
 const MODES: AsciiMode[] = ["ascii", "pixel", "photo"];
 
-export function AsciiImage({ src, label, caption }: AsciiImageProps) {
+export function AsciiImage({ src, label, caption, onExpand }: AsciiImageProps) {
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
@@ -38,7 +40,8 @@ export function AsciiImage({ src, label, caption }: AsciiImageProps) {
 
     const width = wrap.clientWidth;
     const fontSize = width < 420 ? 6 : width < 720 ? 7 : 8;
-    const cols = colsForWidth(width, fontSize * 0.62);
+    // 0.78 divisor → fewer, chunkier glyphs: reads as an image at card size
+    const cols = colsForWidth(width, fontSize * 0.78);
 
     const frame = renderAscii(img, {
       cols,
@@ -147,6 +150,17 @@ export function AsciiImage({ src, label, caption }: AsciiImageProps) {
               loading frame…
             </div>
           </div>
+        )}
+        {/* expand affordance */}
+        {onExpand && ready && (
+          <button
+            onClick={onExpand}
+            aria-label={`Open ${label} in full-res ASCII lightbox`}
+            className="absolute bottom-2.5 right-2.5 z-10 flex items-center gap-1.5 rounded-sm border border-primary/30 bg-[#050a06]/85 px-2.5 py-1.5 font-mono text-[9px] tracking-[0.2em] text-primary/90 opacity-0 backdrop-blur-sm transition-all duration-200 hover:border-primary/60 hover:bg-primary/15 hover:text-primary focus-visible:opacity-100 group-hover:opacity-100"
+          >
+            <Expand className="h-3 w-3" />
+            EXPAND
+          </button>
         )}
         {/* scanlines + vignette */}
         <div className="scanlines pointer-events-none absolute inset-0" />

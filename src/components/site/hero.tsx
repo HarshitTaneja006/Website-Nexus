@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowDown, ChevronDown } from "lucide-react";
 import { AsciiCanvas, type AsciiPreset } from "@/components/ascii/ascii-canvas";
+import { usePresence } from "@/hooks/use-presence";
 
 const ASCII_LOGO = String.raw`███╗   ██╗███████╗██╗  ██╗██╗   ██╗███████╗
 ████╗  ██║██╔════╝╚██╗██╔╝██║   ██║██╔════╝
@@ -69,6 +70,7 @@ export function Hero() {
   const [preset, setPreset] = useState<AsciiPreset>("rain");
   const [runStats, setRunStats] = useState(false);
   const statsRef = useRef<HTMLDivElement | null>(null);
+  const { online } = usePresence();
 
   // remote control: ⌘K palette (or anywhere else) can switch the engine
   useEffect(() => {
@@ -122,6 +124,9 @@ export function Hero() {
         <p>12.9066° N, 80.0406° E</p>
       </div>
       <div className="pointer-events-none absolute right-4 top-20 hidden text-right font-mono text-[9px] leading-relaxed text-primary/40 sm:block md:right-8">
+        <p>
+          BUILDERS ON GRID: <span className="tabular-nums text-primary/80">{online == null ? "--" : online}</span>
+        </p>
         <p>ASCII ENGINE: ACTIVE</p>
         <p>MODE: 32K PHOSPHOR</p>
         <p>FRAME: GLYPH/RASTER</p>

@@ -1,9 +1,12 @@
 "use client";
 
+import { useState } from "react";
+import { Expand } from "lucide-react";
 import { AsciiImage } from "@/components/ascii/ascii-image";
+import { AsciiLightbox, type LightboxShot } from "@/components/ascii/ascii-lightbox";
 import { useReveal } from "@/components/site/use-reveal";
 
-const SHOTS = [
+const SHOTS: LightboxShot[] = [
   {
     src: "/media/gallery-1.png",
     label: "HACK_NIGHT.RAW",
@@ -21,13 +24,14 @@ const SHOTS = [
   },
   {
     src: "/media/gallery-4.png",
-    label: "WINState.RAW",
+    label: "WIN_STATE.RAW",
     caption: "A team of students celebrating with a trophy on stage",
   },
 ];
 
 export function AsciiGallery() {
   const { ref, seen } = useReveal<HTMLDivElement>();
+  const [lightbox, setLightbox] = useState<number | null>(null);
 
   return (
     <section id="gallery" className="relative border-b border-border/60 bg-[#070b08]">
@@ -42,17 +46,31 @@ export function AsciiGallery() {
             </div>
             <p className="max-w-sm font-mono text-[10px] leading-relaxed tracking-wider text-muted-foreground">
               EVERY FRAME IS RENDERED AS TEXT — NO CODEC, NO GPU, JUST GLYPHS.
-              SWITCH MODES OR BLEND THE SLIDER. ENGINE: ASCILINE-STYLE MAPPER.
+              SWITCH MODES OR BLEND THE SLIDER. CLICK A FRAME FOR THE FULL-RES
+              TERMINAL VIEW.
             </p>
           </div>
 
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
-            {SHOTS.map((s) => (
-              <AsciiImage key={s.src} {...s} />
+            {SHOTS.map((s, i) => (
+              <AsciiImage
+                key={s.src}
+                {...s}
+                onExpand={() => setLightbox(i)}
+              />
             ))}
           </div>
         </div>
       </div>
+
+      {lightbox !== null && (
+        <AsciiLightbox
+          shots={SHOTS}
+          index={lightbox}
+          onClose={() => setLightbox(null)}
+          onNavigate={setLightbox}
+        />
+      )}
     </section>
   );
 }

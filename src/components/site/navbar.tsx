@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CommandPalette } from "@/components/site/command-palette";
+import { usePresence } from "@/hooks/use-presence";
 
 const LINKS = [
   { href: "#flight", label: "FLIGHT" },
@@ -22,6 +23,7 @@ export function Navbar() {
   const [time, setTime] = useState("--:--:--");
   const [active, setActive] = useState("");
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const { online, connected } = usePresence();
 
   useEffect(() => {
     const onScroll = () => {
@@ -122,8 +124,16 @@ export function Navbar() {
           </div>
 
           <div className="flex items-center gap-3">
+            <div
+              className="hidden items-center gap-2 font-mono text-[10px] text-muted-foreground md:flex"
+              title="live builders connected right now"
+            >
+              <span className={`led ${connected ? "" : "opacity-40"}`} />
+              <span className="tabular-nums">
+                {online == null ? "--" : online} <span className="text-primary/60">ON GRID</span>
+              </span>
+            </div>
             <div className="hidden items-center gap-2 font-mono text-[10px] text-muted-foreground md:flex">
-              <span className="led" />
               <span className="tabular-nums">{time} IST</span>
             </div>
             <Button asChild size="sm" className="hidden font-mono text-[11px] tracking-widest sm:inline-flex">
@@ -179,7 +189,10 @@ export function Navbar() {
           </a>
         </div>
         <div className="flex items-center justify-between border-t border-border/50 px-8 py-4 font-mono text-[10px] text-muted-foreground">
-          <span>NEXUS · VIT CHENNAI</span>
+          <span className="flex items-center gap-2">
+            <span className="led" />
+            {online == null ? "--" : online} ON GRID
+          </span>
           <span className="tabular-nums">{time} IST</span>
         </div>
       </div>

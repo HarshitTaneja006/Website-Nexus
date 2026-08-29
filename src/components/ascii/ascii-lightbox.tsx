@@ -1,0 +1,243 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react";
+import { paintAscii, renderAscii, type AsciiMode } from "@/lib/ascii";
+
+/**
+ * AsciiLightbox — fullscreen viewer that re-renders a gallery shot as
+ * high-resolution ASCII (ASCILINE-style mapper pushed to 60–260 cols).
+ * Arrow keys navigate shots, Esc closes, slider dials the glyph density.
+ */
+
+export interface LightboxShot {
+  src: string;
+  label: string;
+  caption: string;
+}
+
+const MODES: AsciiMode[] = ["ascii", "pixel", "photo"];
+
+export function AsciiLightbox({
+  shots,
+  index,
+  onClose,
+  onNavigate,
+}: {
+  shots: LightboxShot[];
+  index: number;
+  onClose: () => void;
+  onNavigate: (next: number) => void;
+}) {
+  const shot = shots[index];
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const imgRef = useRef<HTMLImageElement | null>(null);
+  const rafRef = useRef<number>(0);
+
+  const [ready, setReady] = useState(false);
+  const [mode, setMode] = useState<AsciiMode>("ascii");
+  const [zoom, setZoom] = useState(150); // target column count
+  const [grid, setGrid] = useState({ cols: 0, rows: 0 });
+
+  // reset readiness when the shot changes — state-adjust-during-render pattern
+  const [prevSrc, setPrevSrc] = useState(shot.src);
+  if (prevSrc !== shot.src) {
+    setPrevSrc(shot.src);
+    setReady(false);
+  }
+
+  // load the frame for the current shot
+  useEffect(() => {
+    let cancelled = false;
+    const img = new Image();
+    img.decoding = "async";
+    img.src = shot.src;
+    img.onload = () => {
+      if (cancelled) return;
+      imgRef.current = img;
+      setReady(true);
+    };
+    return () => {
+      cancelled = true;
+    };
+  }, [shot.src]);
+
+  const paint = useCallback(() => {
+    const img = imgRef.current;
+    const canvas = canvasRef.current;
+    if (!img || !img.complete || !img.naturalWidth || !canvas) return;
+
+    // usable viewport area for the glyph canvas
+    const maxW = Math.min(window.innerWidth - 48, 1600);
+    const maxH = window.innerHeight - 190;
+    const aspect = img.naturalHeight / img.naturalWidth;
+
+    // cell geometry must match the engines: charW=0.6em, lineH=1.06em,
+    // renderAscii rows = cols * aspect * (0.6/1.06)
+    const charW = 12 * 0.6;
+    const lineH = 12 * 1.06;
+    const cellAspect = 0.6 / 1.06;
+    const colsByW = maxW / charW;
+    const colsByH = maxH / (lineH * aspect * cellAspect);
+    const cols = Math.max(40, Math.min(zoom, Math.floor(Math.min(colsByW, colsByH))));
+
+    const frame = renderAscii(img, {
+      cols,
+      ramp: mode === "pixel" ? " .·:;=+x%#@" : " .,:;-~=+*x%#@",
+      mode: mode === "photo" ? "ascii" : mode,
+      gamma: 0.68,
+      colorize: mode === "pixel",
+    });
+    setGrid({ cols: frame.cols, rows: frame.rows });
+
+    paintAscii(canvas, frame, {
+      fg: "#4ade80",
+      bright: "#d9ffe4",
+      bg: mode === "photo" ? null : "#050a06",
+      fontSize: 12,
+      dpr: Math.min(2, window.devicePixelRatio || 1),
+    });
+  }, [mode, zoom]);
+
+  // repaint on mode/zoom/ready changes
+  useEffect(() => {
+    if (!ready) return;
+    rafRef.current = requestAnimationFrame(paint);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [ready, paint]);
+
+  // repaint on window resize (debounced)
+  useEffect(() => {
+    if (!ready) return;
+    let t: ReturnType<typeof setTimeout>;
+    const onResize = () => {
+      clearTimeout(t);
+      t = setTimeout(paint, 150);
+    };
+    window.addEventListener("resize", onResize);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("resize", onResize);
+    };
+  }, [ready, paint]);
+
+  // keyboard controls + scroll lock
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowRight") onNavigate((index + 1) % shots.length);
+      if (e.key === "ArrowLeft") onNavigate((index - 1 + shots.length) % shots.length);
+    };
+    window.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [index, shots.length, onClose, onNavigate]);
+
+  const step = (dir: 1 | -1) => onNavigate((index + dir + shots.length) % shots.length);
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`ASCII lightbox — ${shot.label}`}
+      className="fixed inset-0 z-[90] flex flex-col bg-[#030604]/97 backdrop-blur-sm"
+    >
+      {/* top chrome */}
+      <div className="flex items-center justify-between gap-3 border-b border-border/70 bg-[#050a06]/90 px-4 py-2.5 sm:px-6">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="led led-amber shrink-0" />
+          <span className="truncate font-mono text-[11px] uppercase tracking-[0.25em] text-primary">
+            {shot.label}
+          </span>
+          <span className="hidden font-mono text-[10px] text-muted-foreground sm:inline">
+            {index + 1}/{shots.length} · {shot.caption}
+          </span>
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <div className="flex overflow-hidden rounded-sm border border-border font-mono text-[10px]" role="tablist" aria-label="render mode">
+            {MODES.map((m) => (
+              <button
+                key={m}
+                role="tab"
+                aria-selected={mode === m}
+                onClick={() => setMode(m)}
+                className={`px-2.5 py-1 uppercase tracking-wider transition-colors ${
+                  mode === m
+                    ? "bg-primary/15 text-primary"
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                }`}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Close lightbox"
+            className="rounded-sm border border-border p-1.5 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* canvas stage */}
+      <div className="scanlines relative flex flex-1 items-center justify-center overflow-hidden p-4">
+        {!ready && (
+          <div className="flex items-center gap-2 font-mono text-[11px] text-muted-foreground">
+            <span className="led led-amber" />
+            decoding frame…
+          </div>
+        )}
+        <canvas
+          ref={canvasRef}
+          aria-hidden="true"
+          className="max-h-full max-w-full object-contain transition-opacity duration-300"
+          style={{ imageRendering: "pixelated", opacity: ready ? 1 : 0 }}
+        />
+        {/* prev / next */}
+        <button
+          onClick={() => step(-1)}
+          aria-label="Previous frame"
+          className="absolute left-3 top-1/2 -translate-y-1/2 rounded-sm border border-border bg-[#050a06]/80 p-2 text-muted-foreground transition-all hover:border-primary/50 hover:text-primary"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+        <button
+          onClick={() => step(1)}
+          aria-label="Next frame"
+          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-sm border border-border bg-[#050a06]/80 p-2 text-muted-foreground transition-all hover:border-primary/50 hover:text-primary"
+        >
+          <ChevronRight className="h-5 w-5" />
+        </button>
+      </div>
+
+      {/* bottom readout + zoom */}
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-border/70 bg-[#050a06]/90 px-4 py-2.5 font-mono text-[10px] tracking-widest text-muted-foreground sm:px-6">
+        <span className="tabular-nums">
+          GRID {grid.cols || "—"}×{grid.rows || "—"} GLYPHS
+        </span>
+        <div className="flex items-center gap-2.5">
+          <ZoomIn className="h-3.5 w-3.5 text-primary/70" />
+          <span className="hidden sm:inline">DENSITY</span>
+          <input
+            type="range"
+            min={60}
+            max={260}
+            step={2}
+            value={zoom}
+            onChange={(e) => setZoom(Number(e.target.value))}
+            aria-label="ASCII glyph density"
+            className="h-1 w-40 cursor-pointer appearance-none rounded bg-border accent-[#4ade80] sm:w-56"
+          />
+          <span className="w-9 tabular-nums text-primary/80">{zoom}c</span>
+        </div>
+        <span className="hidden md:inline">← → NAVIGATE · ESC CLOSE</span>
+      </div>
+    </div>
+  );
+}

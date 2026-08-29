@@ -20,12 +20,45 @@ let cache: CacheEntry | null = null;
 const TTL = 30 * 60 * 1000; // 30 minutes
 
 const QUERIES = [
-  "latest technology news AI",
-  "software engineering developer news this week",
+  "AI model release announcement this week OpenAI Anthropic Google",
+  "developer tools launch news this week",
+  "tech industry breaking news",
 ];
 
 function hostLabel(host: string): string {
   return host.replace(/^www\./, "").split(".")[0].toUpperCase();
+}
+
+/**
+ * Reject low-quality search hits: site homepages, index/listing pages and
+ * truncated titles that read like navigation crumbs instead of headlines.
+ */
+function isQualityHit(url: string, title: string): boolean {
+  const t = title.trim().toLowerCase();
+  // homepage / listing patterns
+  const badPatterns = [
+    /:\s*home$/, // "…: Home"
+    /\|\s*(latest|home|news\s*$)/, // "X | Latest …" pipe-crumb titles
+    /^(ai |tech )?(news|updates|analysis|reviews?)\b/, // titles that START with "News…" / "AI News…"
+    /\b(latest|breaking)\b.*\b(news|analysis|updates)\b/, // "Latest AI News and Analysis"
+    /\b(news|updates|products?|analysis|coverage|reviews?)\s*(and|&|,|\+)?\s*(products?|analysis|updates|reviews?)?\s*$/i,
+    /^what\b|^how\b.*(website|newsletter)/, // Q&A/listicle search results
+    /news,\s*trends\s*&/, // "X: Software Development News, Trends & Best…"
+    /^\d{4}\b/, // bare year titles
+    /\b(subscribe|sign in|log in|newsletter signup)\b/,
+    /\bmagazine\b|\bjournal\b|\barchive\b|\btopics?\b$/,
+  ];
+  if (badPatterns.some((p) => p.test(t))) return false;
+  // root URLs are homepages, not articles
+  try {
+    const { pathname } = new URL(url);
+    if (pathname === "/" || pathname.length < 2) return false;
+  } catch {
+    return false; // unparseable URL
+  }
+  // headline must have some substance
+  if (t.split(/\s+/).length < 5) return false;
+  return true;
 }
 
 export async function GET() {
@@ -53,6 +86,7 @@ export async function GET() {
 
       for (const r of results) {
         if (!r?.url || !r?.name || seen.has(r.url)) continue;
+        if (!isQualityHit(r.url, r.name)) continue;
         seen.add(r.url);
         items.push({
           title: r.name.trim().slice(0, 160),

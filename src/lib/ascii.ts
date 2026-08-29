@@ -34,6 +34,11 @@ export interface AsciiRenderOptions {
   invert?: boolean;
   /** color the glyphs with the source pixel color (ascii mode) */
   colorize?: boolean;
+  /**
+   * percentile-based histogram stretch (default true) — rescues dark/flat
+   * sources by remapping the 2nd..98th luminance percentiles to 0..1
+   */
+  autoLevels?: boolean;
 }
 
 export interface AsciiFrame {
@@ -79,9 +84,12 @@ export function renderAscii(
   const sh = "naturalHeight" in source ? source.naturalHeight : source.height;
   if (!sw || !sh) return { lines: [], colors: [], cols: 0, rows: 0 };
 
-  // monospace cells ≈ 0.6 width / 1.0 height (we draw with lineHeight = 1.06em)
-  const cellAspect = 0.58;
-  const rows = Math.max(4, Math.round((cols * (sh / sw)) / cellAspect));
+  // monospace cells: charW ≈ 0.6em wide / 1.06em line height (paintAscii uses
+  // the same geometry) — cells are ~1.77× taller than wide, so a correct
+  // aspect-preserving frame needs rows = cols * (sh/sw) * (charW / lineH).
+  // (The old `/ 0.58` stretched frames ~3× vertically; object-cover hid it.)
+  const cellAspect = 0.6 / 1.06; // ≈ 0.566
+  const rows = Math.max(4, Math.round(cols * (sh / sw) * cellAspect));
 
   const off = document.createElement("canvas");
   off.width = cols;
@@ -91,6 +99,45 @@ export function renderAscii(
 
   ctx.drawImage(source, 0, 0, cols, rows);
   const data = ctx.getImageData(0, 0, cols, rows).data;
+
+  // --- optional auto-levels: luminance histogram stretch (2%..98%) ---
+  let lo = 0;
+  let hi = 1;
+  if (opts.autoLevels !== false) {
+    const hist = new Uint32Array(256);
+    let opaque = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      const a = data[i + 3] / 255;
+      if (a < 0.1) continue;
+      const lum = (0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2]) / 255;
+      hist[Math.min(255, Math.round(lum * 255))]++;
+      opaque++;
+    }
+    if (opaque > 32) {
+      const cut = opaque * 0.02;
+      let acc = 0;
+      for (let b = 0; b < 256; b++) {
+        acc += hist[b];
+        if (acc >= cut) {
+          lo = b / 255;
+          break;
+        }
+      }
+      acc = 0;
+      for (let b = 255; b >= 0; b--) {
+        acc += hist[b];
+        if (acc >= cut) {
+          hi = b / 255;
+          break;
+        }
+      }
+      if (hi - lo < 0.12) {
+        lo = 0; // nearly flat frame — don't overstretch noise
+        hi = 1;
+      }
+    }
+  }
+  const span = Math.max(0.05, hi - lo);
 
   const lines: string[] = [];
   const colors: (string | null)[][] = [];
@@ -105,9 +152,10 @@ export function renderAscii(
       const g = data[i + 1];
       const b = data[i + 2];
       const a = data[i + 3] / 255;
-      // perceptual luminance
+      // perceptual luminance, auto-leveled then gamma-shaped
       let lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-      lum = Math.pow(Math.min(1, Math.max(0, lum * a)), gamma);
+      lum = Math.min(1, Math.max(0, (lum * a - lo) / span));
+      lum = Math.pow(lum, gamma);
       if (invert) lum = 1 - lum;
 
       if (mode === "pixel") {
