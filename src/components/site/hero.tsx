@@ -70,6 +70,16 @@ export function Hero() {
   const [runStats, setRunStats] = useState(false);
   const statsRef = useRef<HTMLDivElement | null>(null);
 
+  // remote control: ⌘K palette (or anywhere else) can switch the engine
+  useEffect(() => {
+    const onEngine = (e: Event) => {
+      const p = (e as CustomEvent).detail;
+      if (p === "rain" || p === "wave" || p === "donut") setPreset(p);
+    };
+    window.addEventListener("nexus:engine", onEngine);
+    return () => window.removeEventListener("nexus:engine", onEngine);
+  }, []);
+
   useEffect(() => {
     const el = statsRef.current;
     if (!el) return;
@@ -89,7 +99,18 @@ export function Hero() {
   return (
     <section id="top" className="relative flex min-h-svh flex-col overflow-hidden">
       {/* ascii background */}
-      <AsciiCanvas preset={preset} className="absolute inset-0 -z-10 opacity-[0.32]" fontSize={11} />
+      <div
+        className="pointer-events-none absolute inset-0 -z-10 transition-opacity duration-700"
+        style={{ opacity: preset === "donut" ? 0.55 : preset === "wave" ? 0.34 : 0.3 }}
+      >
+        <AsciiCanvas
+          key={preset}
+          preset={preset}
+          className="h-full w-full"
+          fontSize={11}
+          speed={preset === "donut" ? 1.15 : 1}
+        />
+      </div>
       <div className="grid-bg pointer-events-none absolute inset-0 -z-10 opacity-60" />
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(5,8,6,0.88)_92%)]" />
       <div className="scanlines pointer-events-none absolute inset-0 -z-10" />

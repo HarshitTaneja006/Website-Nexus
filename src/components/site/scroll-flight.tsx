@@ -110,6 +110,14 @@ export function ScrollFlight({ hasIntroVideo }: { hasIntroVideo: boolean }) {
   useEffect(() => {
     setMounted(true);
     setReducedMotion(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    // prewarm the scene stills so seams stay seamless on first scrub
+    const warm = (src: string) => {
+      const img = new Image();
+      img.decoding = "async";
+      img.src = src;
+    };
+    const id = setTimeout(() => SCENES.forEach((s) => warm(s.still)), 1200);
+    return () => clearTimeout(id);
   }, []);
 
   useEffect(() => {

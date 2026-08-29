@@ -1,4 +1,5 @@
 import { Heart } from "lucide-react";
+import { ShipLog } from "@/components/site/ship-log";
 
 const ASCII_MARK = String.raw`███╗   ██╗███████╗██╗  ██╗██╗   ██╗███████╗
 ████╗  ██║██╔════╝╚██╗██╔╝██║   ██║██╔════╝
@@ -75,6 +76,9 @@ export function Footer() {
             </ul>
           </div>
         </div>
+
+        {/* ship log */}
+        <ShipLog />
 
         {/* bottom bar */}
         <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-border/50 pt-6 font-mono text-[10px] text-muted-foreground/70 sm:flex-row">

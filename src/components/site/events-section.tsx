@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, MapPin, Users } from "lucide-react";
+import { CalendarDays, MapPin, Timer, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -42,6 +42,57 @@ const fmtFull = new Intl.DateTimeFormat("en-GB", {
   hour12: false,
   timeZone: "Asia/Calcutta",
 });
+
+/** Live T-minus ticker to the flagship upcoming event (IST). */
+function FlagshipCountdown({ target, title }: { target: string; title: string }) {
+  const [now, setNow] = useState<number | null>(null);
+
+  useEffect(() => {
+    const tick = () => setNow(Date.now());
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const ms = now == null ? null : new Date(target).getTime() - now;
+  const past = ms != null && ms <= 0;
+  const d = ms == null ? 0 : Math.floor(ms / 86400000);
+  const h = ms == null ? 0 : Math.floor((ms % 86400000) / 3600000);
+  const m = ms == null ? 0 : Math.floor((ms % 3600000) / 60000);
+  const s = ms == null ? 0 : Math.floor((ms % 60000) / 1000);
+  const pad = (n: number) => String(n).padStart(2, "0");
+
+  return (
+    <div className="hud-corners mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 overflow-hidden rounded-md border border-amber-300/25 bg-gradient-to-r from-amber-300/[0.07] via-card to-card px-5 py-3.5">
+      <span className="flex items-center gap-2 font-mono text-[10px] tracking-[0.3em] text-amber-300">
+        <Timer className="h-3.5 w-3.5" />
+        T-MINUS
+      </span>
+      <span className="font-display text-2xl font-bold tabular-nums tracking-tight text-foreground sm:text-3xl">
+        {ms == null ? (
+          <span className="text-muted-foreground">--D --:--:--</span>
+        ) : past ? (
+          <span className="text-primary">LIVE NOW</span>
+        ) : (
+          <>
+            {d}
+            <span className="text-amber-300">D</span> {pad(h)}:{pad(m)}:{pad(s)}
+          </>
+        )}
+      </span>
+      <span className="font-mono text-[10px] tracking-widest text-muted-foreground">
+        UNTIL <span className="text-foreground/80">{title}</span>
+      </span>
+      <a
+        href="#events"
+        onClick={(e) => e.preventDefault()}
+        className="ml-auto hidden font-mono text-[9px] tracking-[0.25em] text-primary/60 sm:block"
+      >
+        ▸ FLAGSHIP
+      </a>
+    </div>
+  );
+}
 
 function EventCard({
   ev,
@@ -235,6 +286,11 @@ export function EventsSection() {
               ))}
             </div>
           </div>
+
+          {/* flagship countdown */}
+          {tab === "upcoming" && featured && (
+            <FlagshipCountdown target={featured.startsAt} title={featured.title} />
+          )}
 
           {/* featured */}
           {tab === "upcoming" && featured && (

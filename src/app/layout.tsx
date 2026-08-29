@@ -41,7 +41,17 @@ export const metadata: Metadata = {
     description:
       "The student tech collective of VIT Chennai. Scroll to fly through our world.",
     siteName: "NEXUS",
+    images: [
+      { url: "/media/og.png", width: 1344, height: 768, alt: "NEXUS — the campus grid" },
+    ],
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "NEXUS — Innovate. Lead. Build.",
+    description:
+      "The student tech collective of VIT Chennai. Scroll to fly through our world.",
+    images: ["/media/og.png"],
   },
 };
 

@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CommandPalette } from "@/components/site/command-palette";
 
 const LINKS = [
   { href: "#flight", label: "FLIGHT" },
   { href: "#about", label: "ABOUT" },
   { href: "#events", label: "EVENTS" },
+  { href: "#news", label: "NEWS" },
   { href: "#stack", label: "STACK" },
   { href: "#gallery", label: "GALLERY" },
   { href: "#team", label: "TEAM" },
@@ -19,11 +21,13 @@ export function Navbar() {
   const [open, setOpen] = useState(false);
   const [time, setTime] = useState("--:--:--");
   const [active, setActive] = useState("");
+  const [paletteOpen, setPaletteOpen] = useState(false);
 
   useEffect(() => {
     const onScroll = () => {
       const y = window.scrollY;
       setScrolled(y > 32);
+      if (y < window.innerHeight * 0.45) setActive("");
       const max = document.documentElement.scrollHeight - window.innerHeight;
       setProgress(max > 0 ? Math.min(1, y / max) : 0);
     };
@@ -73,6 +77,7 @@ export function Navbar() {
 
   return (
     <>
+      <CommandPalette open={paletteOpen} setOpen={setPaletteOpen} />
       {/* scroll progress */}
       <div className="fixed inset-x-0 top-0 z-[70] h-[2px] bg-transparent">
         <div
@@ -124,6 +129,13 @@ export function Navbar() {
             <Button asChild size="sm" className="hidden font-mono text-[11px] tracking-widest sm:inline-flex">
               <a href="#join">JOIN_US</a>
             </Button>
+            <button
+              onClick={() => setPaletteOpen(true)}
+              aria-label="Open command palette"
+              className="hidden items-center gap-1.5 rounded-sm border border-border bg-card/60 px-2.5 py-1.5 font-mono text-[10px] text-muted-foreground transition-all hover:border-primary/50 hover:text-primary md:flex"
+            >
+              <span>⌘K</span>
+            </button>
             <button
               className="grid h-9 w-9 place-items-center rounded-sm border border-border text-foreground lg:hidden"
               onClick={() => setOpen(!open)}
