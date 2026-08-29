@@ -65,7 +65,16 @@ export async function GET(req: NextRequest) {
       db.joinRequest.findMany({
         orderBy: { createdAt: "desc" },
         take: 40,
-        select: { name: true, email: true, branch: true, year: true, interest: true, createdAt: true },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          branch: true,
+          year: true,
+          interest: true,
+          status: true,
+          createdAt: true,
+        },
       }),
       db.rsvp.findMany({
         orderBy: { createdAt: "desc" },
@@ -118,13 +127,20 @@ export async function GET(req: NextRequest) {
           at: s.createdAt.toISOString(),
         })),
         joinRequests: joinRequests.map((j) => ({
+          id: j.id,
           name: j.name,
           email: maskEmail(j.email),
           branch: j.branch,
           year: j.year,
           interest: j.interest,
+          status: j.status,
           createdAt: j.createdAt.toISOString(),
         })),
+        joinStatus: {
+          pending: joinRequests.filter((j) => j.status === "pending").length,
+          approved: joinRequests.filter((j) => j.status === "approved").length,
+          rejected: joinRequests.filter((j) => j.status === "rejected").length,
+        },
       },
       { headers: { "cache-control": "no-store" } }
     );

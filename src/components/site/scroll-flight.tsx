@@ -111,6 +111,14 @@ function sceneFromHash(hash: string): number {
   return SCENES.findIndex((s) => s.id === m[1]);
 }
 
+/** "?scene=lab" → scene index, or -1 (share links carry the OG preview). */
+function sceneFromQuery(): number {
+  if (typeof window === "undefined") return -1;
+  const v = new URLSearchParams(window.location.search).get("scene");
+  if (!v) return -1;
+  return SCENES.findIndex((s) => s.id === v);
+}
+
 export function ScrollFlight({ hasIntroVideo }: { hasIntroVideo: boolean }) {
   const outerRef = useRef<HTMLDivElement | null>(null);
   const stickyRef = useRef<HTMLDivElement | null>(null);
@@ -354,9 +362,25 @@ export function ScrollFlight({ hasIntroVideo }: { hasIntroVideo: boolean }) {
     };
 
     // deep link: #scene-lab lands mid-scrub on that scene, instantly.
-    // Capture the hash BEFORE update() runs — the scrub's "above flight"
+    // ?scene=lab works too (that's what LINK chips copy — the OG preview
+    // unfurls on social apps); the param is promoted to the canonical
+    // #scene-lab hash and scrubbed from the URL on landing.
+    // Capture BEFORE update() runs — the scrub's "above flight"
     // branch strips unknown-to-the-DOM hashes on the very first frame.
-    const initialSi = didHashJump.current ? -1 : sceneFromHash(window.location.hash);
+    const fromQuery = sceneFromQuery();
+    if (fromQuery >= 0 && sceneFromHash(window.location.hash) < 0) {
+      // promote ?scene=x → the canonical #scene-x hash, keeping any other
+      // params (?event=… deep links ride along untouched)
+      const rest = new URLSearchParams(window.location.search);
+      rest.delete("scene");
+      const qs = rest.toString();
+      history.replaceState(
+        null,
+        "",
+        `${window.location.pathname}${qs ? `?${qs}` : ""}#scene-${SCENES[fromQuery].id}`
+      );
+    }
+    const initialSi = didHashJump.current ? -1 : Math.max(sceneFromHash(window.location.hash), fromQuery);
     didHashJump.current = true;
 
     const landDeepLink = (segIdx2: number) => {
@@ -434,11 +458,13 @@ export function ScrollFlight({ hasIntroVideo }: { hasIntroVideo: boolean }) {
   };
 
   const copySceneLink = (sceneId: string) => {
-    const url = `${window.location.origin}${window.location.pathname}#scene-${sceneId}`;
+    // ?scene= URLs land identically in-browser AND unfurl a scene-specific
+    // OG card (generateMetadata → /api/og?scene=…) on social/IM apps.
+    const url = `${window.location.origin}${window.location.pathname}?scene=${sceneId}`;
     const done = () =>
       toast({
         title: "SCENE LINK COPIED",
-        description: `#${sceneId} — anyone opening this lands mid-flight on this shot.`,
+        description: `?scene=${sceneId} — lands mid-flight on this shot, previews its own card.`,
       });
     if (navigator.clipboard) {
       navigator.clipboard.writeText(url).then(done).catch(() => {
@@ -603,7 +629,14 @@ export function ScrollFlight({ hasIntroVideo }: { hasIntroVideo: boolean }) {
                   className="group flex items-center gap-2 font-mono text-[9px] tracking-[0.25em] transition-colors"
                   aria-label={`Jump to ${label}`}
                 >
-                  <span className={active ? "text-primary" : "text-muted-foreground/60 group-hover:text-foreground"}>
+                  <span
+                    className={`tabular-nums ${
+                      active ? "text-primary/90" : "text-muted-foreground/40 group-hover:text-muted-foreground"
+                    }`}
+                  >
+                    {seg.kind === "video" ? "00" : String(sceneNo + 1).padStart(2, "0")}
+                  </span>
+                  <span className={active ? "text-primary text-glow" : "text-muted-foreground/60 group-hover:text-foreground"}>
                     {label}
                   </span>
                   <span

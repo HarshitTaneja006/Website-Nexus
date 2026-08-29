@@ -114,7 +114,7 @@ export function Navbar() {
               <a
                 key={l.href}
                 href={l.href}
-                className={`relative px-3 py-1.5 font-mono text-[11px] tracking-widest transition-colors ${
+                className={`nav-sweep relative px-3 py-1.5 font-mono text-[11px] tracking-widest transition-colors ${
                   active === l.href ? "text-primary" : "text-muted-foreground hover:text-foreground"
                 }`}
               >

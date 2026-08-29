@@ -15,8 +15,10 @@ function xesc(text: string): string {
 
 /**
  * GET /api/feed.xml — RSS 2.0 wire feed. Carries every transmit (event)
- * as an item so readers/IFTTT/Slack RSS can mirror the schedule. Pair it
- * with the Signal.WIRE newsletter: one is pull, the other is push.
+ * as an item so readers/IFTTT/Slack RSS can mirror the schedule. Item
+ * links are ?event=slug deep links — feed readers land straight on the
+ * RSVP dialog (upcoming) or full brief (past). Pair it with the
+ * Signal.WIRE newsletter: one is pull, the other is push.
  */
 export async function GET(req: Request) {
   try {
@@ -30,6 +32,8 @@ export async function GET(req: Request) {
       req.headers.get("origin") ??
       "https://nexus-website-inky.vercel.app";
     const link = `${base}/#events`;
+    /** per-item deep link: opens the site straight on that event's dialog */
+    const eventLink = (slug: string) => `${base}/?event=${encodeURIComponent(slug)}`;
     const built = new Date().toUTCString();
 
     const items = events
@@ -43,7 +47,7 @@ export async function GET(req: Request) {
         return [
           "    <item>",
           `      <title>${xesc(title)}</title>`,
-          `      <link>${xesc(link)}</link>`,
+          `      <link>${xesc(eventLink(e.slug))}</link>`,
           `      <guid isPermaLink="false">nexus-event-${xesc(e.id)}</guid>`,
           `      <category>${xesc(e.category)}</category>`,
           `      <pubDate>${e.startsAt.toUTCString()}</pubDate>`,

@@ -36,14 +36,16 @@ model Rsvp {
 }
 
 model JoinRequest {
-  id        String   @id @default(cuid())
-  name      String
-  email     String
-  branch    String
-  year      String
-  interest  String
-  message   String?
-  createdAt DateTime @default(now())
+  id         String    @id @default(cuid())
+  name       String
+  email      String
+  branch     String
+  year       String
+  interest   String
+  message    String?
+  status     String    @default("pending") // pending | approved | rejected
+  reviewedAt DateTime?
+  createdAt  DateTime  @default(now())
 }
 
 model Subscriber {

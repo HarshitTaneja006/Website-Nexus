@@ -29,7 +29,10 @@ export function BootLoader() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced || sessionStorage.getItem("nexus-booted")) {
+    // ?noboot skips the sequence entirely — QA runs and demo replays
+    // shouldn't wait for (or double-fire) the boot animation
+    const noBoot = new URLSearchParams(window.location.search).has("noboot");
+    if (reduced || noBoot || sessionStorage.getItem("nexus-booted")) {
       const skip = setTimeout(() => setVisible(false), 0);
       return () => clearTimeout(skip);
     }
@@ -74,7 +77,7 @@ export function BootLoader() {
 
   return (
     <div
-      className="scanlines fixed inset-0 z-[100] flex cursor-pointer flex-col items-center justify-center bg-[#050806] transition-opacity duration-500"
+      className="crt-power scanlines fixed inset-0 z-[100] flex cursor-pointer flex-col items-center justify-center bg-[#050806] transition-opacity duration-500"
       onClick={() => {
         doneRef.current = true;
         document.body.style.overflow = "";
@@ -100,11 +103,11 @@ export function BootLoader() {
       <div className="relative mt-6 w-[min(420px,86vw)]">
         <div className="mb-1.5 flex justify-between font-mono text-[10px] text-muted-foreground">
           <span>INITIALIZING</span>
-          <span>{Math.min(progress, 100)}%</span>
+          <span className="tabular-nums text-primary/80">{Math.min(progress, 100)}%</span>
         </div>
         <div className="h-[3px] w-full overflow-hidden rounded bg-secondary">
           <div
-            className="h-full bg-primary transition-[width] duration-100"
+            className="h-full bg-gradient-to-r from-primary via-[#a7f3d0] to-amber-300 shadow-[0_0_12px_rgba(74,222,128,0.55)] transition-[width] duration-100"
             style={{ width: `${Math.min(progress, 100)}%` }}
           />
         </div>

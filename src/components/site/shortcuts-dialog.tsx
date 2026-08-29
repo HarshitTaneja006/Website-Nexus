@@ -31,7 +31,8 @@ const GROUPS: { title: string; rows: Row[] }[] = [
     rows: [
       { keys: ["SCROLL"], desc: "scrub the camera through the four scenes" },
       { keys: ["#scene-gate … #scene-community"], desc: "deep-link straight into a scene" },
-      { keys: ["🔗 LINK"], desc: "per-scene chip copies the deep URL" },
+      { keys: ["?scene=<id>"], desc: "share-grade scene link — unfurls its own OG card" },
+      { keys: ["🔗 LINK"], desc: "per-scene chip copies the ?scene= share URL" },
     ],
   },
   {
@@ -46,6 +47,7 @@ const GROUPS: { title: string; rows: Row[] }[] = [
     title: "EVENTS",
     rows: [
       { keys: ["?event=<slug>"], desc: "deep-link an event — RSVP pre-opens (archive → brief)" },
+      { keys: ["?noboot"], desc: "skip the boot sequence (QA / demo replays)" },
       { keys: ["SHARE"], desc: "invite text carries the ?event= deep link" },
       { keys: ["MY.RSVP"], desc: "scan any email against the RSVP ledger" },
     ],
