@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Expand } from "lucide-react";
-import { paintAscii, renderAscii, colsForWidth, type AsciiMode, type AsciiFrame } from "@/lib/ascii";
+import { Expand, FileDown } from "lucide-react";
+import { paintAscii, renderAscii, frameToText, colsForWidth, type AsciiMode, type AsciiFrame } from "@/lib/ascii";
+import { useToast } from "@/hooks/use-toast";
 
 /**
  * AsciiImage — renders a real image as live ASCII text on a canvas.
@@ -31,6 +32,7 @@ export function AsciiImage({ src, label, caption, onExpand }: AsciiImageProps) {
   const [mode, setMode] = useState<AsciiMode>("ascii");
   const [mix, setMix] = useState(82); // 100 = full ascii, 0 = full photo
   const [grid, setGrid] = useState({ cols: 0, rows: 0 });
+  const { toast } = useToast();
 
   const renderNow = useCallback(() => {
     const img = imgRef.current;
@@ -94,6 +96,20 @@ export function AsciiImage({ src, label, caption, onExpand }: AsciiImageProps) {
   }, [ready, renderNow]);
 
   const showAscii = mode !== "photo" || mix > 0;
+
+  const exportTxt = useCallback(() => {
+    const frame = frameRef.current;
+    if (!frame || !frame.lines.length) return;
+    const text = frameToText(frame, { label, mode: mode.toUpperCase(), source: src });
+    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `nexus-${label.toLowerCase().replace(/\.(raw|png)$/, "")}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "FRAME DUMPED", description: `${frame.cols}×${frame.rows} glyphs → .txt` });
+  }, [label, mode, src, toast]);
 
   return (
     <figure className="group relative flex h-full flex-col overflow-hidden rounded-md border border-border bg-card">
@@ -172,18 +188,28 @@ export function AsciiImage({ src, label, caption, onExpand }: AsciiImageProps) {
         <span className="font-mono text-[10px] text-muted-foreground">
           GRID {grid.cols || "—"}×{grid.rows || "—"} · SRC 1152×864
         </span>
-        <input
-          type="range"
-          min={0}
-          max={100}
-          value={mix}
-          onChange={(e) => setMix(Number(e.target.value))}
-          onMouseUp={() => {
-            if (mode === "photo" && mix > 0) setMode("ascii");
-          }}
-          aria-label={`ASCII to photo blend for ${label}`}
-          className="h-1 w-24 cursor-pointer appearance-none rounded bg-border accent-[#4ade80]"
-        />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={exportTxt}
+            aria-label={`Download ${label} as plain-text ASCII`}
+            title="dump frame → .txt"
+            className="rounded-sm border border-transparent p-1 text-muted-foreground transition-all hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
+          >
+            <FileDown className="h-3.5 w-3.5" />
+          </button>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={mix}
+            onChange={(e) => setMix(Number(e.target.value))}
+            onMouseUp={() => {
+              if (mode === "photo" && mix > 0) setMode("ascii");
+            }}
+            aria-label={`ASCII to photo blend for ${label}`}
+            className="h-1 w-24 cursor-pointer appearance-none rounded bg-border accent-[#4ade80]"
+          />
+        </div>
       </div>
     </figure>
   );

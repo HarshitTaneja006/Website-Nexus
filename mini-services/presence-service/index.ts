@@ -45,6 +45,17 @@ httpServer.listen(PORT, () => {
   console.log(`presence service running on port ${PORT}`);
 });
 
+// REST sidecar for the OPS console: /api/admin/stats proxies this (server-side
+// only — never exposed through the gateway). Separate port because socket.io
+// owns every request path on the main server.
+const STATS_PORT = 3004;
+createServer((_req, res) => {
+  res.writeHead(200, { "content-type": "application/json" });
+  res.end(JSON.stringify({ count: io.engine.clientsCount, peak, at: Date.now() }));
+}).listen(STATS_PORT, () => {
+  console.log(`presence stats sidecar listening on ${STATS_PORT}`);
+});
+
 process.on("SIGTERM", () => {
   httpServer.close(() => process.exit(0));
 });

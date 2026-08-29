@@ -245,3 +245,29 @@ export function paintAscii(
 export function colsForWidth(widthPx: number, targetCharW = 8): number {
   return Math.max(24, Math.min(220, Math.round(widthPx / targetCharW)));
 }
+
+/**
+ * Serialize an AsciiFrame to a plain-text artifact — the terminal-native
+ * export format of the engine (ASCILINE's "canvas as typographic surface",
+ * piped to a file). Pure text: no codec, no gpu, just glyphs.
+ */
+export function frameToText(
+  frame: AsciiFrame,
+  meta?: { label?: string; source?: string; mode?: string }
+): string {
+  const header = [
+    "──────────────────────────────────────────────",
+    " NEXUS ASCII EXPORT — phosphor frame dump",
+    ` GRID      ${frame.cols}×${frame.rows} glyphs`,
+    meta?.label ? ` LABEL     ${meta.label}` : null,
+    meta?.mode ? ` MODE      ${meta.mode}` : null,
+    meta?.source ? ` SOURCE    ${meta.source}` : null,
+    ` STAMP     ${new Date().toISOString()}`,
+    " ENGINE    renderAscii() · nexus redesign",
+    "──────────────────────────────────────────────",
+  ]
+    .filter((l): l is string => l !== null)
+    .join("\n");
+
+  return `${header}\n\n${frame.lines.join("\n")}\n`;
+}

@@ -28,7 +28,7 @@ export function Footer() {
           <div>
             <pre
               aria-hidden="true"
-              className="select-none text-[5px] leading-[1.2] text-primary/50 sm:text-[6.5px]"
+              className="glitch-hover select-none text-[5px] leading-[1.2] text-primary/50 transition-colors duration-300 hover:text-primary sm:text-[6.5px]"
             >
               {ASCII_MARK}
             </pre>

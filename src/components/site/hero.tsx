@@ -168,7 +168,7 @@ export function Hero() {
           >
             {ASCII_LOGO}
           </pre>
-          <h1 className="font-display relative select-none text-[19vw] font-bold leading-[0.9] tracking-[-0.04em] text-foreground text-glow sm:text-[15vw] lg:text-[10.5rem]">
+          <h1 className="font-display glitch-hover relative select-none text-[19vw] font-bold leading-[0.9] tracking-[-0.04em] text-foreground text-glow sm:text-[15vw] lg:text-[10.5rem]">
             NEXUS
           </h1>
         </div>

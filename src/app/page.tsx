@@ -12,6 +12,7 @@ import { AsciiGallery } from "@/components/site/ascii-gallery";
 import { Team } from "@/components/site/team";
 import { Join } from "@/components/site/join";
 import { Footer } from "@/components/site/footer";
+import { KonamiEgg } from "@/components/site/konami-egg";
 
 export default function Page() {
   // decides at SSR whether the blob-scrubbed fly-in clip exists
@@ -26,6 +27,7 @@ export default function Page() {
   return (
     <div className="flex min-h-screen flex-col">
       <BootLoader />
+      <KonamiEgg />
       <Navbar />
       <main className="flex-1">
         <Hero />

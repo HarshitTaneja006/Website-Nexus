@@ -12,6 +12,7 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 import { useToast } from "@/hooks/use-toast";
+import { OPS_EVENT } from "@/components/site/ops-console";
 
 /**
  * CommandPalette — a terminal-styled ⌘K launcher.
@@ -160,6 +161,17 @@ export function CommandPalette({
             <span className="text-primary/60">✉</span>
             <span className="font-bold tracking-widest">COPY EMAIL</span>
             <span className="ml-auto text-[10px] text-muted-foreground/60">./nexusvitc@gmail.com</span>
+          </CommandItem>
+          <CommandItem
+            value="ops console admin stats rsvp join"
+            onSelect={() =>
+              run(() => window.dispatchEvent(new CustomEvent(OPS_EVENT)))
+            }
+            className="gap-3 text-xs"
+          >
+            <span className="text-amber-300/80">#</span>
+            <span className="font-bold tracking-widest">OPS CONSOLE</span>
+            <span className="ml-auto text-[10px] text-muted-foreground/60">./rsvp + join ledger</span>
           </CommandItem>
           <CommandItem
             value="open source github"

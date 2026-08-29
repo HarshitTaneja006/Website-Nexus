@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CommandPalette } from "@/components/site/command-palette";
+import { OpsConsole } from "@/components/site/ops-console";
 import { usePresence } from "@/hooks/use-presence";
 
 const LINKS = [
@@ -80,6 +81,7 @@ export function Navbar() {
   return (
     <>
       <CommandPalette open={paletteOpen} setOpen={setPaletteOpen} />
+      <OpsConsole />
       {/* scroll progress */}
       <div className="fixed inset-x-0 top-0 z-[70] h-[2px] bg-transparent">
         <div

@@ -46,8 +46,8 @@ export function AsciiGallery() {
             </div>
             <p className="max-w-sm font-mono text-[10px] leading-relaxed tracking-wider text-muted-foreground">
               EVERY FRAME IS RENDERED AS TEXT — NO CODEC, NO GPU, JUST GLYPHS.
-              SWITCH MODES OR BLEND THE SLIDER. CLICK A FRAME FOR THE FULL-RES
-              TERMINAL VIEW.
+              SWITCH MODES, BLEND THE SLIDER, OR DUMP ANY FRAME AS A .TXT
+              ARTIFACT. CLICK A FRAME FOR THE FULL-RES TERMINAL VIEW.
             </p>
           </div>
 

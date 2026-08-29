@@ -289,6 +289,32 @@
   transform: translateY(0);
 }
 
+/* ---------- CRT glitch hover (RGB-split) ---------- */
+.glitch-hover {
+  display: inline-block;
+}
+.glitch-hover:hover {
+  animation: glitch-jitter 0.26s steps(2, end) 2;
+  text-shadow:
+    -2px 0 rgba(248, 113, 113, 0.55),
+    2px 0 rgba(251, 191, 36, 0.5),
+    0 0 18px rgba(74, 222, 128, 0.45);
+}
+@keyframes glitch-jitter {
+  0% { transform: translate(0, 0) skewX(0deg); }
+  25% { transform: translate(-1.5px, 1px) skewX(-1.4deg); }
+  50% { transform: translate(1.5px, -1px) skewX(1.2deg); }
+  75% { transform: translate(-1px, 0.5px) skewX(-0.6deg); }
+  100% { transform: translate(0, 0) skewX(0deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glitch-hover:hover {
+    animation: none;
+    text-shadow: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .reveal {
     opacity: 1;

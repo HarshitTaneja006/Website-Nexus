@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react";
-import { paintAscii, renderAscii, type AsciiMode } from "@/lib/ascii";
+import { ChevronLeft, ChevronRight, Download, X, ZoomIn, ClipboardCopy } from "lucide-react";
+import { paintAscii, renderAscii, frameToText, type AsciiFrame, type AsciiMode } from "@/lib/ascii";
+import { useToast } from "@/hooks/use-toast";
 
 /**
  * AsciiLightbox — fullscreen viewer that re-renders a gallery shot as
@@ -32,7 +33,9 @@ export function AsciiLightbox({
   const shot = shots[index];
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
+  const frameRef = useRef<AsciiFrame | null>(null);
   const rafRef = useRef<number>(0);
+  const { toast } = useToast();
 
   const [ready, setReady] = useState(false);
   const [mode, setMode] = useState<AsciiMode>("ascii");
@@ -88,6 +91,7 @@ export function AsciiLightbox({
       gamma: 0.68,
       colorize: mode === "pixel",
     });
+    frameRef.current = frame;
     setGrid({ cols: frame.cols, rows: frame.rows });
 
     paintAscii(canvas, frame, {
@@ -139,6 +143,35 @@ export function AsciiLightbox({
 
   const step = (dir: 1 | -1) => onNavigate((index + dir + shots.length) % shots.length);
 
+  const exportTxt = useCallback(() => {
+    const frame = frameRef.current;
+    if (!frame || !frame.lines.length) return;
+    const text = frameToText(frame, {
+      label: shot.label,
+      mode: mode.toUpperCase(),
+      source: shot.src,
+    });
+    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `nexus-${shot.label.toLowerCase().replace(/\.(raw|png)$/, "")}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "FRAME DUMPED", description: `${frame.cols}×${frame.rows} glyphs → .txt` });
+  }, [mode, shot.label, shot.src, toast]);
+
+  const copyAscii = useCallback(async () => {
+    const frame = frameRef.current;
+    if (!frame || !frame.lines.length) return;
+    try {
+      await navigator.clipboard.writeText(frameToText(frame, { label: shot.label, mode: mode.toUpperCase() }));
+      toast({ title: "COPIED", description: "ascii frame → clipboard" });
+    } catch {
+      toast({ title: "CLIPBOARD BLOCKED", description: "try the .txt export instead", variant: "destructive" });
+    }
+  }, [mode, shot.label, toast]);
+
   return (
     <div
       role="dialog"
@@ -175,6 +208,23 @@ export function AsciiLightbox({
               </button>
             ))}
           </div>
+          <button
+            onClick={copyAscii}
+            aria-label="Copy ASCII frame to clipboard"
+            title="copy frame → clipboard"
+            className="rounded-sm border border-border p-1.5 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+          >
+            <ClipboardCopy className="h-4 w-4" />
+          </button>
+          <button
+            onClick={exportTxt}
+            aria-label={`Download ${shot.label} as plain-text ASCII`}
+            title="dump frame → .txt"
+            className="flex items-center gap-1.5 rounded-sm border border-primary/30 bg-primary/5 px-2 py-1.5 font-mono text-[10px] tracking-widest text-primary/90 transition-colors hover:border-primary/60 hover:bg-primary/15 hover:text-primary"
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">.TXT</span>
+          </button>
           <button
             onClick={onClose}
             aria-label="Close lightbox"
@@ -236,7 +286,7 @@ export function AsciiLightbox({
           />
           <span className="w-9 tabular-nums text-primary/80">{zoom}c</span>
         </div>
-        <span className="hidden md:inline">← → NAVIGATE · ESC CLOSE</span>
+        <span className="hidden lg:inline">← → NAVIGATE · ESC CLOSE · TXT = FRAME DUMP</span>
       </div>
     </div>
   );
