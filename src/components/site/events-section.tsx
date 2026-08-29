@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, CalendarPlus, MapPin, Share2, Timer, Users } from "lucide-react";
+import { CalendarDays, CalendarPlus, MapPin, ScanLine, Share2, Timer, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -240,6 +240,107 @@ function EventCard({
   );
 }
 
+/**
+ * MY.RSVP — self-service lookup. Enter the email you RSVP'd with and the
+ * grid echoes back every transmit you're on the list for.
+ */
+function MyRsvpLookup() {
+  const [email, setEmail] = useState("");
+  const [state, setState] = useState<"idle" | "scanning" | "done" | "error">("idle");
+  const [rsvps, setRsvps] = useState<
+    { slug: string; title: string; venue: string; startsAt: string; featured: boolean }[]
+  >([]);
+
+  const scan = async () => {
+    const value = email.trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) {
+      setState("error");
+      return;
+    }
+    setState("scanning");
+    try {
+      const res = await fetch(`/api/rsvp-lookup?email=${encodeURIComponent(value)}`, {
+        cache: "no-store",
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      const data = (await res.json()) as { rsvps: typeof rsvps };
+      setRsvps(data.rsvps);
+      setState("done");
+    } catch {
+      setState("error");
+    }
+  };
+
+  return (
+    <div className="mt-10 rounded-md border border-dashed border-primary/25 bg-card/40 p-5 font-mono">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <label
+          htmlFor="my-rsvp-email"
+          className="flex items-center gap-2 text-[10px] tracking-[0.3em] text-primary"
+        >
+          <ScanLine className="h-3.5 w-3.5" />
+          MY.RSVP — AM I ON THE LIST?
+        </label>
+        <div className="flex min-w-[240px] flex-1 items-center gap-2">
+          <span className="shrink-0 text-sm text-amber-300">$</span>
+          <input
+            id="my-rsvp-email"
+            type="email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              if (state === "error") setState("idle");
+            }}
+            onKeyDown={(e) => e.key === "Enter" && scan()}
+            placeholder="rsvp email → nexus events --mine"
+            aria-label="Email used for RSVP"
+            className="h-8 min-w-0 flex-1 rounded-sm border border-input bg-background/70 px-2.5 text-xs text-foreground outline-none placeholder:text-muted-foreground/40 focus-visible:ring-1 focus-visible:ring-ring"
+          />
+          <button
+            onClick={scan}
+            disabled={state === "scanning"}
+            className="h-8 shrink-0 rounded-sm border border-primary/40 bg-primary/10 px-3 text-[10px] tracking-[0.2em] text-primary transition-colors hover:bg-primary/20 disabled:opacity-50"
+          >
+            {state === "scanning" ? "SCANNING…" : "SCAN"}
+          </button>
+        </div>
+      </div>
+
+      {state === "error" && (
+        <p className="mt-3 text-[10px] tracking-widest text-destructive" role="alert">
+          uplink fault — check the email and retry.
+        </p>
+      )}
+      {state === "done" && rsvps.length === 0 && (
+        <p className="mt-3 text-[10px] tracking-widest text-muted-foreground">
+          no transmits found for that address — RSVP to something below ↓
+        </p>
+      )}
+      {rsvps.length > 0 && (
+        <ul className="thin-scroll mt-4 max-h-56 space-y-1.5 overflow-y-auto pr-1">
+          {rsvps.map((r) => (
+            <li
+              key={r.slug}
+              className="flex flex-wrap items-center gap-x-3 gap-y-1 border border-border/50 bg-background/50 px-3 py-2 text-[10px]"
+            >
+              {r.featured && <span className="led led-amber shrink-0" title="flagship" />}
+              <span className="font-bold tracking-wider text-foreground">{r.title}</span>
+              <span className="text-muted-foreground">{fmtFull.format(new Date(r.startsAt))} IST</span>
+              <span className="flex items-center gap-1 text-muted-foreground">
+                <MapPin className="h-2.5 w-2.5 text-primary/60" />
+                {r.venue}
+              </span>
+              <span className="ml-auto rounded-sm bg-primary/10 px-1.5 py-0.5 text-[9px] tracking-[0.2em] text-primary">
+                ✓ ON LIST
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export function EventsSection() {
   const [events, setEvents] = useState<EventDTO[] | null>(null);
   const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
@@ -385,6 +486,9 @@ export function EventsSection() {
               </p>
             </div>
           )}
+
+          {/* self-service rsvp lookup */}
+          <MyRsvpLookup />
         </div>
       </div>
 

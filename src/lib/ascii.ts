@@ -271,3 +271,92 @@ export function frameToText(
 
   return `${header}\n\n${frame.lines.join("\n")}\n`;
 }
+
+/**
+ * Serialize an AsciiFrame to a PNG "typographic print" — the same glyph grid
+ * re-painted at print size onto an offscreen canvas with a phosphor palette
+ * and a metadata footer strip. Async: resolves once toBlob() settles.
+ */
+export function frameToPngBlob(
+  frame: AsciiFrame,
+  meta?: { label?: string; mode?: string },
+  o?: { fg?: string; bright?: string; bg?: string; fontSize?: number }
+): Promise<Blob | null> {
+  const fg = o?.fg ?? "#4ade80";
+  const bright = o?.bright ?? "#d9ffe4";
+  const bg = o?.bg ?? "#050a06";
+  const fontSize = o?.fontSize ?? 14;
+
+  const charW = fontSize * 0.6;
+  const lineHeight = fontSize * 1.06;
+  const pad = 28;
+  const footerH = 44;
+  const width = Math.ceil(frame.cols * charW + pad * 2);
+  const height = Math.ceil(frame.rows * lineHeight + pad * 2 + footerH);
+
+  const off = document.createElement("canvas");
+  off.width = width;
+  off.height = height;
+  const ctx = off.getContext("2d");
+  if (!ctx || !frame.lines.length) return Promise.resolve(null);
+
+  // backdrop + subtle CRT vignette
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, width, height);
+  const glow = ctx.createRadialGradient(width / 2, height / 2, 0, width / 2, height / 2, Math.max(width, height) * 0.7);
+  glow.addColorStop(0, "rgba(74, 222, 128, 0.045)");
+  glow.addColorStop(1, "rgba(0, 0, 0, 0)");
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, width, height);
+
+  // glyphs — paint row by row (bright tint for the densest glyphs)
+  ctx.font = `${fontSize}px monospace`;
+  ctx.textBaseline = "top";
+  const dense = frame.cols > 160;
+  for (let y = 0; y < frame.lines.length; y++) {
+    const line = frame.lines[y];
+    const rowColors = frame.colors[y];
+    ctx.fillStyle = fg;
+    let run = "";
+    let runColor: string | null = fg;
+    let x = 0;
+    const flush = () => {
+      if (!run) return;
+      ctx.fillStyle = runColor ?? (dense ? fg : bright);
+      ctx.fillText(run, pad + x * charW, pad + y * lineHeight);
+      x += run.length;
+      run = "";
+    };
+    for (let cx = 0; cx < line.length; cx++) {
+      const ch = line[cx];
+      const c = rowColors?.[cx] ?? null;
+      // brightest glyphs get the "hot phosphor" tint
+      const color = ch === "@" || ch === "%" || ch === "#" ? bright : (c ?? fg);
+      if (color !== runColor) {
+        flush();
+        runColor = color;
+      }
+      run += ch;
+    }
+    flush();
+  }
+
+  // footer strip
+  const stamp = new Date().toISOString().replace("T", " ").slice(0, 16);
+  ctx.fillStyle = "rgba(148, 224, 168, 0.25)";
+  ctx.fillRect(pad, height - footerH - 8, width - pad * 2, 1);
+  ctx.fillStyle = fg;
+  ctx.font = `${Math.max(9, Math.round(fontSize * 0.62))}px monospace`;
+  const metaBits = [
+    "NEXUS ASCII PRINT",
+    meta?.label ? `· ${meta.label}` : null,
+    meta?.mode ? `· ${meta.mode}` : null,
+    `· ${frame.cols}×${frame.rows} GLYPHS`,
+    `· ${stamp} UTC`,
+  ]
+    .filter(Boolean)
+    .join("  ");
+  ctx.fillText(metaBits, pad, height - footerH + 6);
+
+  return new Promise((resolve) => off.toBlob((b) => resolve(b), "image/png"));
+}

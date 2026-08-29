@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Download, X, ZoomIn, ClipboardCopy } from "lucide-react";
-import { paintAscii, renderAscii, frameToText, type AsciiFrame, type AsciiMode } from "@/lib/ascii";
+import { ChevronLeft, ChevronRight, Download, FileImage, X, ZoomIn, ClipboardCopy } from "lucide-react";
+import { paintAscii, renderAscii, frameToText, frameToPngBlob, type AsciiFrame, type AsciiMode } from "@/lib/ascii";
 import { useToast } from "@/hooks/use-toast";
 
 /**
@@ -172,6 +172,27 @@ export function AsciiLightbox({
     }
   }, [mode, shot.label, toast]);
 
+  const exportPng = useCallback(async () => {
+    const frame = frameRef.current;
+    if (!frame || !frame.lines.length) return;
+    const blob = await frameToPngBlob(
+      frame,
+      { label: shot.label, mode: mode.toUpperCase() },
+      { fontSize: mode === "pixel" ? 12 : 14 }
+    );
+    if (!blob) {
+      toast({ title: "PRINT FAILED", description: "frame unavailable — retry", variant: "destructive" });
+      return;
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `nexus-${shot.label.toLowerCase().replace(/\.(raw|png)$/, "")}.print.png`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "PRINT SAVED", description: `${frame.cols}×${frame.rows} glyphs → .png typographic print` });
+  }, [mode, shot.label, toast]);
+
   return (
     <div
       role="dialog"
@@ -215,6 +236,14 @@ export function AsciiLightbox({
             className="rounded-sm border border-border p-1.5 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
           >
             <ClipboardCopy className="h-4 w-4" />
+          </button>
+          <button
+            onClick={exportPng}
+            aria-label={`Download ${shot.label} as PNG typographic print`}
+            title="print frame → .png"
+            className="rounded-sm border border-border p-1.5 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+          >
+            <FileImage className="h-4 w-4" />
           </button>
           <button
             onClick={exportTxt}
@@ -286,7 +315,7 @@ export function AsciiLightbox({
           />
           <span className="w-9 tabular-nums text-primary/80">{zoom}c</span>
         </div>
-        <span className="hidden lg:inline">← → NAVIGATE · ESC CLOSE · TXT = FRAME DUMP</span>
+        <span className="hidden lg:inline">← → NAVIGATE · ESC CLOSE · TXT = FRAME DUMP · PNG = PRINT</span>
       </div>
     </div>
   );

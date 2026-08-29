@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { KeyRound, Lock, RefreshCcw } from "lucide-react";
+import { ChevronDown, KeyRound, Lock, RefreshCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 /**
@@ -21,7 +21,15 @@ interface Stats {
     featuredEvent: string | null;
     presence: { count: number | null; peak: number | null };
   };
-  rsvpsByEvent: { slug: string; title: string; category: string; startsAt: string; featured: boolean; count: number }[];
+  rsvpsByEvent: {
+    slug: string;
+    title: string;
+    category: string;
+    startsAt: string;
+    featured: boolean;
+    count: number;
+    attendees: { name: string; email: string; at: string }[];
+  }[];
   joinRequests: { name: string; email: string; branch: string; year: string; interest: string; createdAt: string }[];
 }
 
@@ -34,6 +42,16 @@ export function OpsConsole() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  const toggle = useCallback((slug: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(slug)) next.delete(slug);
+      else next.add(slug);
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     const onOpen = () => setOpen(true);
@@ -76,7 +94,7 @@ export function OpsConsole() {
             NEXUS//OPS — RESTRICTED SHELL
           </DialogTitle>
           <DialogDescription className="text-[10px] tracking-widest text-muted-foreground">
-            rsvp ledger · join feed · presence peak
+            rsvp ledger · attendee names · join feed · presence peak
           </DialogDescription>
         </DialogHeader>
 
@@ -149,18 +167,51 @@ export function OpsConsole() {
                   SYNC
                 </button>
               </p>
-              <ul className="thin-scroll mt-2 max-h-40 space-y-1 overflow-y-auto pr-1">
-                {stats.rsvpsByEvent.map((e) => (
-                  <li
-                    key={e.slug}
-                    className="flex items-center gap-2 border-b border-border/40 py-1.5 text-[10px] tracking-wider"
-                  >
-                    {e.featured && <span className="led led-amber shrink-0" title="flagship" />}
-                    <span className="truncate text-foreground">{e.title}</span>
-                    <span className="shrink-0 text-muted-foreground/60">{e.category}</span>
-                    <span className="ml-auto shrink-0 tabular-nums text-primary">{e.count}</span>
-                  </li>
-                ))}
+              <ul className="thin-scroll mt-2 max-h-56 space-y-1 overflow-y-auto pr-1">
+                {stats.rsvpsByEvent.map((e) => {
+                  const isOpen = expanded.has(e.slug);
+                  return (
+                    <li key={e.slug} className="border-b border-border/40 py-1 text-[10px] tracking-wider">
+                      <button
+                        onClick={() => toggle(e.slug)}
+                        aria-expanded={isOpen}
+                        disabled={e.count === 0}
+                        className="flex w-full items-center gap-2 rounded-sm px-1 py-0.5 text-left transition-colors hover:bg-secondary/60 disabled:cursor-default disabled:hover:bg-transparent"
+                        title={e.count === 0 ? "no rsvps yet" : "show/hide ledger"}
+                      >
+                        {e.featured && <span className="led led-amber shrink-0" title="flagship" />}
+                        <span className="truncate text-foreground">{e.title}</span>
+                        <span className="shrink-0 text-muted-foreground/60">{e.category}</span>
+                        <span className="ml-auto shrink-0 tabular-nums text-primary">{e.count}</span>
+                        <ChevronDown
+                          className={`h-3 w-3 shrink-0 text-muted-foreground/60 transition-transform ${
+                            isOpen ? "rotate-180" : ""
+                          } ${e.count === 0 ? "opacity-0" : ""}`}
+                        />
+                      </button>
+                      {isOpen && e.attendees.length > 0 && (
+                        <ul className="mb-1.5 ml-4 space-y-0.5 border-l border-primary/20 pl-3 pt-1">
+                          {e.attendees.map((a, i) => (
+                            <li key={`${a.email}-${i}`} className="flex items-center justify-between gap-2 text-[9px]">
+                              <span className="truncate font-bold tracking-wider text-foreground/90">{a.name}</span>
+                              <span className="flex shrink-0 items-center gap-2 text-muted-foreground/70">
+                                <span className="hidden sm:inline">{a.email}</span>
+                                <span className="tabular-nums">
+                                  {new Date(a.at).toLocaleDateString("en-GB", { timeZone: "Asia/Calcutta" })}
+                                </span>
+                              </span>
+                            </li>
+                          ))}
+                          {e.count > e.attendees.length && (
+                            <li className="pt-0.5 text-[9px] text-muted-foreground/50">
+                              +{e.count - e.attendees.length} more…
+                            </li>
+                          )}
+                        </ul>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
 

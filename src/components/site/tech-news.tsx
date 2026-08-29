@@ -114,17 +114,28 @@ export function TechNews() {
                     href={n.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group flex flex-col rounded-md border border-border bg-card p-4 transition-all hover:border-primary/40 hover:bg-secondary/30"
+                    className="group relative flex flex-col overflow-hidden rounded-md border border-border bg-card p-4 pl-5 transition-all duration-300 hover:border-primary/40 hover:bg-secondary/30 hover:shadow-[0_0_24px_rgba(74,222,128,0.07)]"
                   >
+                    {/* left accent rail — lights up on hover */}
+                    <span
+                      aria-hidden="true"
+                      className="absolute inset-y-0 left-0 w-[2px] bg-gradient-to-b from-primary/0 via-primary/60 to-primary/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                    />
                     <div className="flex items-center justify-between font-mono text-[9px] tracking-[0.2em] text-muted-foreground">
-                      <span className="text-primary/70">{n.source || "WIRE"}</span>
-                      <span>{timeAgo(n.published)}</span>
+                      <span className="flex items-center gap-2">
+                        <span className="tabular-nums text-primary/40">{String(i + 1).padStart(2, "0")}</span>
+                        <span className="rounded-sm border border-primary/20 bg-primary/5 px-1.5 py-px text-primary/80 transition-colors group-hover:border-primary/40">
+                          {n.source || "WIRE"}
+                        </span>
+                      </span>
+                      <span className="tabular-nums">{timeAgo(n.published)}</span>
                     </div>
-                    <p className="mt-2 flex-1 text-sm font-medium leading-snug text-foreground/90 group-hover:text-primary">
+                    <p className="mt-2 flex-1 text-sm font-medium leading-snug text-foreground/90 transition-colors group-hover:text-primary">
                       {n.title}
                     </p>
-                    <span className="mt-3 flex items-center gap-1 font-mono text-[9px] text-muted-foreground/70">
-                      READ WIRE <ExternalLink className="h-3 w-3" />
+                    <span className="mt-3 flex items-center gap-1 font-mono text-[9px] tracking-[0.15em] text-muted-foreground/70 transition-colors group-hover:text-primary/90">
+                      READ WIRE
+                      <ExternalLink className="h-3 w-3 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                     </span>
                   </a>
                 ))}

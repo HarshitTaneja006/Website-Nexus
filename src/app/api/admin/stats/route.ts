@@ -48,10 +48,11 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const [events, joinTotal, joinRequests, presence] = await Promise.all([
+    const [events, joinTotal, joinRequests, rsvpRows, presence] = await Promise.all([
       db.event.findMany({
         orderBy: { startsAt: "desc" },
         select: {
+          id: true,
           slug: true,
           title: true,
           category: true,
@@ -66,8 +67,15 @@ export async function GET(req: NextRequest) {
         take: 40,
         select: { name: true, email: true, branch: true, year: true, interest: true, createdAt: true },
       }),
+      db.rsvp.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 120,
+        select: { name: true, email: true, eventId: true, createdAt: true },
+      }),
       presenceStats(),
     ]);
+
+    const idToSlug = new Map(events.map((e) => [e.id, e.slug]));
 
     const rsvpsByEvent = events.map((e) => ({
       slug: e.slug,
@@ -76,6 +84,14 @@ export async function GET(req: NextRequest) {
       startsAt: e.startsAt.toISOString(),
       featured: e.featured,
       count: e._count.rsvps,
+      attendees: rsvpRows
+        .filter((r) => idToSlug.get(r.eventId) === e.slug)
+        .slice(0, 30)
+        .map((r) => ({
+          name: r.name,
+          email: maskEmail(r.email),
+          at: r.createdAt.toISOString(),
+        })),
     }));
 
     return NextResponse.json(
