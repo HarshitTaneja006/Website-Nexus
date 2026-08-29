@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ExternalLink, RefreshCw } from "lucide-react";
+import { ExternalLink, RefreshCw, Rss } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useReveal } from "@/components/site/use-reveal";
 
@@ -89,6 +89,16 @@ export function TechNews() {
             <div className="flex items-center gap-3 font-mono text-[10px] text-muted-foreground">
               <span className={`led ${degraded ? "led-amber" : ""}`} />
               <span>{degraded ? "CACHE FEED" : "LIVE UPLINK"}</span>
+              <a
+                href="/api/feed.xml"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="subscribe to the wire — RSS"
+                aria-label="RSS wire feed"
+                className="grid h-8 w-8 place-items-center rounded-sm border border-border text-muted-foreground transition-colors hover:border-amber-300/50 hover:text-amber-300"
+              >
+                <Rss className="h-3.5 w-3.5" />
+              </a>
               <button
                 onClick={load}
                 className="grid h-8 w-8 place-items-center rounded-sm border border-border transition-colors hover:border-primary/50 hover:text-primary"

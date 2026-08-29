@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, CalendarPlus, ListOrdered, MapPin, ScanLine, Share2, Timer, Users } from "lucide-react";
+import { CalendarDays, CalendarPlus, CalendarRange, ListOrdered, MapPin, Rss, ScanLine, Share2, Timer, Users } from "lucide-react";
 import { AsciiBanner } from "@/components/ascii/ascii-banner";
-import { AsciiImage } from "@/components/ascii/ascii-image";
+import { AsciiImage, AsciiThumb } from "@/components/ascii/ascii-image";
 import { AsciiLightbox, type LightboxShot } from "@/components/ascii/ascii-lightbox";
 import { Button } from "@/components/ui/button";
 import {
@@ -218,16 +218,17 @@ function EventCard({
   onDetail: (ev: EventDTO) => void;
   featured?: boolean;
 }) {
+  const poster = POSTERS[ev.slug];
   const d = new Date(ev.startsAt);
   return (
     <article
       className={`group relative flex flex-col overflow-hidden rounded-md border bg-card transition-all duration-300 hover:border-primary/40 hover:shadow-[0_0_30px_rgba(74,222,128,0.08)] ${
-        featured ? "border-primary/35 sm:flex-row" : "border-border"
+        featured ? "border-primary/35 sm:flex-row" : "border-border sm:flex-row"
       }`}
     >
       {/* date block */}
       <div
-        className={`flex shrink-0 flex-col items-center justify-center border-b border-border/60 bg-secondary/30 px-6 py-4 font-mono sm:w-28 sm:border-b-0 ${
+        className={`flex shrink-0 flex-col items-center justify-center border-b border-border/60 bg-secondary/30 px-6 py-4 font-mono sm:w-28 sm:border-b-0 sm:border-r ${
           featured ? "sm:py-8" : ""
         }`}
       >
@@ -239,7 +240,19 @@ function EventCard({
         </span>
       </div>
 
-      <div className="flex flex-1 flex-col p-5">
+      {/* ASCII poster thumb — live glyph render, lights up on card hover */}
+      {poster && (
+        <AsciiThumb
+          src={poster.src}
+          onClick={() => onDetail(ev)}
+          ariaLabel={`Open ${ev.title} full brief`}
+          className={`my-4 mr-4 shrink-0 self-stretch rounded-sm border border-border/60 opacity-75 transition-all duration-300 group-hover:border-primary/40 group-hover:opacity-100 group-hover:shadow-[inset_0_0_18px_rgba(74,222,128,0.12)] ${
+            featured ? "hidden w-36 md:block lg:w-44" : "hidden w-24 sm:block"
+          } ${featured ? "group-hover:shadow-[0_0_18px_rgba(251,191,36,0.10)]" : ""}`}
+        />
+      )}
+
+      <div className="flex min-w-0 flex-1 flex-col p-5">
         <div className="flex flex-wrap items-center gap-2">
           <span
             className={`rounded-sm px-2 py-0.5 font-mono text-[9px] tracking-[0.2em] ${
@@ -554,20 +567,41 @@ export function EventsSection() {
                 Transmit schedule
               </h2>
             </div>
-            {/* tabs */}
-            <div className="flex overflow-hidden rounded-sm border border-border font-mono text-[11px]">
-              {(["upcoming", "past"] as const).map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setTab(t)}
-                  aria-pressed={tab === t}
-                  className={`px-4 py-2 tracking-[0.2em] transition-colors ${
-                    tab === t ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  --{t}
-                </button>
-              ))}
+            {/* subscription feeds + tabs */}
+            <div className="flex flex-wrap items-center gap-2">
+              <a
+                href="/api/calendar.ics"
+                download="nexus-transmit-schedule.ics"
+                title="subscribe — every event, any calendar app"
+                className="flex items-center gap-1.5 rounded-sm border border-border px-3 py-2 font-mono text-[10px] tracking-[0.2em] text-muted-foreground transition-all hover:border-primary/50 hover:text-primary hover:shadow-[0_0_12px_rgba(74,222,128,0.15)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <CalendarRange className="h-3.5 w-3.5" />
+                ALL.ICS
+              </a>
+              <a
+                href="/api/feed.xml"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="RSS wire feed"
+                className="flex items-center gap-1.5 rounded-sm border border-border px-3 py-2 font-mono text-[10px] tracking-[0.2em] text-muted-foreground transition-all hover:border-amber-300/50 hover:text-amber-300 hover:shadow-[0_0_12px_rgba(251,191,36,0.12)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <Rss className="h-3.5 w-3.5" />
+                RSS
+              </a>
+              <div className="flex overflow-hidden rounded-sm border border-border font-mono text-[11px]">
+                {(["upcoming", "past"] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setTab(t)}
+                    aria-pressed={tab === t}
+                    className={`px-4 py-2 tracking-[0.2em] transition-colors ${
+                      tab === t ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    --{t}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 

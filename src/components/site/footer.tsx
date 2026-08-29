@@ -1,4 +1,4 @@
-import { Heart } from "lucide-react";
+import { Heart, Rss } from "lucide-react";
 import { ShipLog } from "@/components/site/ship-log";
 import { NewsletterSignup } from "@/components/site/newsletter-signup";
 
@@ -41,6 +41,26 @@ export function Footer() {
             <div className="mt-4 flex items-center gap-2 font-mono text-[10px] text-muted-foreground/70">
               <span className="led" />
               SYSTEM NOMINAL · SERVED FROM CAMPUS GRID
+            </div>
+            <div className="mt-2 flex items-center gap-3 font-mono text-[10px] text-muted-foreground/70">
+              <span>FEEDS:</span>
+              <a
+                href="/api/feed.xml"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 transition-colors hover:text-amber-300"
+              >
+                <Rss className="h-3 w-3" />
+                RSS WIRE
+              </a>
+              <span aria-hidden="true" className="text-border">·</span>
+              <a
+                href="/api/calendar.ics"
+                download="nexus-transmit-schedule.ics"
+                className="transition-colors hover:text-primary"
+              >
+                ICS CAL
+              </a>
             </div>
           </div>
 

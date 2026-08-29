@@ -2,72 +2,20 @@
  * event-share.ts — client-side helpers for the event cards:
  *  - buildIcs(): RFC 5545 .ics blob so students can add events to any calendar
  *  - shareEvent(): Web Share API with clipboard fallback (terminal-styled toast text)
+ *
+ * The RFC 5545 primitives live in ics.ts (server-safe) so the site-wide
+ * /api/calendar.ics subscription feed renders byte-identical output.
  */
 
-export interface IcsEvent {
-  uid: string;
-  title: string;
-  description: string;
-  venue: string;
-  startsAt: string; // ISO
-  endsAt: string | null; // ISO
-}
+import { buildVCalendar, type IcsEventInput } from "@/lib/ics";
 
-/** ISO → ICS UTC "YYYYMMDDTHHMMSSZ" */
-function icsDate(iso: string): string {
-  return new Date(iso).toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
-}
-
-/** RFC 5545 requires escaping commas, semicolons and newlines in text fields. */
-function esc(text: string): string {
-  return text
-    .replace(/\\/g, "\\\\")
-    .replace(/;/g, "\\;")
-    .replace(/,/g, "\\,")
-    .replace(/\r?\n/g, "\\n");
-}
-
-/** Fold long lines at 75 octets per RFC 5545 §3.1. */
-function fold(line: string): string {
-  if (line.length <= 75) return line;
-  const parts: string[] = [];
-  let rest = line;
-  parts.push(rest.slice(0, 75));
-  rest = rest.slice(75);
-  while (rest.length > 0) {
-    parts.push(" " + rest.slice(0, 74));
-    rest = rest.slice(74);
-  }
-  return parts.join("\r\n");
-}
+export type IcsEvent = IcsEventInput & { slug?: string };
 
 export function buildIcs(ev: IcsEvent): string {
-  const dtstamp = icsDate(new Date().toISOString());
-  const dtstart = icsDate(ev.startsAt);
-  // default to a 2-hour block when no explicit end
-  const dtend = ev.endsAt
-    ? icsDate(ev.endsAt)
-    : icsDate(new Date(new Date(ev.startsAt).getTime() + 2 * 3600_000).toISOString());
-
-  const lines = [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "PRODID:-//NEXUS VITC//Transmit Schedule//EN",
-    "CALSCALE:GREGORIAN",
-    "METHOD:PUBLISH",
-    "BEGIN:VEVENT",
-    fold(`UID:${ev.uid}@nexus.vitc`),
-    fold(`DTSTAMP:${dtstamp}`),
-    fold(`DTSTART:${dtstart}`),
-    fold(`DTEND:${dtend}`),
-    fold(`SUMMARY:${esc(ev.title)}`),
-    fold(`LOCATION:${esc(ev.venue)}`),
-    fold(`DESCRIPTION:${esc(ev.description)}`),
-    fold(`URL:${typeof window !== "undefined" ? window.location.origin + "#events" : "#events"}`),
-    "END:VEVENT",
-    "END:VCALENDAR",
-  ];
-  return lines.join("\r\n");
+  return buildVCalendar([ev], {
+    name: "NEXUS — VIT Chennai",
+    description: "Single event transmit from the NEXUS schedule",
+  });
 }
 
 export function downloadIcs(ev: IcsEvent): void {

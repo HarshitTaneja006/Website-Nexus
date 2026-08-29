@@ -37,6 +37,12 @@ export const metadata: Metadata = {
   icons: {
     icon: "/logo.svg",
   },
+  alternates: {
+    types: {
+      "application/rss+xml": "/api/feed.xml",
+      "text/calendar": "/api/calendar.ics",
+    },
+  },
   openGraph: {
     title: "NEXUS — Innovate. Lead. Build.",
     description:

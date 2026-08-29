@@ -6,6 +6,81 @@ import { paintAscii, renderAscii, frameToText, colsForWidth, type AsciiMode, typ
 import { useToast } from "@/hooks/use-toast";
 
 /**
+ * AsciiThumb — micro glyph render of a poster for event cards. No chrome,
+ * no interaction surface of its own (optional click-through), just a live
+ * ASCII still so every card wears its own poster as terminal texture.
+ */
+export function AsciiThumb({
+  src,
+  onClick,
+  className = "",
+  ariaLabel,
+}: {
+  src: string;
+  onClick?: () => void;
+  className?: string;
+  ariaLabel?: string;
+}) {
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  const render = useCallback(() => {
+    const wrap = wrapRef.current;
+    const canvas = canvasRef.current;
+    if (!wrap || !canvas || canvas.dataset.rendered === "1") return;
+    const width = wrap.clientWidth;
+    if (!width) return; // hidden (e.g. sm:hidden breakpoint) — skip entirely
+    const img = new Image();
+    img.decoding = "async";
+    img.src = src;
+    img.onload = () => {
+      const w = wrap.clientWidth;
+      if (!w) return;
+      const fontSize = 5;
+      const cols = colsForWidth(w, fontSize * 0.62);
+      const frame = renderAscii(img, {
+        cols,
+        ramp: " .:;=+%#@",
+        mode: "ascii",
+        gamma: 0.85,
+        colorize: false,
+      });
+      canvas.dataset.rendered = "1";
+      paintAscii(canvas, frame, {
+        fg: "#4ade80",
+        bright: "#d9ffe4",
+        bg: "#070d08",
+        fontSize,
+      });
+    };
+  }, [src]);
+
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    const ro = new ResizeObserver(() => render());
+    ro.observe(wrap);
+    render();
+    return () => ro.disconnect();
+  }, [render]);
+
+  return (
+    <div
+      ref={wrapRef}
+      className={`relative overflow-hidden bg-[#070d08] ${onClick ? "cursor-pointer" : ""} ${className}`}
+      onClick={onClick}
+      role={onClick ? "presentation" : undefined}
+      aria-hidden={onClick ? undefined : true}
+      aria-label={ariaLabel}
+      title={ariaLabel}
+    >
+      <canvas ref={canvasRef} className="h-full w-full" style={{ imageRendering: "pixelated" }} />
+      <div className="scanlines pointer-events-none absolute inset-0 opacity-60" />
+    </div>
+  );
+}
+
+/**
  * AsciiImage — renders a real image as live ASCII text on a canvas.
  * Mode switcher mirrors ASCILINE's output modes:
  *   ASCII (glyphs) / PIXEL (colored blocks) / PHOTO (original pixels).

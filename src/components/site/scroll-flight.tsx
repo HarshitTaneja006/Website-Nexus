@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Link2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 /**
  * ScrollFlight — a scroll-scrubbed camera flight through the NEXUS world.
@@ -88,6 +90,27 @@ function clamp01(v: number) {
   return Math.max(0, Math.min(1, v));
 }
 
+/** Absolute document-Y that centres segment `idx` mid-scrub. */
+function segmentTop(
+  outer: HTMLElement,
+  segments: Segment[],
+  idx: number,
+  vh: number
+): number {
+  // rect-based (offsetTop is 0 here — the section is the offsetParent)
+  const docTop = outer.getBoundingClientRect().top + window.scrollY;
+  let acc = 0;
+  for (let i = 0; i < idx; i++) acc += segments[i].w * vh;
+  return docTop + acc + segments[idx].w * vh * 0.55;
+}
+
+/** "#scene-lab" → scene index, or -1. */
+function sceneFromHash(hash: string): number {
+  const m = /^#scene-([a-z-]+)$/.exec(hash);
+  if (!m) return -1;
+  return SCENES.findIndex((s) => s.id === m[1]);
+}
+
 export function ScrollFlight({ hasIntroVideo }: { hasIntroVideo: boolean }) {
   const outerRef = useRef<HTMLDivElement | null>(null);
   const stickyRef = useRef<HTMLDivElement | null>(null);
@@ -106,6 +129,8 @@ export function ScrollFlight({ hasIntroVideo }: { hasIntroVideo: boolean }) {
   const videoStateRef = useRef(videoState);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const didHashJump = useRef(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     setMounted(true);
@@ -293,6 +318,18 @@ export function ScrollFlight({ hasIntroVideo }: { hasIntroVideo: boolean }) {
       if (nextIdx !== activeIdxRef.current) {
         activeIdxRef.current = nextIdx;
         setActiveIdx(nextIdx);
+        // keep the URL in sync so any scene is deep-linkable (#scene-lab)
+        const curSeg = segments[segIdx];
+        if (curSeg.kind === "still") {
+          const target = `#scene-${curSeg.scene.id}`;
+          if (window.location.hash !== target) {
+            history.replaceState(null, "", target);
+          }
+        }
+      }
+      // scrubbed back above the flight → drop the scene hash so nav anchors stay clean
+      if (rect.top > 0 && /^#scene-/.test(window.location.hash)) {
+        history.replaceState(null, "", window.location.pathname + window.location.search);
       }
       if (readoutRef.current) {
         const seg = segments[segIdx];
@@ -316,8 +353,66 @@ export function ScrollFlight({ hasIntroVideo }: { hasIntroVideo: boolean }) {
       onScroll();
     };
 
+    // deep link: #scene-lab lands mid-scrub on that scene, instantly.
+    // Capture the hash BEFORE update() runs — the scrub's "above flight"
+    // branch strips unknown-to-the-DOM hashes on the very first frame.
+    const initialSi = didHashJump.current ? -1 : sceneFromHash(window.location.hash);
+    didHashJump.current = true;
+
+    const landDeepLink = (segIdx2: number) => {
+      measure();
+      window.scrollTo({
+        top: segmentTop(outer, segments, segIdx2, window.innerHeight),
+        behavior: "instant",
+      });
+      update();
+    };
+
     measure();
     update();
+
+    if (initialSi >= 0) {
+      const segIdx2 = initialSi + (hasIntroVideo ? 1 : 0);
+      // two frames out — past the browser's own initial scroll handling;
+      // "instant" overrides the global scroll-behavior:smooth so the
+      // landing can't be cancelled mid-animation
+      requestAnimationFrame(() => requestAnimationFrame(() => landDeepLink(segIdx2)));
+      // fonts/images above us settle late and shift the flight's document
+      // offset → re-land on a short loop until the target converges with
+      // reality (any user input hands control back immediately)
+      let userMoved = false;
+      const markMoved = () => {
+        userMoved = true;
+      };
+      window.addEventListener("wheel", markMoved, { passive: true });
+      window.addEventListener("touchmove", markMoved, { passive: true });
+      window.addEventListener("keydown", markMoved, { passive: true });
+      const settle = setInterval(() => {
+        if (userMoved) {
+          clearInterval(settle);
+          cleanup();
+          return;
+        }
+        const target = segmentTop(outer, segments, segIdx2, window.innerHeight);
+        if (Math.abs(target - window.scrollY) < 2) {
+          clearInterval(settle);
+          cleanup();
+          return;
+        }
+        landDeepLink(segIdx2);
+      }, 120);
+      const stop = setTimeout(() => {
+        clearInterval(settle);
+        cleanup();
+      }, 2500);
+      const cleanup = () => {
+        clearTimeout(stop);
+        window.removeEventListener("wheel", markMoved);
+        window.removeEventListener("touchmove", markMoved);
+        window.removeEventListener("keydown", markMoved);
+      };
+    }
+
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onResize);
 
@@ -330,15 +425,28 @@ export function ScrollFlight({ hasIntroVideo }: { hasIntroVideo: boolean }) {
     };
   }, [segments, layerCount, totalW, hasIntroVideo]);
 
-  const jumpToSegment = (idx: number) => {
+  const jumpToSegment = (idx: number, smooth = true) => {
     const vh = window.innerHeight;
     const outer = outerRef.current;
     if (!outer) return;
-    let acc = 0;
-    for (let i = 0; i < idx; i++) acc += segments[i].w * vh;
-    const target = acc + segments[idx].w * vh * 0.55;
-    const top = outer.offsetTop + target;
-    window.scrollTo({ top, behavior: "smooth" });
+    const top = segmentTop(outer, segments, idx, vh);
+    window.scrollTo({ top, behavior: smooth ? "smooth" : "auto" });
+  };
+
+  const copySceneLink = (sceneId: string) => {
+    const url = `${window.location.origin}${window.location.pathname}#scene-${sceneId}`;
+    const done = () =>
+      toast({
+        title: "SCENE LINK COPIED",
+        description: `#${sceneId} — anyone opening this lands mid-flight on this shot.`,
+      });
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(done).catch(() => {
+        toast({ title: "CLIPBOARD BLOCKED", description: url, variant: "destructive" });
+      });
+    } else {
+      toast({ title: "CLIPBOARD BLOCKED", description: url, variant: "destructive" });
+    }
   };
 
   // reduced motion: stacked panels (client-only to avoid hydration mismatch)
@@ -445,7 +553,7 @@ export function ScrollFlight({ hasIntroVideo }: { hasIntroVideo: boolean }) {
                         : seg.scene.body}
                     </p>
                     {seg.kind === "still" && (
-                      <div className="mt-4 flex flex-wrap gap-2">
+                      <div className="mt-4 flex flex-wrap items-center gap-2">
                         {seg.scene.tags.map((t) => (
                           <span
                             key={t}
@@ -454,6 +562,15 @@ export function ScrollFlight({ hasIntroVideo }: { hasIntroVideo: boolean }) {
                             {t}
                           </span>
                         ))}
+                        <button
+                          onClick={() => copySceneLink(seg.scene.id)}
+                          title="copy a deep link to this scene"
+                          aria-label={`Copy deep link to scene ${seg.scene.label}`}
+                          className="flex items-center gap-1.5 rounded-sm border border-border/80 bg-black/40 px-2.5 py-1 font-mono text-[9px] tracking-[0.2em] text-muted-foreground backdrop-blur-sm transition-colors hover:border-primary/60 hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        >
+                          <Link2 className="h-3 w-3" />
+                          LINK
+                        </button>
                       </div>
                     )}
                   </div>
