@@ -44,3 +44,10 @@ model JoinRequest {
   message   String?
   createdAt DateTime @default(now())
 }
+
+model Subscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  source    String   @default("footer")
+  createdAt DateTime @default(now())
+}

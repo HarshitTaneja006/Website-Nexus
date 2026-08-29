@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, CalendarPlus, MapPin, ScanLine, Share2, Timer, Users } from "lucide-react";
+import { AsciiBanner } from "@/components/ascii/ascii-banner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -98,10 +99,12 @@ function FlagshipCountdown({ target, title }: { target: string; title: string })
 function EventCard({
   ev,
   onRsvp,
+  onDetail,
   featured,
 }: {
   ev: EventDTO;
   onRsvp: (ev: EventDTO) => void;
+  onDetail: (ev: EventDTO) => void;
   featured?: boolean;
 }) {
   const d = new Date(ev.startsAt);
@@ -147,8 +150,15 @@ function EventCard({
           </span>
         </div>
 
-        <h3 className="font-display mt-3 text-lg font-bold text-foreground group-hover:text-primary sm:text-xl">
-          {ev.title}
+        <h3 className="font-display mt-3 text-lg font-bold text-foreground sm:text-xl">
+          <button
+            onClick={() => onDetail(ev)}
+            aria-haspopup="dialog"
+            className="text-left transition-colors hover:text-primary"
+            title="open full brief"
+          >
+            {ev.title}
+          </button>
         </h3>
         <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
           {ev.description}
@@ -345,6 +355,7 @@ export function EventsSection() {
   const [events, setEvents] = useState<EventDTO[] | null>(null);
   const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
   const [dialogEv, setDialogEv] = useState<EventDTO | null>(null);
+  const [detailEv, setDetailEv] = useState<EventDTO | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -450,7 +461,7 @@ export function EventsSection() {
           {/* featured */}
           {tab === "upcoming" && featured && (
             <div className="mt-8">
-              <EventCard ev={featured} onRsvp={setDialogEv} featured />
+              <EventCard ev={featured} onRsvp={setDialogEv} onDetail={setDetailEv} featured />
             </div>
           )}
 
@@ -467,7 +478,9 @@ export function EventsSection() {
                 ))
               : shown
                   .filter((e) => e.id !== featured?.id || tab === "past")
-                  .map((ev) => <EventCard key={ev.id} ev={ev} onRsvp={setDialogEv} />)}
+                  .map((ev) => (
+                    <EventCard key={ev.id} ev={ev} onRsvp={setDialogEv} onDetail={setDetailEv} />
+                  ))}
           </div>
 
           {/* terminal empty state */}
@@ -539,6 +552,128 @@ export function EventsSection() {
               {submitting ? "TRANSMITTING…" : "CONFIRM_RSVP"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* full-brief dialog */}
+      <Dialog open={!!detailEv} onOpenChange={(o) => !o && setDetailEv(null)}>
+        <DialogContent className="thin-scroll max-h-[85vh] overflow-y-auto border-border bg-card p-0 sm:max-w-lg">
+          <DialogHeader className="border-b border-border/70 bg-secondary/40 px-5 py-3">
+            <DialogTitle className="sr-only">{detailEv?.title}</DialogTitle>
+            <DialogDescription className="sr-only">full event brief</DialogDescription>
+          </DialogHeader>
+          {detailEv && (
+            <div className="px-5 pb-5 pt-4">
+              {/* ASCII banner header — typeset by the same glyph engine */}
+              <div className="rounded-sm border border-border/60 bg-[#070d08] px-3 py-3">
+                <AsciiBanner text={detailEv.title} cols={90} />
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <span
+                  className={`rounded-sm px-2 py-0.5 font-mono text-[9px] tracking-[0.2em] ${
+                    detailEv.category === "HACKATHON"
+                      ? "bg-amber-300/10 text-amber-300"
+                      : "bg-primary/10 text-primary"
+                  }`}
+                >
+                  {detailEv.category}
+                </span>
+                {detailEv.featured && (
+                  <span className="rounded-sm border border-primary/40 px-2 py-0.5 font-mono text-[9px] tracking-[0.2em] text-primary">
+                    ★ FLAGSHIP
+                  </span>
+                )}
+                <span className="ml-auto flex items-center gap-1 font-mono text-[10px] text-muted-foreground">
+                  <Users className="h-3 w-3" />
+                  {detailEv.rsvpCount} going
+                </span>
+              </div>
+
+              <p className="mt-4 text-sm leading-relaxed text-foreground/85">
+                {detailEv.description}
+              </p>
+
+              <div className="mt-4 grid gap-2 rounded-sm border border-border/60 bg-secondary/30 p-3 font-mono text-[11px]">
+                <span className="flex items-center gap-2 text-foreground/80">
+                  <CalendarDays className="h-3.5 w-3.5 text-primary/70" />
+                  {fmtFull.format(new Date(detailEv.startsAt))} IST
+                </span>
+                <span className="flex items-center gap-2 text-foreground/80">
+                  <MapPin className="h-3.5 w-3.5 text-primary/70" />
+                  {detailEv.venue}
+                </span>
+              </div>
+
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {detailEv.tags.split(",").map((t) => (
+                  <span key={t} className="font-mono text-[9px] text-primary/50">
+                    #{t.trim()}
+                  </span>
+                ))}
+              </div>
+
+              <div className="mt-5 flex flex-wrap items-center justify-end gap-2 border-t border-border/50 pt-4">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={async () => {
+                    const res = await shareEvent({
+                      slug: detailEv.slug,
+                      title: detailEv.title,
+                      description: detailEv.description,
+                    });
+                    toast({
+                      title: res.ok
+                        ? res.via === "share"
+                          ? "SIGNAL BEAMED"
+                          : "COPIED TO CLIPBOARD"
+                        : "SIGNAL BLOCKED",
+                      description: res.message,
+                      variant: res.ok ? undefined : "destructive",
+                    });
+                  }}
+                  className="h-8 px-3 font-mono text-[10px] tracking-widest text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                >
+                  <Share2 className="h-3.5 w-3.5" />
+                  SHARE
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    downloadIcs({
+                      uid: detailEv.id,
+                      slug: detailEv.slug,
+                      title: detailEv.title,
+                      description: detailEv.description,
+                      venue: detailEv.venue,
+                      startsAt: detailEv.startsAt,
+                      endsAt: detailEv.endsAt,
+                    });
+                    toast({
+                      title: "CALENDAR PATCHED",
+                      description: `${detailEv.slug}.ics downloaded — see you there.`,
+                    });
+                  }}
+                  className="h-8 px-3 font-mono text-[10px] tracking-widest text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                >
+                  <CalendarPlus className="h-3.5 w-3.5" />
+                  .ICS
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setDetailEv(null);
+                    setDialogEv(detailEv);
+                  }}
+                  className="h-8 border border-primary/40 bg-primary/10 px-4 font-mono text-[10px] tracking-widest text-primary hover:bg-primary/20"
+                >
+                  RSVP_
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </section>

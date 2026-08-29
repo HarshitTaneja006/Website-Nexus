@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Expand } from "lucide-react";
 import { AsciiImage } from "@/components/ascii/ascii-image";
+import { AsciiCamFeed } from "@/components/ascii/ascii-camfeed";
 import { AsciiLightbox, type LightboxShot } from "@/components/ascii/ascii-lightbox";
 import { useReveal } from "@/components/site/use-reveal";
 
@@ -46,12 +47,16 @@ export function AsciiGallery() {
             </div>
             <p className="max-w-sm font-mono text-[10px] leading-relaxed tracking-wider text-muted-foreground">
               EVERY FRAME IS RENDERED AS TEXT — NO CODEC, NO GPU, JUST GLYPHS.
-              SWITCH MODES, BLEND THE SLIDER, OR DUMP ANY FRAME AS A .TXT
-              ARTIFACT. CLICK A FRAME FOR THE FULL-RES TERMINAL VIEW.
+              SWITCH MODES, BLEND THE SLIDER, DUMP ANY FRAME AS A .TXT ARTIFACT,
+              OR GO LIVE: PIPE YOUR OWN CAMERA THROUGH THE ENGINE. CLICK A FRAME
+              FOR THE FULL-RES TERMINAL VIEW.
             </p>
           </div>
 
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <AsciiCamFeed />
+            </div>
             {SHOTS.map((s, i) => (
               <AsciiImage
                 key={s.src}

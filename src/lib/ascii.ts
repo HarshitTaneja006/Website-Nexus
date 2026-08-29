@@ -35,6 +35,11 @@ export interface AsciiRenderOptions {
   /** color the glyphs with the source pixel color (ascii mode) */
   colorize?: boolean;
   /**
+   * binary cutoff (0..1) — when set, output collapses to ramp[0] / ramp[last]
+   * around this luminance. Perfect for block-letter text banners.
+   */
+  binary?: number;
+  /**
    * percentile-based histogram stretch (default true) — rescues dark/flat
    * sources by remapping the 2nd..98th luminance percentiles to 0..1
    */
@@ -70,7 +75,7 @@ function toCss(r: number, g: number, b: number, boost: number): string {
  * Mirrors ASCILINE's pipeline: decode → downsample → luminance → glyph map.
  */
 export function renderAscii(
-  source: HTMLImageElement | HTMLCanvasElement,
+  source: HTMLImageElement | HTMLCanvasElement | HTMLVideoElement,
   opts: AsciiRenderOptions
 ): AsciiFrame {
   const cols = Math.max(8, Math.floor(opts.cols));
@@ -80,8 +85,16 @@ export function renderAscii(
   const invert = opts.invert ?? false;
   const colorize = opts.colorize ?? false;
 
-  const sw = "naturalWidth" in source ? source.naturalWidth : source.width;
-  const sh = "naturalHeight" in source ? source.naturalHeight : source.height;
+  const sw = "naturalWidth" in source
+    ? source.naturalWidth
+    : "videoWidth" in source
+      ? source.videoWidth
+      : source.width;
+  const sh = "naturalHeight" in source
+    ? source.naturalHeight
+    : "videoHeight" in source
+      ? source.videoHeight
+      : source.height;
   if (!sw || !sh) return { lines: [], colors: [], cols: 0, rows: 0 };
 
   // monospace cells: charW ≈ 0.6em wide / 1.06em line height (paintAscii uses
@@ -163,6 +176,10 @@ export function renderAscii(
         const idx = lum < 0.08 ? 0 : Math.max(1, Math.round(lum * n));
         line += idx === 0 ? " " : "█";
         rowColors.push(idx === 0 ? null : toCss(r, g, b, 1.12));
+      } else if (opts.binary != null) {
+        const on = lum >= opts.binary;
+        line += on ? ramp[n] : ramp[0];
+        rowColors.push(null);
       } else {
         const idx = Math.round(lum * n);
         line += ramp[idx];
@@ -244,6 +261,77 @@ export function paintAscii(
 /** Convenience: pick a sane column count for a container. */
 export function colsForWidth(widthPx: number, targetCharW = 8): number {
   return Math.max(24, Math.min(220, Math.round(widthPx / targetCharW)));
+}
+
+/**
+ * Text → AsciiFrame: typeset a string LARGE onto an offscreen canvas (≈480px
+ * wide) and let renderAscii downsample it into glyph space — same pipeline as
+ * the gallery stills. Long titles word-wrap so every letter keeps enough
+ * columns to stay legible; strokes are thickened via strokeText and a high
+ * gamma crushes antialias fuzz. (canvas ctx.font cannot resolve CSS var() —
+ * use explicit system stacks.)
+ */
+export function textToAsciiFrame(
+  text: string,
+  opts?: { cols?: number; weight?: string; maxLineChars?: number }
+): AsciiFrame {
+  const cols = Math.max(24, Math.min(160, opts?.cols ?? 110));
+  const weight = opts?.weight ?? "800";
+  const maxChars = opts?.maxLineChars ?? 16;
+  const fontStack = `${weight} 48px Arial, 'Helvetica Neue', 'Liberation Sans', sans-serif`;
+
+  // word-wrap so each line keeps enough glyph columns per letter
+  const words = text.toUpperCase().split(/\s+/);
+  const lines: string[] = [];
+  let cur = "";
+  for (const w of words) {
+    const candidate = cur ? `${cur} ${w}` : w;
+    if (candidate.length > maxChars && cur) {
+      lines.push(cur);
+      cur = w;
+    } else {
+      cur = candidate;
+    }
+  }
+  if (cur) lines.push(cur);
+  if (lines.length === 0) return { lines: [], colors: [], cols: 0, rows: 0 };
+
+  // hi-res typeset surface — the longest line defines the scale
+  const W = 480;
+  const off = document.createElement("canvas");
+  const ctx = off.getContext("2d");
+  if (!ctx) return { lines: [], colors: [], cols: 0, rows: 0 };
+
+  ctx.font = fontStack;
+  const longest = lines.reduce((a, b) => (b.length > a.length ? b : a), "");
+  const refW = Math.max(1, ctx.measureText(longest).width);
+  const fontSize = Math.max(10, Math.min(48, (48 * (0.92 * W)) / refW));
+  const lineH = fontSize * 1.22;
+  const H = Math.ceil(lineH * lines.length + fontSize * 0.4);
+
+  off.width = W;
+  off.height = H;
+  ctx.font = fontStack;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#ffffff";
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = Math.max(1.5, fontSize * 0.07);
+  ctx.lineJoin = "round";
+  lines.forEach((line, i) => {
+    const y = fontSize * 0.25 + lineH * (i + 0.5);
+    ctx.fillText(line, W / 2, y);
+    ctx.strokeText(line, W / 2, y);
+  });
+
+  // downsample into glyph space; binary cutoff → chunky block-letter glyphs
+  return renderAscii(off, {
+    cols,
+    ramp: "# ",
+    mode: "ascii",
+    gamma: 1,
+    binary: 0.42,
+  });
 }
 
 /**
