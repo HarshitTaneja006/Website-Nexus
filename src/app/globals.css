@@ -322,6 +322,67 @@
     0 0 22px rgba(74, 222, 128, 0.07);
 }
 
+/* ---------- anchor offset under the fixed navbar ----------
+   every hash target (#events, #gallery, scene sections…) lands 72px
+   below the viewport top so the h-14 header never covers headings */
+section[id],
+div[id="top"] {
+  scroll-margin-top: 72px;
+}
+
+/* ---------- keyboard key chip (shortcuts MAN page) ---------- */
+.kbd {
+  display: inline-flex;
+  min-width: 1.75rem;
+  justify-content: center;
+  align-items: center;
+  padding: 0.15rem 0.45rem;
+  border: 1px solid rgba(148, 224, 168, 0.28);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: rgba(74, 222, 128, 0.06);
+  color: #d9ffe4;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  box-shadow: 0 0 10px rgba(74, 222, 128, 0.06);
+  white-space: nowrap;
+}
+
+/* ---------- MY.RSVP rows — staggered terminal readout ---------- */
+.rsvp-row {
+  opacity: 0;
+  animation: rsvp-row-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: var(--stagger, 0ms);
+}
+@keyframes rsvp-row-in {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+    background: rgba(74, 222, 128, 0.10);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+    background: transparent;
+  }
+}
+
+/* ---------- OPS ledger rows — phosphor rail on hover ---------- */
+.ledger-row {
+  border-left: 2px solid transparent;
+  transition:
+    border-color 0.25s ease,
+    background-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+.ledger-row:hover {
+  border-left-color: rgba(74, 222, 128, 0.65);
+  background: rgba(74, 222, 128, 0.04);
+  box-shadow: inset 0 0 14px rgba(74, 222, 128, 0.05);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .glitch-hover:hover {
     animation: none;
@@ -338,8 +399,12 @@
   .marquee-track,
   .marquee-track-fast,
   .led,
-  .cursor-blink {
+  .cursor-blink,
+  .rsvp-row {
     animation: none;
+  }
+  .rsvp-row {
+    opacity: 1;
   }
   html {
     scroll-behavior: auto;

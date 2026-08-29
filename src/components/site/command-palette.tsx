@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/command";
 import { useToast } from "@/hooks/use-toast";
 import { OPS_EVENT } from "@/components/site/ops-console";
+import { SHORTCUTS_EVENT } from "@/components/site/shortcuts-dialog";
 
 /**
  * CommandPalette — a terminal-styled ⌘K launcher.
@@ -201,6 +202,17 @@ export function CommandPalette({
             <span className="text-amber-300/80">#</span>
             <span className="font-bold tracking-widest">OPS CONSOLE</span>
             <span className="ml-auto text-[10px] text-muted-foreground/60">./rsvp + join ledger</span>
+          </CommandItem>
+          <CommandItem
+            value="shortcuts manual keys help man deep links"
+            onSelect={() =>
+              run(() => window.dispatchEvent(new CustomEvent(SHORTCUTS_EVENT)))
+            }
+            className="gap-3 text-xs"
+          >
+            <span className="text-primary/60">?</span>
+            <span className="font-bold tracking-widest">SHORTCUTS</span>
+            <span className="ml-auto text-[10px] text-muted-foreground/60">./keys · deep links · feeds</span>
           </CommandItem>
           <CommandItem
             value="open source github"

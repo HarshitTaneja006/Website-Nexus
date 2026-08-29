@@ -8,6 +8,7 @@
  */
 
 import { buildVCalendar, type IcsEventInput } from "@/lib/ics";
+import { buildEventDeepLink } from "@/lib/deep-link";
 
 export type IcsEvent = IcsEventInput & { slug?: string };
 
@@ -38,14 +39,13 @@ export interface SharePayload {
 /**
  * Native share sheet when available; otherwise copy a styled invite line
  * to the clipboard. Returns a toast descriptor for the caller.
+ * The shared URL is a true deep link (?event=slug#events) — opening it
+ * scrolls to the schedule and pre-opens this event's dialog.
  */
 export async function shareEvent(
   ev: SharePayload & { slug: string }
 ): Promise<{ ok: boolean; via: "share" | "clipboard"; message: string }> {
-  const url =
-    typeof window !== "undefined"
-      ? `${window.location.origin}${window.location.pathname}#events`
-      : "#events";
+  const url = buildEventDeepLink(ev.slug);
   const text = `▸ ${ev.title} — ${ev.description.slice(0, 120)}\n${url}`;
 
   try {

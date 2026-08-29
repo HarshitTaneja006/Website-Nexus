@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, CalendarPlus, CalendarRange, ListOrdered, MapPin, Rss, ScanLine, Share2, Timer, Users } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { CalendarDays, CalendarPlus, CalendarRange, Link2, ListOrdered, MapPin, Rss, ScanLine, Share2, Timer, Users } from "lucide-react";
 import { AsciiBanner } from "@/components/ascii/ascii-banner";
 import { AsciiImage, AsciiThumb } from "@/components/ascii/ascii-image";
 import { AsciiLightbox, type LightboxShot } from "@/components/ascii/ascii-lightbox";
@@ -20,6 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useReveal } from "@/components/site/use-reveal";
 import { downloadIcs, shareEvent } from "@/lib/event-share";
+import { buildEventDeepLink, replaceUrl, stripEventParam } from "@/lib/deep-link";
 
 export interface EventDTO {
   id: string;
@@ -114,8 +115,9 @@ const fmtFull = new Intl.DateTimeFormat("en-GB", {
 });
 
 /** Live T-minus ticker to the flagship upcoming event (IST). */
-function FlagshipCountdown({ target, title }: { target: string; title: string }) {
+function FlagshipCountdown({ target, title, slug }: { target: string; title: string; slug: string }) {
   const [now, setNow] = useState<number | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     const tick = () => setNow(Date.now());
@@ -153,13 +155,22 @@ function FlagshipCountdown({ target, title }: { target: string; title: string })
       <span className="font-mono text-[10px] tracking-widest text-muted-foreground">
         UNTIL <span className="text-foreground/80">{title}</span>
       </span>
-      <a
-        href="#events"
-        onClick={(e) => e.preventDefault()}
-        className="ml-auto hidden font-mono text-[9px] tracking-[0.25em] text-primary/60 sm:block"
+      <button
+        onClick={async () => {
+          try {
+            await navigator.clipboard.writeText(buildEventDeepLink(slug));
+            toast({ title: "FLAGSHIP LINK COPIED", description: "opens straight on the RSVP dialog" });
+          } catch {
+            toast({ title: "CLIPBOARD BLOCKED", description: "link: /?event=nexus-hack-5.0", variant: "destructive" });
+          }
+        }}
+        aria-label="Copy deep link to the flagship event"
+        title="copy flagship deep link"
+        className="ml-auto flex items-center gap-1.5 rounded-sm border border-amber-300/25 bg-amber-300/5 px-2 py-1 font-mono text-[9px] tracking-[0.25em] text-amber-300/80 transition-all hover:border-amber-300/60 hover:text-amber-300 hover:shadow-[0_0_12px_rgba(251,191,36,0.15)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
       >
-        ▸ FLAGSHIP
-      </a>
+        <Link2 className="h-3 w-3" />
+        FLAGSHIP LINK
+      </button>
     </div>
   );
 }
@@ -458,10 +469,11 @@ function MyRsvpLookup() {
       )}
       {rsvps.length > 0 && (
         <ul className="thin-scroll mt-4 max-h-56 space-y-1.5 overflow-y-auto pr-1">
-          {rsvps.map((r) => (
+          {rsvps.map((r, i) => (
             <li
               key={r.slug}
-              className="flex flex-wrap items-center gap-x-3 gap-y-1 border border-border/50 bg-background/50 px-3 py-2 text-[10px]"
+              className="rsvp-row flex flex-wrap items-center gap-x-3 gap-y-1 border border-border/50 bg-background/50 px-3 py-2 text-[10px]"
+              style={{ "--stagger": `${i * 70}ms` } as React.CSSProperties}
             >
               {r.featured && <span className="led led-amber shrink-0" title="flagship" />}
               <span className="font-bold tracking-wider text-foreground">{r.title}</span>
@@ -492,6 +504,8 @@ export function EventsSection() {
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
   const { ref, seen } = useReveal<HTMLDivElement>();
+  // guards the StrictMode double-run of the ?event= deep-link effect
+  const deepLinked = useRef(false);
 
   useEffect(() => {
     fetch("/api/events")
@@ -499,6 +513,33 @@ export function EventsSection() {
       .then((data) => setEvents(data.events as EventDTO[]))
       .catch(() => setEvents([]));
   }, []);
+
+  // deep link: /?event=<slug> → land on the schedule with the event's dialog
+  // pre-opened (RSVP for upcoming, full brief for past). Param is scrubbed
+  // afterwards so refreshes and shares stay clean.
+  useEffect(() => {
+    if (events === null || deepLinked.current) return;
+    deepLinked.current = true;
+    const slug = new URLSearchParams(window.location.search).get("event");
+    if (!slug) return;
+    const ev = events.find((e) => e.slug === slug);
+    stripEventParam(); // scrub first so a dialog-cycle refresh never re-triggers
+    if (!ev) {
+      toast({ title: "UNKNOWN EVENT", description: `no transmit matches "${slug}"`, variant: "destructive" });
+      return;
+    }
+    document.getElementById("events")?.scrollIntoView({ behavior: "instant" });
+    const upcoming = new Date(ev.startsAt).getTime() >= Date.now();
+    if (upcoming) setDialogEv(ev);
+    else setDetailEv(ev);
+    // the flight engine writes #scene-* from the scroll event fired by the
+    // jump above — re-assert #events once that event has been flushed
+    window.setTimeout(() => replaceUrl(`${window.location.pathname}#events`), 160);
+    toast({
+      title: upcoming ? "DEEP LINK — RSVP PRESELECTED" : "DEEP LINK — ARCHIVE BRIEF",
+      description: ev.title,
+    });
+  }, [events, toast]);
 
   const { upcoming, past, featured } = useMemo(() => {
     const now = Date.now();
@@ -607,7 +648,7 @@ export function EventsSection() {
 
           {/* flagship countdown */}
           {tab === "upcoming" && featured && (
-            <FlagshipCountdown target={featured.startsAt} title={featured.title} />
+            <FlagshipCountdown target={featured.startsAt} title={featured.title} slug={featured.slug} />
           )}
 
           {/* featured */}

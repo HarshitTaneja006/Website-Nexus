@@ -42,7 +42,22 @@ export function foldIcsLine(line: string): string {
   return parts.join("\r\n");
 }
 
-/** One VEVENT block. */
+/** One VALARM display reminder. */
+function buildValarm(minutesBefore: number, title: string, venue: string): string {
+  const desc =
+    minutesBefore >= 1440
+      ? `[NEXUS] "${title}" starts tomorrow — ${venue}`
+      : `[NEXUS] "${title}" starts in ${minutesBefore} min — ${venue}`;
+  return [
+    "BEGIN:VALARM",
+    "ACTION:DISPLAY",
+    foldIcsLine(`DESCRIPTION:${icsEscape(desc)}`),
+    foldIcsLine(`TRIGGER:-P${minutesBefore >= 1440 ? "1D" : `T${minutesBefore}M`}`),
+    "END:VALARM",
+  ].join("\r\n");
+}
+
+/** One VEVENT block (with two display reminders: 24h and 60m before — upcoming events only). */
 export function buildVEvent(ev: IcsEventInput, calName: string): string {
   const dtstamp = icsDate(new Date().toISOString());
   const dtstart = icsDate(ev.startsAt);
@@ -63,6 +78,10 @@ export function buildVEvent(ev: IcsEventInput, calName: string): string {
     foldIcsLine(`CATEGORIES:${icsEscape(calName)}`),
   ];
   if (ev.url) lines.push(foldIcsLine(`URL:${ev.url}`));
+  if (new Date(ev.startsAt).getTime() > Date.now()) {
+    lines.push(buildValarm(1440, ev.title, ev.venue));
+    lines.push(buildValarm(60, ev.title, ev.venue));
+  }
   lines.push("END:VEVENT");
   return lines.join("\r\n");
 }

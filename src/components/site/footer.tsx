@@ -1,3 +1,5 @@
+"use client";
+
 import { Heart, Rss } from "lucide-react";
 import { ShipLog } from "@/components/site/ship-log";
 import { NewsletterSignup } from "@/components/site/newsletter-signup";
@@ -112,6 +114,13 @@ export function Footer() {
             <span className="text-primary/60">lets-scroll</span> scrub engine ·
             <span className="text-primary/60">asciline</span>-style ascii
           </p>
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent("nexus:shortcuts"))}
+            className="flex items-center gap-2 rounded-sm border border-border px-2.5 py-1.5 tracking-widest transition-all hover:border-primary/50 hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            title="open the shell manual"
+          >
+            <span className="kbd">?</span> SHORTCUTS
+          </button>
         </div>
       </div>
     </footer>

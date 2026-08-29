@@ -5,6 +5,7 @@ import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CommandPalette } from "@/components/site/command-palette";
 import { OpsConsole } from "@/components/site/ops-console";
+import { ShortcutsDialog, SHORTCUTS_EVENT } from "@/components/site/shortcuts-dialog";
 import { usePresence } from "@/hooks/use-presence";
 
 const LINKS = [
@@ -82,6 +83,7 @@ export function Navbar() {
     <>
       <CommandPalette open={paletteOpen} setOpen={setPaletteOpen} />
       <OpsConsole />
+      <ShortcutsDialog />
       {/* scroll progress */}
       <div className="fixed inset-x-0 top-0 z-[70] h-[2px] bg-transparent">
         <div
@@ -144,9 +146,18 @@ export function Navbar() {
             <button
               onClick={() => setPaletteOpen(true)}
               aria-label="Open command palette"
+              title="command palette"
               className="hidden items-center gap-1.5 rounded-sm border border-border bg-card/60 px-2.5 py-1.5 font-mono text-[10px] text-muted-foreground transition-all hover:border-primary/50 hover:text-primary md:flex"
             >
               <span>⌘K</span>
+            </button>
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent(SHORTCUTS_EVENT))}
+              aria-label="Keyboard shortcuts and deep links manual"
+              title="shortcuts manual (?)"
+              className="hidden h-8 w-8 items-center justify-center rounded-sm border border-border bg-card/60 font-mono text-[11px] text-muted-foreground transition-all hover:border-primary/50 hover:text-primary md:flex"
+            >
+              ?
             </button>
             <button
               className="grid h-9 w-9 place-items-center rounded-sm border border-border text-foreground lg:hidden"

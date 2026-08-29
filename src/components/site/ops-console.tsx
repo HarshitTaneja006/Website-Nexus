@@ -150,7 +150,10 @@ export function OpsConsole() {
                   value: stats.totals.presence.peak == null ? "—" : stats.totals.presence.peak,
                 },
               ].map((t) => (
-                <div key={t.label} className="hud-corners border border-border/70 bg-secondary/30 px-3 py-2.5">
+                <div
+                  key={t.label}
+                  className="hud-corners border border-border/70 bg-secondary/30 px-3 py-2.5 transition-all duration-300 hover:border-primary/40 hover:shadow-[0_0_16px_rgba(74,222,128,0.08)]"
+                >
                   <p className="text-[9px] tracking-[0.25em] text-muted-foreground">{t.label}</p>
                   <p className="mt-1 text-xl font-bold tabular-nums text-primary text-glow">{t.value}</p>
                 </div>
@@ -236,7 +239,7 @@ export function OpsConsole() {
                   {stats.subscribers.map((s, i) => (
                     <li
                       key={`${s.email}-${i}`}
-                      className="flex items-center justify-between gap-2 border border-border/50 bg-background/50 px-3 py-1.5 text-[10px]"
+                      className="ledger-row flex items-center justify-between gap-2 border border-border/50 bg-background/50 px-3 py-1.5 text-[10px]"
                     >
                       <span className="flex min-w-0 items-center gap-2">
                         <Radio className="h-3 w-3 shrink-0 text-primary/60" aria-hidden="true" />
@@ -266,7 +269,7 @@ export function OpsConsole() {
               ) : (
                 <ul className="thin-scroll mt-2 max-h-48 space-y-1.5 overflow-y-auto pr-1">
                   {stats.joinRequests.map((j, i) => (
-                    <li key={`${j.email}-${i}`} className="border border-border/50 bg-background/50 px-3 py-2 text-[10px]">
+                    <li key={`${j.email}-${i}`} className="ledger-row border border-border/50 bg-background/50 px-3 py-2 text-[10px]">
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-bold tracking-wider text-foreground">{j.name}</span>
                         <span className="tabular-nums text-muted-foreground/60">

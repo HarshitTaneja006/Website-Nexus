@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Download, FileImage, X, ZoomIn, ClipboardCopy } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, FileImage, X, ZoomIn, ClipboardCopy, Link2 } from "lucide-react";
 import { paintAscii, renderAscii, frameToText, frameToPngBlob, type AsciiFrame, type AsciiMode } from "@/lib/ascii";
 import { useToast } from "@/hooks/use-toast";
 
@@ -24,11 +24,14 @@ export function AsciiLightbox({
   index,
   onClose,
   onNavigate,
+  deepLink,
 }: {
   shots: LightboxShot[];
   index: number;
   onClose: () => void;
   onNavigate: (next: number) => void;
+  /** when provided, renders a LINK chip that copies a shareable deep URL for the current frame */
+  deepLink?: (index: number) => string;
 }) {
   const shot = shots[index];
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -153,6 +156,16 @@ export function AsciiLightbox({
     };
   }, [index, shots.length, onClose, onNavigate]);
 
+  const copyDeepLink = useCallback(async () => {
+    if (!deepLink) return;
+    try {
+      await navigator.clipboard.writeText(deepLink(index));
+      toast({ title: "FRAME LINK COPIED", description: `${shot.label} → clipboard` });
+    } catch {
+      toast({ title: "CLIPBOARD BLOCKED", description: "link stays in the address bar", variant: "destructive" });
+    }
+  }, [deepLink, index, shot.label, toast]);
+
   const step = (dir: 1 | -1) => onNavigate((index + dir + shots.length) % shots.length);
 
   const exportTxt = useCallback(() => {
@@ -220,7 +233,10 @@ export function AsciiLightbox({
             {shot.label}
           </span>
           <span className="hidden font-mono text-[10px] text-muted-foreground sm:inline">
-            {index + 1}/{shots.length} · {shot.caption}
+            {shot.caption}
+          </span>
+          <span className="shrink-0 rounded-sm border border-border/80 bg-secondary/40 px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-primary/80">
+            {index + 1}/{shots.length}
           </span>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
@@ -241,6 +257,16 @@ export function AsciiLightbox({
               </button>
             ))}
           </div>
+          {deepLink && (
+            <button
+              onClick={copyDeepLink}
+              aria-label="Copy deep link to this frame"
+              title="copy frame link"
+              className="rounded-sm border border-border p-1.5 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+            >
+              <Link2 className="h-4 w-4" />
+            </button>
+          )}
           <button
             onClick={copyAscii}
             aria-label="Copy ASCII frame to clipboard"
@@ -327,7 +353,7 @@ export function AsciiLightbox({
           />
           <span className="w-9 tabular-nums text-primary/80">{zoom}c</span>
         </div>
-        <span className="hidden lg:inline">← → NAVIGATE · ESC CLOSE · TXT = FRAME DUMP · PNG = PRINT</span>
+        <span className="hidden lg:inline">← → NAVIGATE · ESC CLOSE · LINK = SHARE FRAME · TXT = DUMP · PNG = PRINT</span>
       </div>
     </div>
   );
