@@ -1,11 +1,23 @@
 /**
- * ascii.ts — a compact, client-side ASCII rendering engine.
+ * ascii.ts — NEXUS glyph engine v2.
  *
  * Heavily inspired by ASCILINE (https://github.com/YusufB5/ASCILINE):
  * "turns the browser canvas into a typographic display surface" by mapping
  * pixel luminance/color to text glyphs. This is the static-image flavour of
  * that idea — the animated presets (rain / donut / wave) live in
  * components/ascii/ascii-canvas.tsx.
+ *
+ * v2 rendering pipeline (the crisp rewrite):
+ *   1. fonts are resolved to REAL families — canvas ctx.font cannot resolve
+ *      CSS var(), so the actual --font-geist-mono family list is read from
+ *      computed style and the advance width is MEASURED, never assumed;
+ *   2. sources are box-filtered through a supersampled offscreen canvas
+ *      (default 3× the glyph grid) so every cell is a true area average —
+ *      no single-point moiré;
+ *   3. optional unsharp mask on the cell-luminance grid restores local
+ *      contrast lost to downsampling (definition without haloing);
+ *   4. paintAscii sizes canvases pixel-exactly from the measured metrics —
+ *      frames are displayed 1:1 instead of being CSS-upscaled.
  */
 
 export type AsciiMode = "ascii" | "pixel" | "photo";
@@ -14,23 +26,110 @@ export type AsciiMode = "ascii" | "pixel" | "photo";
 export const RAMPS = {
   /** compact classic ramp — good for display-sized renders */
   short: " .':-=+*#%@",
-  /** phosphor-flavoured ramp with block glyphs */
+  /** phosphor-flavoured ramp with block glyphs (PIXEL mode) */
   blocks: " .·:;=+x%#@",
-  /** high-detail 70-glyph ramp for large canvases */
+  /** 18-step tonal ramp — default for image renders: smooth but crisp */
+  mid: " .,:;i!~=+*xoq#%@",
+  /** classic donut.c luminance string (12 steps, bright → dense) */
+  donut: ".,-~:;=!*#$@",
+  /** high-detail 70-glyph ramp for very large canvases */
   detail:
-    "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ",
+    " .`':\",;Il!i><~+_-?][}{1)(|/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$",
 } as const;
 
+/* ------------------------------------------------------------------ */
+/* font plumbing — the #1 crispness fix                                */
+/* ------------------------------------------------------------------ */
+
+const FALLBACK_STACK =
+  "ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', 'Courier New', monospace";
+
+let resolvedStack: string | null = null;
+
+/**
+ * A ctx.font-usable font stack that actually contains the site's mono face.
+ * canvas ignores var() inside font strings (silent no-op → 10px sans-serif),
+ * so we read the resolved custom property once and append robust fallbacks.
+ */
+export function monoFontStack(): string {
+  if (resolvedStack) return resolvedStack;
+  try {
+    const v = getComputedStyle(document.documentElement)
+      .getPropertyValue("--font-geist-mono")
+      .trim();
+    resolvedStack = v ? `${v}, ${FALLBACK_STACK}` : FALLBACK_STACK;
+  } catch {
+    resolvedStack = FALLBACK_STACK;
+  }
+  return resolvedStack;
+}
+
+export interface MonoMetrics {
+  /** real advance width of one glyph cell in CSS px */
+  charW: number;
+  /** line height in CSS px (1.05em — matches the paint row stride) */
+  lineH: number;
+}
+
+const metricsCache = new Map<number, MonoMetrics>();
+let fontsRehooked = false;
+
+/**
+ * MEASURED monospace cell metrics for a given px size (cached).
+ * Assumed 0.6em advances are what made v1 renders fuzzy — real fonts
+ * differ by a few percent, and 60 columns of accumulated drift smears text.
+ */
+export function monoMetrics(fontSize: number): MonoMetrics {
+  const size = Math.max(3, Math.round(fontSize * 100) / 100);
+  const hit = metricsCache.get(size);
+  if (hit) return hit;
+
+  let m: MonoMetrics = { charW: size * 0.6, lineH: size * 1.05 };
+  try {
+    const off = document.createElement("canvas");
+    const ctx = off.getContext("2d");
+    if (ctx) {
+      ctx.font = `${size}px ${monoFontStack()}`;
+      const w = ctx.measureText("0123456789mwMW@#%").width / 16;
+      if (w > 0) m = { charW: w, lineH: Math.round(size * 105) / 100 };
+    }
+  } catch {
+    /* keep the classic 0.6 estimate */
+  }
+  metricsCache.set(size, m);
+
+  // webfont finished loading after we measured? drop the cache so the next
+  // render re-measures with the real face (one-shot hook)
+  if (!fontsRehooked) {
+    fontsRehooked = true;
+    try {
+      void document.fonts?.ready.then(() => metricsCache.clear());
+    } catch {
+      /* no fonts API — estimates stay */
+    }
+  }
+  return m;
+}
+
+/* ------------------------------------------------------------------ */
+/* render — supersampled box filter → tonal grid → glyphs              */
+/* ------------------------------------------------------------------ */
+
 export interface AsciiRenderOptions {
-  /** number of character columns (rows derive from aspect + line height) */
+  /** number of character columns */
   cols: number;
+  /**
+   * explicit row count (exact-fit renders). When omitted, rows derive from
+   * the source aspect and the cell aspect so frames stay undistorted.
+   */
+  rows?: number;
   /** glyph ramp to use */
   ramp?: string;
   /** render mode: ascii glyphs / colored blocks / plain photo passthrough */
   mode?: AsciiMode;
   /** darken shadows for CRT feel (0..1) */
   gamma?: number;
-  /** invert ramp mapping (light text on dark bg) */
+  /** invert ramp mapping */
   invert?: boolean;
   /** color the glyphs with the source pixel color (ascii mode) */
   colorize?: boolean;
@@ -44,6 +143,20 @@ export interface AsciiRenderOptions {
    * sources by remapping the 2nd..98th luminance percentiles to 0..1
    */
   autoLevels?: boolean;
+  /**
+   * box-filter supersample factor (1..4, default 3). Each glyph cell is the
+   * average of an SS×SS block — kills the single-point sampling moiré that
+   * made v1 renders sparkle inaccurately.
+   */
+  supersample?: number;
+  /**
+   * unsharp-mask amount (0..1, default 0) on the cell-luminance grid —
+   * restores the local contrast that downsampling softens. 0.3–0.5 reads
+   * as "defined" without halos.
+   */
+  sharpen?: number;
+  /** glyph-cell aspect (charW/lineH); defaults to measured mono metrics */
+  cellAspect?: number;
 }
 
 export interface AsciiFrame {
@@ -53,6 +166,14 @@ export interface AsciiFrame {
   colors: (string | null)[][];
   cols: number;
   rows: number;
+}
+
+function sourceDims(
+  source: HTMLImageElement | HTMLCanvasElement | HTMLVideoElement
+): { sw: number; sh: number } {
+  if ("naturalWidth" in source) return { sw: source.naturalWidth, sh: source.naturalHeight };
+  if ("videoWidth" in source) return { sw: source.videoWidth, sh: source.videoHeight };
+  return { sw: source.width, sh: source.height };
 }
 
 const hexCache = new Map<string, string>();
@@ -70,9 +191,31 @@ function toCss(r: number, g: number, b: number, boost: number): string {
   return css;
 }
 
+/** 3×3 gaussian-ish blur used by the unsharp pass (clamp-edge). */
+function blur3(src: Float32Array, cols: number, rows: number): Float32Array {
+  const out = new Float32Array(src.length);
+  for (let y = 0; y < rows; y++) {
+    const y0 = y > 0 ? y - 1 : 0;
+    const y2 = y < rows - 1 ? y + 1 : rows - 1;
+    for (let x = 0; x < cols; x++) {
+      const x0 = x > 0 ? x - 1 : 0;
+      const x2 = x < cols - 1 ? x + 1 : cols - 1;
+      const s =
+        2 * src[y * cols + x] +
+        (src[y * cols + x0] + src[y * cols + x2] +
+          src[y0 * cols + x] + src[y2 * cols + x]) * 0.75 +
+        (src[y0 * cols + x0] + src[y0 * cols + x2] +
+          src[y2 * cols + x0] + src[y2 * cols + x2]) * 0.25;
+      out[y * cols + x] = s / 5;
+    }
+  }
+  return out;
+}
+
 /**
- * Render an image (or canvas) into an AsciiFrame using an offscreen sampler.
- * Mirrors ASCILINE's pipeline: decode → downsample → luminance → glyph map.
+ * Render an image (or canvas/video) into an AsciiFrame.
+ * Pipeline: supersampled box downsample → auto-levels → gamma → unsharp →
+ * glyph map. Mirrors ASCILINE's mapper, with a broadcast-grade front end.
  */
 export function renderAscii(
   source: HTMLImageElement | HTMLCanvasElement | HTMLVideoElement,
@@ -80,50 +223,82 @@ export function renderAscii(
 ): AsciiFrame {
   const cols = Math.max(8, Math.floor(opts.cols));
   const mode = opts.mode ?? "ascii";
-  const ramp = opts.ramp ?? RAMPS.blocks;
+  const ramp = opts.ramp ?? RAMPS.mid;
   const gamma = opts.gamma ?? 0.9;
   const invert = opts.invert ?? false;
   const colorize = opts.colorize ?? false;
 
-  const sw = "naturalWidth" in source
-    ? source.naturalWidth
-    : "videoWidth" in source
-      ? source.videoWidth
-      : source.width;
-  const sh = "naturalHeight" in source
-    ? source.naturalHeight
-    : "videoHeight" in source
-      ? source.videoHeight
-      : source.height;
+  const { sw, sh } = sourceDims(source);
   if (!sw || !sh) return { lines: [], colors: [], cols: 0, rows: 0 };
 
-  // monospace cells: charW ≈ 0.6em wide / 1.06em line height (paintAscii uses
-  // the same geometry) — cells are ~1.77× taller than wide, so a correct
-  // aspect-preserving frame needs rows = cols * (sh/sw) * (charW / lineH).
-  // (The old `/ 0.58` stretched frames ~3× vertically; object-cover hid it.)
-  const cellAspect = 0.6 / 1.06; // ≈ 0.566
-  const rows = Math.max(4, Math.round(cols * (sh / sw) * cellAspect));
+  const cellAspect =
+    opts.cellAspect ?? (() => {
+      const m = monoMetrics(10);
+      return m.charW / m.lineH;
+    })();
+  const rows =
+    opts.rows != null
+      ? Math.max(4, Math.floor(opts.rows))
+      : Math.max(4, Math.round(cols * (sh / sw) * cellAspect));
+
+  // ---- supersampled box-filter sampling ----
+  const SS = Math.max(1, Math.min(4, Math.round(opts.supersample ?? 3)));
+  const sampW = cols * SS;
+  const sampH = rows * SS;
 
   const off = document.createElement("canvas");
-  off.width = cols;
-  off.height = rows;
-  const ctx = off.getContext("2d", { willReadFrequently: true });
-  if (!ctx) return { lines: [], colors: [], cols: 0, rows: 0 };
+  off.width = sampW;
+  off.height = sampH;
+  const sctx = off.getContext("2d", { willReadFrequently: true });
+  if (!sctx) return { lines: [], colors: [], cols: 0, rows: 0 };
+  sctx.imageSmoothingEnabled = true;
+  sctx.imageSmoothingQuality = "high";
+  sctx.drawImage(source, 0, 0, sampW, sampH);
 
-  ctx.drawImage(source, 0, 0, cols, rows);
-  const data = ctx.getImageData(0, 0, cols, rows).data;
+  let raw: Uint8ClampedArray;
+  try {
+    raw = sctx.getImageData(0, 0, sampW, sampH).data;
+  } catch {
+    return { lines: [], colors: [], cols: 0, rows: 0 };
+  }
 
-  // --- optional auto-levels: luminance histogram stretch (2%..98%) ---
+  // per-cell area average (alpha-weighted luminance + rgb)
+  const lum = new Float32Array(cols * rows);
+  const rgb = new Float32Array(cols * rows * 3);
+  const invN = 1 / (SS * SS);
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      let l = 0;
+      let r = 0;
+      let g = 0;
+      let b = 0;
+      for (let dy = 0; dy < SS; dy++) {
+        const sy = y * SS + dy;
+        for (let dx = 0; dx < SS; dx++) {
+          const i = ((sy * sampW) + x * SS + dx) * 4;
+          const a = raw[i + 3] / 255;
+          l += (0.2126 * raw[i] + 0.7152 * raw[i + 1] + 0.0722 * raw[i + 2]) / 255 * a;
+          r += raw[i] * a;
+          g += raw[i + 1] * a;
+          b += raw[i + 2] * a;
+        }
+      }
+      const idx = y * cols + x;
+      lum[idx] = l * invN;
+      rgb[idx * 3] = r * invN;
+      rgb[idx * 3 + 1] = g * invN;
+      rgb[idx * 3 + 2] = b * invN;
+    }
+  }
+
+  // ---- auto-levels: luminance histogram stretch (2%..98%) ----
   let lo = 0;
   let hi = 1;
   if (opts.autoLevels !== false) {
     const hist = new Uint32Array(256);
     let opaque = 0;
-    for (let i = 0; i < data.length; i += 4) {
-      const a = data[i + 3] / 255;
-      if (a < 0.1) continue;
-      const lum = (0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2]) / 255;
-      hist[Math.min(255, Math.round(lum * 255))]++;
+    for (let i = 0; i < lum.length; i++) {
+      hist[Math.min(255, Math.round(lum[i] * 255))]++;
       opaque++;
     }
     if (opaque > 32) {
@@ -151,7 +326,21 @@ export function renderAscii(
     }
   }
   const span = Math.max(0.05, hi - lo);
+  for (let i = 0; i < lum.length; i++) {
+    lum[i] = Math.pow(Math.min(1, Math.max(0, (lum[i] - lo) / span)), gamma);
+    if (invert) lum[i] = 1 - lum[i];
+  }
 
+  // ---- unsharp mask: definition pass ----
+  if (opts.sharpen && opts.sharpen > 0) {
+    const blur = blur3(lum, cols, rows);
+    const amt = Math.min(1, opts.sharpen);
+    for (let i = 0; i < lum.length; i++) {
+      lum[i] = Math.min(1, Math.max(0, lum[i] + amt * (lum[i] - blur[i])));
+    }
+  }
+
+  // ---- glyph mapping ----
   const lines: string[] = [];
   const colors: (string | null)[][] = [];
   const n = ramp.length - 1;
@@ -160,30 +349,28 @@ export function renderAscii(
     let line = "";
     const rowColors: (string | null)[] = [];
     for (let x = 0; x < cols; x++) {
-      const i = (y * cols + x) * 4;
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
-      const a = data[i + 3] / 255;
-      // perceptual luminance, auto-leveled then gamma-shaped
-      let lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-      lum = Math.min(1, Math.max(0, (lum * a - lo) / span));
-      lum = Math.pow(lum, gamma);
-      if (invert) lum = 1 - lum;
-
+      const idx = y * cols + x;
+      const v = lum[idx];
       if (mode === "pixel") {
         // colored block glyph █ — the "--pixel" flag of ASCILINE
-        const idx = lum < 0.08 ? 0 : Math.max(1, Math.round(lum * n));
-        line += idx === 0 ? " " : "█";
-        rowColors.push(idx === 0 ? null : toCss(r, g, b, 1.12));
+        const gi = v < 0.08 ? 0 : Math.max(1, Math.round(v * n));
+        line += gi === 0 ? " " : "█";
+        rowColors.push(
+          gi === 0
+            ? null
+            : toCss(rgb[idx * 3], rgb[idx * 3 + 1], rgb[idx * 3 + 2], 1.12)
+        );
       } else if (opts.binary != null) {
-        const on = lum >= opts.binary;
-        line += on ? ramp[n] : ramp[0];
+        line += v >= opts.binary ? ramp[n] : ramp[0];
         rowColors.push(null);
       } else {
-        const idx = Math.round(lum * n);
-        line += ramp[idx];
-        rowColors.push(colorize && idx > 0 ? toCss(r, g, b, 1.35) : null);
+        const gi = Math.round(v * n);
+        line += ramp[gi];
+        rowColors.push(
+          colorize && gi > 0
+            ? toCss(rgb[idx * 3], rgb[idx * 3 + 1], rgb[idx * 3 + 2], 1.35)
+            : null
+        );
       }
     }
     lines.push(line);
@@ -193,7 +380,18 @@ export function renderAscii(
   return { lines, colors, cols, rows };
 }
 
-/** Paint an AsciiFrame onto a visible canvas with phosphor styling. */
+/* ------------------------------------------------------------------ */
+/* paint — measured metrics, pixel-exact canvases, two-tone pop        */
+/* ------------------------------------------------------------------ */
+
+/** glyphs dense enough to get the "hot phosphor" tint */
+const BRIGHT_CHARS = "@#%&8BWM";
+
+/**
+ * Paint an AsciiFrame onto a visible canvas with phosphor styling.
+ * Returns the CSS-pixel size of the painted grid — size the host element
+ * from it (or leave the canvas stretched by ≤ half a glyph; invisible).
+ */
 export function paintAscii(
   canvas: HTMLCanvasElement,
   frame: AsciiFrame,
@@ -203,14 +401,18 @@ export function paintAscii(
     bright?: string;
     fontSize?: number;
     dpr?: number;
+    /** override measured metrics (already-normalized cells) */
+    charW?: number;
+    lineH?: number;
   }
-): void {
+): { width: number; height: number } {
   const ctx = canvas.getContext("2d");
-  if (!ctx || !frame.lines.length) return;
-  const dpr = o.dpr ?? Math.min(2, window.devicePixelRatio || 1);
+  if (!ctx || !frame.lines.length) return { width: 0, height: 0 };
+  const dpr = Math.min(3, Math.max(1, o.dpr ?? (window.devicePixelRatio || 1)));
   const fontSize = o.fontSize ?? 10;
-  const lineHeight = fontSize * 1.06;
-  const charW = fontSize * 0.6;
+  const m = monoMetrics(fontSize);
+  const charW = o.charW ?? m.charW;
+  const lineHeight = o.lineH ?? m.lineH;
 
   const width = frame.cols * charW;
   const height = frame.rows * lineHeight;
@@ -227,9 +429,10 @@ export function paintAscii(
     ctx.fillRect(0, 0, width, height);
   }
 
-  ctx.font = `${fontSize}px var(--font-geist-mono), monospace`;
+  ctx.font = `${fontSize}px ${monoFontStack()}`;
   ctx.textBaseline = "top";
 
+  const bright = o.bright ?? null;
   for (let y = 0; y < frame.lines.length; y++) {
     const line = frame.lines[y];
     const rowColors = frame.colors[y];
@@ -247,7 +450,9 @@ export function paintAscii(
     for (let cx = 0; cx < line.length; cx++) {
       const ch = line[cx];
       const c = rowColors?.[cx] ?? null;
-      const color = c ?? o.fg;
+      // densest glyphs pop with the hot-phosphor tint — adds definition
+      const color =
+        c ?? (bright && BRIGHT_CHARS.includes(ch) ? bright : o.fg);
       if (color !== runColor) {
         flush();
         runColor = color;
@@ -256,11 +461,13 @@ export function paintAscii(
     }
     flush();
   }
+
+  return { width, height };
 }
 
 /** Convenience: pick a sane column count for a container. */
 export function colsForWidth(widthPx: number, targetCharW = 8): number {
-  return Math.max(24, Math.min(220, Math.round(widthPx / targetCharW)));
+  return Math.max(24, Math.min(240, Math.round(widthPx / targetCharW)));
 }
 
 /**
@@ -331,6 +538,7 @@ export function textToAsciiFrame(
     mode: "ascii",
     gamma: 1,
     binary: 0.42,
+    supersample: 3,
   });
 }
 
@@ -351,7 +559,7 @@ export function frameToText(
     meta?.mode ? ` MODE      ${meta.mode}` : null,
     meta?.source ? ` SOURCE    ${meta.source}` : null,
     ` STAMP     ${new Date().toISOString()}`,
-    " ENGINE    renderAscii() · nexus redesign",
+    " ENGINE    renderAscii() v2 · nexus redesign",
     "──────────────────────────────────────────────",
   ]
     .filter((l): l is string => l !== null)
@@ -375,8 +583,9 @@ export function frameToPngBlob(
   const bg = o?.bg ?? "#050a06";
   const fontSize = o?.fontSize ?? 14;
 
-  const charW = fontSize * 0.6;
-  const lineHeight = fontSize * 1.06;
+  const m = monoMetrics(fontSize);
+  const charW = m.charW;
+  const lineHeight = m.lineH;
   const pad = 28;
   const footerH = 44;
   const width = Math.ceil(frame.cols * charW + pad * 2);
@@ -398,7 +607,7 @@ export function frameToPngBlob(
   ctx.fillRect(0, 0, width, height);
 
   // glyphs — paint row by row (bright tint for the densest glyphs)
-  ctx.font = `${fontSize}px monospace`;
+  ctx.font = `${fontSize}px ${monoFontStack()}`;
   ctx.textBaseline = "top";
   const dense = frame.cols > 160;
   for (let y = 0; y < frame.lines.length; y++) {
@@ -419,7 +628,7 @@ export function frameToPngBlob(
       const ch = line[cx];
       const c = rowColors?.[cx] ?? null;
       // brightest glyphs get the "hot phosphor" tint
-      const color = ch === "@" || ch === "%" || ch === "#" ? bright : (c ?? fg);
+      const color = c ?? (BRIGHT_CHARS.includes(ch) ? bright : null);
       if (color !== runColor) {
         flush();
         runColor = color;
@@ -434,7 +643,7 @@ export function frameToPngBlob(
   ctx.fillStyle = "rgba(148, 224, 168, 0.25)";
   ctx.fillRect(pad, height - footerH - 8, width - pad * 2, 1);
   ctx.fillStyle = fg;
-  ctx.font = `${Math.max(9, Math.round(fontSize * 0.62))}px monospace`;
+  ctx.font = `${Math.max(9, Math.round(fontSize * 0.62))}px ${monoFontStack()}`;
   const metaBits = [
     "NEXUS ASCII PRINT",
     meta?.label ? `· ${meta.label}` : null,

@@ -27,10 +27,10 @@ export function AsciiBanner({
     if (!frame.lines.length) return;
     paintAscii(canvas, frame, {
       fg: "#4ade80",
-      bright: "#d9ffe4",
+      bright: "#eaffef",
       bg: null,
       fontSize: 8,
-      dpr: Math.min(2, window.devicePixelRatio || 1),
+      dpr: Math.min(3, window.devicePixelRatio || 1),
     });
   }, [text, cols, maxLineChars]);
 

@@ -2,89 +2,22 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Expand, FileDown } from "lucide-react";
-import { paintAscii, renderAscii, frameToText, colsForWidth, type AsciiMode, type AsciiFrame } from "@/lib/ascii";
+import { monoMetrics, paintAscii, RAMPS, renderAscii, frameToText, type AsciiFrame, type AsciiMode } from "@/lib/ascii";
 import { useToast } from "@/hooks/use-toast";
-
-/**
- * AsciiThumb — micro glyph render of a poster for event cards. No chrome,
- * no interaction surface of its own (optional click-through), just a live
- * ASCII still so every card wears its own poster as terminal texture.
- */
-export function AsciiThumb({
-  src,
-  onClick,
-  className = "",
-  ariaLabel,
-}: {
-  src: string;
-  onClick?: () => void;
-  className?: string;
-  ariaLabel?: string;
-}) {
-  const wrapRef = useRef<HTMLDivElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-
-  const render = useCallback(() => {
-    const wrap = wrapRef.current;
-    const canvas = canvasRef.current;
-    if (!wrap || !canvas || canvas.dataset.rendered === "1") return;
-    const width = wrap.clientWidth;
-    if (!width) return; // hidden (e.g. sm:hidden breakpoint) — skip entirely
-    const img = new Image();
-    img.decoding = "async";
-    img.src = src;
-    img.onload = () => {
-      const w = wrap.clientWidth;
-      if (!w) return;
-      const fontSize = 5;
-      const cols = colsForWidth(w, fontSize * 0.62);
-      const frame = renderAscii(img, {
-        cols,
-        ramp: " .:;=+%#@",
-        mode: "ascii",
-        gamma: 0.85,
-        colorize: false,
-      });
-      canvas.dataset.rendered = "1";
-      paintAscii(canvas, frame, {
-        fg: "#4ade80",
-        bright: "#d9ffe4",
-        bg: "#070d08",
-        fontSize,
-      });
-    };
-  }, [src]);
-
-  useEffect(() => {
-    const wrap = wrapRef.current;
-    if (!wrap) return;
-    const ro = new ResizeObserver(() => render());
-    ro.observe(wrap);
-    render();
-    return () => ro.disconnect();
-  }, [render]);
-
-  return (
-    <div
-      ref={wrapRef}
-      className={`relative overflow-hidden bg-[#070d08] ${onClick ? "cursor-pointer" : ""} ${className}`}
-      onClick={onClick}
-      role={onClick ? "presentation" : undefined}
-      aria-hidden={onClick ? undefined : true}
-      aria-label={ariaLabel}
-      title={ariaLabel}
-    >
-      <canvas ref={canvasRef} className="h-full w-full" style={{ imageRendering: "pixelated" }} />
-      <div className="scanlines pointer-events-none absolute inset-0 opacity-60" />
-    </div>
-  );
-}
 
 /**
  * AsciiImage — renders a real image as live ASCII text on a canvas.
  * Mode switcher mirrors ASCILINE's output modes:
  *   ASCII (glyphs) / PIXEL (colored blocks) / PHOTO (original pixels).
  * A crossfade slider blends between the ASCII layer and the photo.
+ *
+ * v2 (crisp rewrite):
+ *   - grid is EXACT-FIT: cols/rows are derived from the measured cell
+ *     metrics and the real box size, so the canvas is displayed 1:1 —
+ *     v1 rendered at ~77% and let object-cover upscale it 1.3× (blur);
+ *   - the v2 render pipeline (box-filter supersampling + unsharp
+ *     definition pass) replaces the single-point sampling;
+ *   - canvas DPR headroom raised to 3 for retina-crisp glyph edges.
  */
 
 interface AsciiImageProps {
@@ -112,6 +45,7 @@ export function AsciiImage({ src, label, caption, onExpand, compact = false }: A
   const [mode, setMode] = useState<AsciiMode>("ascii");
   const [mix, setMix] = useState(82); // 100 = full ascii, 0 = full photo
   const [grid, setGrid] = useState({ cols: 0, rows: 0 });
+  const [srcDims, setSrcDims] = useState({ w: 0, h: 0 });
   const { toast } = useToast();
 
   const renderNow = useCallback(() => {
@@ -120,26 +54,36 @@ export function AsciiImage({ src, label, caption, onExpand, compact = false }: A
     const canvas = canvasRef.current;
     if (!img || !img.complete || !img.naturalWidth || !wrap || !canvas) return;
 
-    const width = wrap.clientWidth;
-    const fontSize = width < 420 ? 6 : width < 720 ? 7 : 8;
-    // 0.78 divisor → fewer, chunkier glyphs: reads as an image at card size
-    const cols = colsForWidth(width, fontSize * 0.78);
+    const w = wrap.clientWidth;
+    const h = wrap.clientHeight;
+    if (!w || !h) return;
+
+    // bigger glyphs than v1 (7–9px vs 6–8px) — small type fuzzes on canvas
+    const fontSize = w < 420 ? 7 : w < 760 ? 8 : 9;
+    const { charW, lineH } = monoMetrics(fontSize);
+    // exact-fit grid → intrinsic canvas size == display size (1:1, no stretch)
+    const cols = Math.max(32, Math.round(w / charW));
+    const rows = Math.max(14, Math.round(h / lineH));
 
     const frame = renderAscii(img, {
       cols,
-      ramp: mode === "pixel" ? " .·:;=+x%#@" : " .,:;-~=+*x%#@",
+      rows,
+      ramp: mode === "pixel" ? RAMPS.blocks : RAMPS.mid,
       mode: mode === "photo" ? "ascii" : mode,
-      gamma: 0.68,
+      gamma: 0.8,
       colorize: mode === "pixel",
+      supersample: 3,
+      sharpen: mode === "ascii" ? 0.45 : 0.2,
     });
     frameRef.current = frame;
     setGrid({ cols: frame.cols, rows: frame.rows });
 
     paintAscii(canvas, frame, {
       fg: "#4ade80",
-      bright: "#d9ffe4",
+      bright: "#eaffef",
       bg: "#070d08",
       fontSize,
+      dpr: Math.min(3, window.devicePixelRatio || 1),
     });
   }, [mode]);
 
@@ -150,6 +94,7 @@ export function AsciiImage({ src, label, caption, onExpand, compact = false }: A
     img.src = src;
     img.onload = () => {
       imgRef.current = img;
+      setSrcDims({ w: img.naturalWidth, h: img.naturalHeight });
       setReady(true);
       renderNow();
     };
@@ -234,14 +179,14 @@ export function AsciiImage({ src, label, caption, onExpand, compact = false }: A
           style={{ opacity: mode === "photo" ? 1 : 1 - mix / 100 }}
           loading="lazy"
         />
-        {/* ascii layer */}
+        {/* ascii layer — exact-fit frame, ≤ half a glyph of stretch */}
         {showAscii && (
           <canvas
             ref={canvasRef}
             className="absolute inset-0 h-full w-full object-cover"
             style={{
               opacity: mode === "photo" ? mix / 100 : 1,
-              imageRendering: "pixelated",
+              imageRendering: "auto",
             }}
             aria-hidden="true"
           />
@@ -273,7 +218,8 @@ export function AsciiImage({ src, label, caption, onExpand, compact = false }: A
       {/* footer readout */}
       <div className="flex items-center justify-between gap-3 border-t border-border/70 bg-secondary/30 px-3 py-2">
         <span className="font-mono text-[10px] text-muted-foreground">
-          GRID {grid.cols || "—"}×{grid.rows || "—"} · SRC 1152×864
+          GRID {grid.cols || "—"}×{grid.rows || "—"} · SRC{" "}
+          {srcDims.w ? `${srcDims.w}×${srcDims.h}` : "—"}
         </span>
         <div className="flex items-center gap-2">
           <button

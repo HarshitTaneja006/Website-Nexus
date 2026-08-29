@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 /** Adds .reveal → .is-visible when the element scrolls into view. */
-export function useReveal<T extends HTMLElement>(threshold = 0.2) {
+export function useReveal<T extends HTMLElement>(threshold = 0.1) {
   const ref = useRef<T | null>(null);
   const [seen, setSeen] = useState(false);
 

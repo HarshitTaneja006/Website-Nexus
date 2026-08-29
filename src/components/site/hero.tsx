@@ -13,9 +13,8 @@ const ASCII_LOGO = String.raw`███╗   ██╗███████╗�
 ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝`;
 
 const STATS = [
-  { value: 420, suffix: "+", label: "ACTIVE MEMBERS" },
-  { value: 38, suffix: "", label: "EVENTS SHIPPED" },
-  { value: 12, suffix: "", label: "PROJECTS LIVE" },
+  { value: 120, suffix: "+", label: "ACTIVE MEMBERS" },
+  { value: 15, suffix: "", label: "EVENTS SHIPPED" },
   { value: 5, suffix: "", label: "DOMAINS" },
 ];
 
@@ -234,7 +233,7 @@ export function Hero() {
         {/* stats */}
         <div
           ref={statsRef}
-          className="mt-14 grid w-full max-w-2xl grid-cols-2 gap-y-6 border-y border-border/50 py-5 sm:grid-cols-4 sm:gap-x-6"
+          className="mt-14 grid w-full max-w-xl grid-cols-3 gap-x-4 gap-y-6 border-y border-border/50 py-5 sm:gap-x-10"
         >
           {STATS.map((s) => (
             <Stat key={s.label} {...s} run={runStats} />

@@ -48,17 +48,22 @@ export function AsciiGallery() {
   // deep link: /…#frame-N lands directly on that frame's lightbox
   useEffect(() => {
     if (linked.current) return;
-    linked.current = true;
     const idx = frameFromHash();
     if (idx == null) return;
     document.getElementById("gallery")?.scrollIntoView({ behavior: "instant" });
     // defer past the jump's scroll event (the flight engine writes #scene-*
     // during the pass-through), then open the lightbox and re-assert the hash
     const id = window.setTimeout(() => {
+      linked.current = true;
       setLightbox(idx);
       replaceUrl(buildFrameDeepLink(idx + 1));
     }, 160);
-    return () => window.clearTimeout(id);
+    return () => {
+      // StrictMode's simulated remount tears this timer down before it can
+      // fire — the effect re-run must be allowed to schedule it again, so
+      // only clear while the opener has not yet fired.
+      if (!linked.current) window.clearTimeout(id);
+    };
   }, []);
 
   // keep the hash in sync with the open frame; strip it when closed

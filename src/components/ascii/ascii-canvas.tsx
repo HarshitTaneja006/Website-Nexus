@@ -2,12 +2,18 @@
 
 import { useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { frameToPngBlob, frameToText, type AsciiFrame } from "@/lib/ascii";
+import { frameToPngBlob, frameToText, monoFontStack, monoMetrics, RAMPS, type AsciiFrame } from "@/lib/ascii";
 
 /**
  * AsciiCanvas — real-time animated ASCII scenes on a plain canvas.
  * ASCILINE (https://github.com/YusufB5/ASCILINE) homage: the browser canvas
  * becomes a typographic display surface — every pixel you see is a glyph.
+ *
+ * v2: fonts resolve to the real Geist Mono family (canvas ctx.font cannot
+ * read CSS var() — v1 silently rendered 10px sans-serif), cell metrics are
+ * MEASURED per resize, and the donut runs the canonical donut.c math:
+ * rigid rotate-X(A)→rotate-Z(B) applied to BOTH point and normal, so the
+ * torus no longer wobbles/deforms and the shading tracks the surface.
  *
  * Presets:
  *  - rain  : phosphor glyph rain (terminal default)
@@ -30,8 +36,8 @@ interface AsciiCanvasProps {
   speed?: number;
 }
 
-const DONUT_CHARS = ".,-~:;=!*#$@";
 const GLYPHS = "01<>[]{}#$%&*+=/\\|;:~^".split("");
+const DONUT_CHARS = RAMPS.donut.split("");
 
 export function AsciiCanvas({
   preset = "rain",
@@ -58,8 +64,12 @@ export function AsciiCanvas({
     let cols = 0;
     let rows = 0;
     let dpr = 1;
-    const charW = fontSize * 0.6;
-    const lineH = fontSize * 1.04;
+    // measured metrics — recomputed on resize (never assume 0.6em)
+    let charW = monoMetrics(fontSize).charW;
+    let lineH = monoMetrics(fontSize).lineH;
+    // cell aspect (width/height) — compensates tall terminal cells so the
+    // donut renders geometrically round
+    const yScale = charW / lineH;
     let raf = 0;
     let running = true;
     let visible = true;
@@ -90,9 +100,10 @@ export function AsciiCanvas({
       | null;
     let lastPaint: LastPaint = null;
 
-    // precomputed trig tables for the donut
-    const TH = 90;
-    const PH = 210;
+    // precomputed trig tables for the donut (θ = tube cross-section,
+    // φ = revolve around the axis)
+    const TH = 96;
+    const PH = 256;
     const cosTh = new Float32Array(TH);
     const sinTh = new Float32Array(TH);
     const cosPh = new Float32Array(PH);
@@ -117,6 +128,9 @@ export function AsciiCanvas({
       canvas!.height = Math.round(h * dpr);
       canvas!.style.width = `${w}px`;
       canvas!.style.height = `${h}px`;
+      const m = monoMetrics(fontSize);
+      charW = m.charW;
+      lineH = m.lineH;
       cols = Math.ceil(w / charW);
       rows = Math.ceil(h / lineH);
       bright = new Float32Array(cols * rows);
@@ -125,6 +139,10 @@ export function AsciiCanvas({
         y: Math.random() * -rows,
         v: 6 + Math.random() * 14,
       }));
+    }
+
+    function setFont(px: number, weight = "") {
+      ctx!.font = `${weight ? weight + " " : ""}${px}px ${monoFontStack()}`;
     }
 
     function colorFor(v: number): string {
@@ -136,23 +154,23 @@ export function AsciiCanvas({
     // -------- painting helpers (run-length grouped fillText) --------
     function paintGrid() {
       lastPaint = { kind: "grid" };
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, cols * charW, rows * lineH);
-      ctx.font = `${fontSize}px var(--font-geist-mono), ui-monospace, monospace`;
-      ctx.textBaseline = "top";
+      ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx!.clearRect(0, 0, cols * charW, rows * lineH);
+      setFont(fontSize);
+      ctx!.textBaseline = "top";
       for (let y = 0; y < rows; y++) {
         let open = false;
         let runStart = 0;
         let runColor = "";
         const flush = (endX: number) => {
           if (!open) return;
-          ctx.fillStyle = runColor;
+          ctx!.fillStyle = runColor;
           let s = "";
           for (let x = runStart; x < endX; x++) {
             const v = bright[y * cols + x];
             s += v > 0.045 ? GLYPHS[Math.min(GLYPHS.length - 1, (v * GLYPHS.length) | 0)] : " ";
           }
-          ctx.fillText(s, runStart * charW, y * lineH);
+          ctx!.fillText(s, runStart * charW, y * lineH);
           open = false;
         };
         for (let x = 0; x < cols; x++) {
@@ -179,23 +197,23 @@ export function AsciiCanvas({
 
     function paintDonut(zbuf: Float32Array, lbuf: Int8Array) {
       lastPaint = { kind: "donut", zbuf, lbuf };
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, cols * charW, rows * lineH);
-      ctx.font = `${fontSize}px var(--font-geist-mono), ui-monospace, monospace`;
-      ctx.textBaseline = "top";
+      ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx!.clearRect(0, 0, cols * charW, rows * lineH);
+      setFont(fontSize);
+      ctx!.textBaseline = "top";
       for (let y = 0; y < rows; y++) {
         let open = false;
         let runStart = 0;
         let runColor = "";
         const flush = (endX: number) => {
           if (!open) return;
-          ctx.fillStyle = runColor;
+          ctx!.fillStyle = runColor;
           let s = "";
           for (let x = runStart; x < endX; x++) {
             const idx = y * cols + x;
             s += zbuf[idx] > 0 ? DONUT_CHARS[Math.max(0, Math.min(11, lbuf[idx]))] : " ";
           }
-          ctx.fillText(s, runStart * charW, y * lineH);
+          ctx!.fillText(s, runStart * charW, y * lineH);
           open = false;
         };
         for (let x = 0; x < cols; x++) {
@@ -204,7 +222,7 @@ export function AsciiCanvas({
             flush(x);
             continue;
           }
-          const color = colorFor(0.28 + (lbuf[idx] / 11) * 0.72);
+          const color = colorFor(0.24 + (lbuf[idx] / 11) * 0.76);
           if (!open) {
             open = true;
             runStart = x;
@@ -266,55 +284,80 @@ export function AsciiCanvas({
       paintGrid();
     }
 
+    /**
+     * The canonical donut.c projection, in cell space:
+     *   point  P(θ,φ) = ((R2+R1·cosθ)·cosφ, (R2+R1·cosθ)·sinφ, R1·sinθ)
+     *   normal N(θ,φ) = (cosθ·cosφ, cosθ·sinφ, sinθ)
+     * then rotate about X by A, about Z by B — the SAME rigid transform for
+     * point and normal (v1 mixed cosA/sinA between them → wobbly deformed
+     * torus). Light L = (0,1,−1)/√2 · N. yScale (measured cell aspect)
+     * keeps the silhouette round on tall terminal cells, and K1 fits BOTH
+     * axes so the torus never clips.
+     */
     function drawDonut(dt: number) {
       t += dt;
       A += (0.85 * dt + pointer.current.vx * 2.6) * speed;
       B += (0.5 * dt + pointer.current.vy * 2.6) * speed;
       pointer.current.vx *= 0.9;
       pointer.current.vy *= 0.9;
+
+      const R1 = 1; // tube radius
+      const R2 = 2; // torus radius
+      const K2 = 5; // camera distance
+      // fit: silhouette ≈ K1·(R1+R2)/K2 = 0.6·K1 cells → keep ≤46% of both axes
+      const K1 = 0.75 * Math.min(cols, rows / yScale);
+
       const cosA = Math.cos(A);
       const sinA = Math.sin(A);
       const cosB = Math.cos(B);
       const sinB = Math.sin(B);
 
-      const R1 = 1;
-      const R2 = 2;
-      const K2 = 5;
-      const K1 = cols * 0.58;
-      const yScale = 0.55;
-
       const zbuf = new Float32Array(cols * rows);
       const lbuf = new Int8Array(cols * rows);
+      const invSqrt2 = Math.SQRT1_2;
 
       for (let j = 0; j < TH; j++) {
         const ct = cosTh[j];
         const st = sinTh[j];
-        const circlex = R2 + R1 * ct;
-        const circley = R1 * st;
-        // rotated normal components (light = (0,1,-1))
-        const n1x = ct;
-        const n1y = st * cosA;
-        const n1z = st * sinA;
+        // radial distance from torus center + offset along the axis
+        const cx = R2 + R1 * ct;
+        const cy = R1 * st;
+        // surface normal before rotation: (ct·cosφ, ct·sinφ, st)
+        const nx0 = ct;
+        const ny0 = ct;
+        const nz0 = st;
         for (let i = 0; i < PH; i++) {
           const cp = cosPh[i];
           const sp = sinPh[i];
-          // rotate about z by B, then shade
-          const nx = n1x * cosB - n1y * sinB;
-          const ny = n1x * sinB + n1y * cosB;
-          const L = ny - n1z;
 
-          const x = circlex * (cosB * cp + sinA * sinB * sp) - circley * cosA * sinB;
-          const y = circlex * (sinB * cp - sinA * cosB * sp) + circley * cosA * cosB;
-          const z = K2 + cosA * circlex * sp + circley * sinA;
-          const ooz = 1 / z;
-          const xp = (cols / 2 + K1 * ooz * x) | 0;
-          const yp = (rows / 2 - K1 * ooz * y * yScale) | 0;
+          // point — rotate about X by A, then about Z by B
+          const px = cx * cp;
+          const py = cx * sp;
+          const pz = cy;
+          const py1 = py * cosA - pz * sinA;
+          const pz1 = py * sinA + pz * cosA;
+          const x2 = px * cosB - py1 * sinB;
+          const y2 = px * sinB + py1 * cosB;
+          const z2 = pz1;
+
+          // normal — the same two rotations
+          const ny1 = ny0 * sp * cosA - nz0 * sinA;
+          const nz1 = ny0 * sp * sinA + nz0 * cosA;
+          const ny2 = nx0 * cp * sinB + ny1 * cosB;
+
+          // light (0, 1, -1)/√2 — top-front lit, classic donut.c shading
+          const L = (ny2 - nz1) * invSqrt2;
+
+          const ooz = 1 / (K2 + z2);
+          const xp = (cols / 2 + K1 * ooz * x2) | 0;
+          const yp = (rows / 2 - K1 * ooz * y2 * yScale) | 0;
           if (xp < 0 || xp >= cols || yp < 0 || yp >= rows) continue;
           const idx = yp * cols + xp;
           if (ooz <= zbuf[idx]) continue;
           zbuf[idx] = ooz;
-          const lum = Math.max(0, Math.min(11, Math.round(((L + 0.4) / 1.6) * 11)));
-          lbuf[idx] = lum;
+          // tonal curve biases toward mid-dark — back edges stay readable
+          const b = L * 0.5 + 0.5;
+          lbuf[idx] = Math.max(0, Math.min(11, Math.round(Math.pow(b, 1.35) * 11)));
         }
       }
       paintDonut(zbuf, lbuf);
@@ -328,22 +371,22 @@ export function AsciiCanvas({
         bright[i] = Math.random() < 0.08 ? 0.10 + Math.random() * 0.10 : 0;
       }
       paintGrid();
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.font = `bold ${Math.round(fontSize * 1.25)}px var(--font-geist-mono), ui-monospace, monospace`;
-      ctx.textBaseline = "middle";
-      ctx.fillStyle = `rgba(${fg},0.85)`;
+      ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
+      setFont(Math.round(fontSize * 1.25), "bold");
+      ctx!.textBaseline = "middle";
+      ctx!.fillStyle = `rgba(${fg},0.85)`;
       const cx = (cols * charW) / 2;
       const cy = (rows * lineH) / 2;
       const lh = fontSize * 1.7;
       const startY = cy - ((lines.length - 1) * lh) / 2 - (sub ? lh * 0.5 : 0);
-      ctx.textAlign = "center";
-      lines.forEach((l, i) => ctx.fillText(l, cx, startY + i * lh));
+      ctx!.textAlign = "center";
+      lines.forEach((l, i) => ctx!.fillText(l, cx, startY + i * lh));
       if (sub) {
-        ctx.font = `${fontSize}px var(--font-geist-mono), ui-monospace, monospace`;
-        ctx.fillStyle = `rgba(${accent},0.75)`;
-        ctx.fillText(sub, cx, startY + lines.length * lh);
+        setFont(fontSize);
+        ctx!.fillStyle = `rgba(${accent},0.75)`;
+        ctx!.fillText(sub, cx, startY + lines.length * lh);
       }
-      ctx.textAlign = "start";
+      ctx!.textAlign = "start";
     }
 
     function drawCamFrame() {

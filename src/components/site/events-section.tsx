@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CalendarDays, CalendarPlus, CalendarRange, Link2, ListOrdered, MapPin, Rss, ScanLine, Share2, Timer, Users } from "lucide-react";
 import { AsciiBanner } from "@/components/ascii/ascii-banner";
-import { AsciiImage, AsciiThumb } from "@/components/ascii/ascii-image";
+import { AsciiImage } from "@/components/ascii/ascii-image";
 import { AsciiLightbox, type LightboxShot } from "@/components/ascii/ascii-lightbox";
 import { Button } from "@/components/ui/button";
 import {
@@ -229,7 +229,6 @@ function EventCard({
   onDetail: (ev: EventDTO) => void;
   featured?: boolean;
 }) {
-  const poster = POSTERS[ev.slug];
   const d = new Date(ev.startsAt);
   return (
     <article
@@ -250,18 +249,6 @@ function EventCard({
           {fmtMonth.format(d)}
         </span>
       </div>
-
-      {/* ASCII poster thumb — live glyph render, lights up on card hover */}
-      {poster && (
-        <AsciiThumb
-          src={poster.src}
-          onClick={() => onDetail(ev)}
-          ariaLabel={`Open ${ev.title} full brief`}
-          className={`my-4 mr-4 shrink-0 self-stretch rounded-sm border border-border/60 opacity-75 transition-all duration-300 group-hover:border-primary/40 group-hover:opacity-100 group-hover:shadow-[inset_0_0_18px_rgba(74,222,128,0.12)] ${
-            featured ? "hidden w-36 md:block lg:w-44" : "hidden w-24 sm:block"
-          } ${featured ? "group-hover:shadow-[0_0_18px_rgba(251,191,36,0.10)]" : ""}`}
-        />
-      )}
 
       <div className="flex min-w-0 flex-1 flex-col p-5">
         <div className="flex flex-wrap items-center gap-2">

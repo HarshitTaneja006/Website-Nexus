@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Camera, CameraOff, CircleDot, FileDown, FileImage } from "lucide-react";
-import { frameToPngBlob, paintAscii, renderAscii, frameToText, colsForWidth, type AsciiFrame } from "@/lib/ascii";
+import { frameToPngBlob, paintAscii, renderAscii, frameToText, monoMetrics, RAMPS, type AsciiFrame } from "@/lib/ascii";
 import { useToast } from "@/hooks/use-toast";
 
 /**
@@ -57,25 +57,34 @@ export function AsciiCamFeed() {
       if (now - last < 1000 / TARGET_FPS) return;
       last = now;
 
+      // exact-fit grid from measured metrics — canvas renders 1:1 (v2)
       const width = wrap.clientWidth;
-      const fontSize = width < 420 ? 6 : width < 720 ? 7 : 8;
-      const cols = colsForWidth(width, fontSize * 0.8);
+      const height = wrap.clientHeight;
+      if (!width || !height) return;
+      const fontSize = width < 420 ? 7 : width < 720 ? 8 : 9;
+      const { charW, lineH } = monoMetrics(fontSize);
+      const cols = Math.max(32, Math.round(width / charW));
+      const rows = Math.max(14, Math.round(height / lineH));
 
       const f = renderAscii(video, {
         cols,
-        ramp: mode === "pixel" ? " .·:;=+x%#@" : " .,:;-~=+*x%#@",
+        rows,
+        ramp: mode === "pixel" ? RAMPS.blocks : RAMPS.mid,
         mode: mode === "photo" ? "ascii" : mode,
         gamma: 0.8, // slightly gentler than stills — webcams run dark
         colorize: mode === "pixel",
+        supersample: 2, // live feed — lighter sampling, still moiré-free
+        sharpen: 0.3,
       });
       frameRef.current = f;
       setGrid({ cols: f.cols, rows: f.rows });
 
       paintAscii(canvas, f, {
         fg: "#4ade80",
-        bright: "#d9ffe4",
+        bright: "#eaffef",
         bg: "#070d08",
         fontSize,
+        dpr: Math.min(3, window.devicePixelRatio || 1),
       });
 
       // rolling fps readout

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Download, FileImage, X, ZoomIn, ClipboardCopy, Link2 } from "lucide-react";
-import { paintAscii, renderAscii, frameToText, frameToPngBlob, type AsciiFrame, type AsciiMode } from "@/lib/ascii";
+import { monoMetrics, paintAscii, RAMPS, renderAscii, frameToText, frameToPngBlob, type AsciiFrame, type AsciiMode } from "@/lib/ascii";
 import { useToast } from "@/hooks/use-toast";
 
 /**
@@ -78,31 +78,33 @@ export function AsciiLightbox({
     const maxH = window.innerHeight - 190;
     const aspect = img.naturalHeight / img.naturalWidth;
 
-    // cell geometry must match the engines: charW=0.6em, lineH=1.06em,
-    // renderAscii rows = cols * aspect * (0.6/1.06)
-    const charW = 12 * 0.6;
-    const lineH = 12 * 1.06;
-    const cellAspect = 0.6 / 1.06;
+    // cell geometry from MEASURED metrics — v1 hardcoded 0.6em/1.06em and
+    // drifted against the painted font
+    const fontSize = 12;
+    const { charW, lineH } = monoMetrics(fontSize);
+    const cellAspect = charW / lineH;
     const colsByW = maxW / charW;
     const colsByH = maxH / (lineH * aspect * cellAspect);
     const cols = Math.max(40, Math.min(zoom, Math.floor(Math.min(colsByW, colsByH))));
 
     const frame = renderAscii(img, {
       cols,
-      ramp: mode === "pixel" ? " .·:;=+x%#@" : " .,:;-~=+*x%#@",
+      ramp: mode === "pixel" ? RAMPS.blocks : RAMPS.mid,
       mode: mode === "photo" ? "ascii" : mode,
-      gamma: 0.68,
+      gamma: 0.75,
       colorize: mode === "pixel",
+      supersample: 3,
+      sharpen: mode === "ascii" ? 0.4 : 0.2,
     });
     frameRef.current = frame;
     setGrid({ cols: frame.cols, rows: frame.rows });
 
     paintAscii(canvas, frame, {
       fg: "#4ade80",
-      bright: "#d9ffe4",
+      bright: "#eaffef",
       bg: mode === "photo" ? null : "#050a06",
-      fontSize: 12,
-      dpr: Math.min(2, window.devicePixelRatio || 1),
+      fontSize,
+      dpr: Math.min(3, window.devicePixelRatio || 1),
     });
   }, [mode, zoom]);
 
@@ -314,7 +316,7 @@ export function AsciiLightbox({
           ref={canvasRef}
           aria-hidden="true"
           className="max-h-full max-w-full object-contain transition-opacity duration-300"
-          style={{ imageRendering: "pixelated", opacity: ready ? 1 : 0 }}
+          style={{ imageRendering: "auto", opacity: ready ? 1 : 0 }}
         />
         {/* prev / next */}
         <button
