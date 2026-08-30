@@ -230,6 +230,7 @@ function EventCard({
   featured?: boolean;
 }) {
   const d = new Date(ev.startsAt);
+  const isPast = d.getTime() < Date.now();
   return (
     <article
       className={`group relative flex flex-col overflow-hidden rounded-md border bg-card transition-all duration-300 hover:border-primary/40 hover:shadow-[0_0_30px_rgba(74,222,128,0.08)] ${
@@ -261,6 +262,11 @@ function EventCard({
           >
             {ev.category}
           </span>
+          {isPast && (
+            <span className="rounded-sm border border-border px-2 py-0.5 font-mono text-[9px] tracking-[0.2em] text-muted-foreground">
+              ARCHIVED
+            </span>
+          )}
           {ev.featured && (
             <span className="rounded-sm border border-primary/40 px-2 py-0.5 font-mono text-[9px] tracking-[0.2em] text-primary">
               ★ FLAGSHIP
@@ -268,7 +274,7 @@ function EventCard({
           )}
           <span className="ml-auto flex items-center gap-1 font-mono text-[10px] text-muted-foreground">
             <Users className="h-3 w-3" />
-            {ev.rsvpCount} going
+            {ev.rsvpCount} {isPast ? "attended" : "going"}
           </span>
         </div>
 
@@ -338,39 +344,44 @@ function EventCard({
               <Share2 className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">SHARE</span>
             </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              aria-label={`Download ${ev.title} as calendar file`}
-              title="add to calendar (.ics)"
-              onClick={() => {
-                downloadIcs({
-                  uid: ev.id,
-                  slug: ev.slug,
-                  title: ev.title,
-                  description: ev.description,
-                  venue: ev.venue,
-                  startsAt: ev.startsAt,
-                  endsAt: ev.endsAt,
-                });
-                toast({
-                  title: "CALENDAR PATCHED",
-                  description: `${ev.slug}.ics downloaded — see you there.`,
-                });
-              }}
-              className="h-8 px-2.5 font-mono text-[10px] tracking-widest text-muted-foreground hover:bg-primary/10 hover:text-primary"
-            >
-              <CalendarPlus className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">.ICS</span>
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => onRsvp(ev)}
-              className="h-8 border-primary/40 px-4 font-mono text-[10px] tracking-widest text-primary hover:bg-primary/15 hover:text-primary"
-            >
-              RSVP_
-            </Button>
+            {/* past transmits are read-only: no calendar export, no RSVP */}
+            {!isPast && (
+              <>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  aria-label={`Download ${ev.title} as calendar file`}
+                  title="add to calendar (.ics)"
+                  onClick={() => {
+                    downloadIcs({
+                      uid: ev.id,
+                      slug: ev.slug,
+                      title: ev.title,
+                      description: ev.description,
+                      venue: ev.venue,
+                      startsAt: ev.startsAt,
+                      endsAt: ev.endsAt,
+                    });
+                    toast({
+                      title: "CALENDAR PATCHED",
+                      description: `${ev.slug}.ics downloaded — see you there.`,
+                    });
+                  }}
+                  className="h-8 px-2.5 font-mono text-[10px] tracking-widest text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                >
+                  <CalendarPlus className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">.ICS</span>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onRsvp(ev)}
+                  className="h-8 border-primary/40 px-4 font-mono text-[10px] tracking-widest text-primary hover:bg-primary/15 hover:text-primary"
+                >
+                  RSVP_
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -540,6 +551,8 @@ export function EventsSection() {
   }, [events]);
 
   const shown = tab === "upcoming" ? upcoming : past;
+  // the full-brief dialog serves BOTH tabs — past transmits are read-only
+  const detailIsPast = detailEv ? new Date(detailEv.startsAt).getTime() < Date.now() : false;
 
   const submitRsvp = async () => {
     if (!dialogEv) return;
@@ -766,6 +779,11 @@ export function EventsSection() {
                 >
                   {detailEv.category}
                 </span>
+                {detailIsPast && (
+                  <span className="rounded-sm border border-border px-2 py-0.5 font-mono text-[9px] tracking-[0.2em] text-muted-foreground">
+                    ARCHIVED
+                  </span>
+                )}
                 {detailEv.featured && (
                   <span className="rounded-sm border border-primary/40 px-2 py-0.5 font-mono text-[9px] tracking-[0.2em] text-primary">
                     ★ FLAGSHIP
@@ -773,7 +791,7 @@ export function EventsSection() {
                 )}
                 <span className="ml-auto flex items-center gap-1 font-mono text-[10px] text-muted-foreground">
                   <Users className="h-3 w-3" />
-                  {detailEv.rsvpCount} going
+                  {detailEv.rsvpCount} {detailIsPast ? "attended" : "going"}
                 </span>
               </div>
 
@@ -845,39 +863,43 @@ export function EventsSection() {
                   <Share2 className="h-3.5 w-3.5" />
                   SHARE
                 </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    downloadIcs({
-                      uid: detailEv.id,
-                      slug: detailEv.slug,
-                      title: detailEv.title,
-                      description: detailEv.description,
-                      venue: detailEv.venue,
-                      startsAt: detailEv.startsAt,
-                      endsAt: detailEv.endsAt,
-                    });
-                    toast({
-                      title: "CALENDAR PATCHED",
-                      description: `${detailEv.slug}.ics downloaded — see you there.`,
-                    });
-                  }}
-                  className="h-8 px-3 font-mono text-[10px] tracking-widest text-muted-foreground hover:bg-primary/10 hover:text-primary"
-                >
-                  <CalendarPlus className="h-3.5 w-3.5" />
-                  .ICS
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setDetailEv(null);
-                    setDialogEv(detailEv);
-                  }}
-                  className="h-8 border border-primary/40 bg-primary/10 px-4 font-mono text-[10px] tracking-widest text-primary hover:bg-primary/20"
-                >
-                  RSVP_
-                </Button>
+                {!detailIsPast && (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        downloadIcs({
+                          uid: detailEv.id,
+                          slug: detailEv.slug,
+                          title: detailEv.title,
+                          description: detailEv.description,
+                          venue: detailEv.venue,
+                          startsAt: detailEv.startsAt,
+                          endsAt: detailEv.endsAt,
+                        });
+                        toast({
+                          title: "CALENDAR PATCHED",
+                          description: `${detailEv.slug}.ics downloaded — see you there.`,
+                        });
+                      }}
+                      className="h-8 px-3 font-mono text-[10px] tracking-widest text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                    >
+                      <CalendarPlus className="h-3.5 w-3.5" />
+                      .ICS
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setDetailEv(null);
+                        setDialogEv(detailEv);
+                      }}
+                      className="h-8 border border-primary/40 bg-primary/10 px-4 font-mono text-[10px] tracking-widest text-primary hover:bg-primary/20"
+                    >
+                      RSVP_
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           )}
