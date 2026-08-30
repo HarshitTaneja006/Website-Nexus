@@ -26,6 +26,11 @@ import { useToast } from "@/hooks/use-toast";
  *   - wide 70-glyph DETAIL ramp for grids ≥110 columns — more tonal steps
  *     = smoother gradients on the large cards;
  *   - supersample raised to 4× — every cell is a true 4×4 area average.
+ *
+ * v4 (defaults round): full cards open in PHOTO mode with the blend
+ *   slider parked at 50 — photo readable at first glance, glyphs woven
+ *   through it; the slider is now a pure blend control in every mode
+ *   (no auto tab-flip on release). compact posters stay pure ASCII.
  */
 
 interface AsciiImageProps {
@@ -50,8 +55,9 @@ export function AsciiImage({ src, label, caption, onExpand, compact = false }: A
   const renderTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [ready, setReady] = useState(false);
-  const [mode, setMode] = useState<AsciiMode>("ascii");
-  const [mix, setMix] = useState(82); // 100 = full ascii, 0 = full photo
+  // full cards open in PHOTO (blended) — compact posters stay pure ASCII
+  const [mode, setMode] = useState<AsciiMode>(compact ? "ascii" : "photo");
+  const [mix, setMix] = useState(compact ? 100 : 50); // 100 = full ascii, 0 = full photo
   const [grid, setGrid] = useState({ cols: 0, rows: 0 });
   const [srcDims, setSrcDims] = useState({ w: 0, h: 0 });
   const { toast } = useToast();
@@ -246,9 +252,6 @@ export function AsciiImage({ src, label, caption, onExpand, compact = false }: A
               max={100}
               value={mix}
               onChange={(e) => setMix(Number(e.target.value))}
-              onMouseUp={() => {
-                if (mode === "photo" && mix > 0) setMode("ascii");
-              }}
               aria-label={`ASCII to photo blend for ${label}`}
               className="h-1 w-24 cursor-pointer appearance-none rounded bg-border accent-[#4ade80]"
             />
