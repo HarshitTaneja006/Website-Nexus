@@ -17,10 +17,18 @@ const SCENES: Record<
   string,
   { no: string; label: string; eyebrow: string; title: string; accent: string; tags: string[] }
 > = {
+  nexus: {
+    no: "00",
+    label: "OVERWATCH",
+    eyebrow: "ACT 00 · ONE SHOT",
+    title: "One City Block. One Shot.",
+    accent: "#4ade80",
+    tags: ["ONE SHOT", "SCROLL-SCRUB", "NIGHT OPS"],
+  },
   gate: {
     no: "01",
     label: "THE GATE",
-    eyebrow: "SCENE 01 · ARRIVAL",
+    eyebrow: "ACT 01 · ARRIVAL",
     title: "The Campus Grid",
     accent: "#4ade80",
     tags: ["COMMUNITY", "VIT CHENNAI", "EST. 2019"],
@@ -28,7 +36,7 @@ const SCENES: Record<
   lab: {
     no: "02",
     label: "THE LAB",
-    eyebrow: "SCENE 02 · RESEARCH",
+    eyebrow: "ACT 02 · RESEARCH",
     title: "Where Prototypes Breathe",
     accent: "#a7f3d0",
     tags: ["ROBOTICS", "AI/ML", "IOT"],
@@ -36,15 +44,24 @@ const SCENES: Record<
   build: {
     no: "03",
     label: "THE BUILD",
-    eyebrow: "SCENE 03 · SHIP IT",
+    eyebrow: "ACT 03 · SHIP IT",
     title: "36 Hours. One Shot.",
     accent: "#fbbf24",
     tags: ["HACKATHON", "OPEN SOURCE", "SHIPPING"],
   },
+  uplink: {
+    no: "04",
+    label: "THE UPLINK",
+    eyebrow: "ACT 04 · TRANSMIT",
+    title: "The Rooftop Frequency",
+    accent: "#4ade80",
+    tags: ["MENTORS", "ALUMNI NET", "YOU"],
+  },
+  // legacy id — old four-scene share links still unfurl the right card
   community: {
     no: "04",
     label: "THE UPLINK",
-    eyebrow: "SCENE 04 · TRANSMIT",
+    eyebrow: "ACT 04 · TRANSMIT",
     title: "The Rooftop Frequency",
     accent: "#4ade80",
     tags: ["MENTORS", "ALUMNI NET", "YOU"],

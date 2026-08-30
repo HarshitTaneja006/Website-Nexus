@@ -19,8 +19,15 @@ import { frameToPngBlob, frameToText, monoFontStack, monoMetrics, RAMPS, type As
  *  - rain  : phosphor glyph rain (terminal default)
  *  - donut : the classic spinning torus (donut.c math), live in ASCII
  *  - wave  : interference field — sine waves carved into characters
- *  - cam   : CAMERA FEED → live ASCII (getUserMedia, permission-gated;
- *            graceful phosphor-noise fallback when denied / unsupported)
+ *  - cam   : LIVE FEED → ASCII. Dual-source signal chain:
+ *            ① real webcam (getUserMedia, permission-gated, mirrored)
+ *            ② on ANY failure (denied / no API / insecure context / no
+ *               device) it auto-falls back to the SYNTH feed — the
+ *               blob-loaded hero-flight fly-through looped through the
+ *               same glyph sampler, so the backdrop ALWAYS moves
+ *            ③ phosphor-noise screen only if both sources die
+ *            Every source change broadcasts `nexus:hero-feed` so the hero
+ *            HUD can show exactly what is on air.
  */
 
 export type AsciiPreset = "rain" | "donut" | "wave" | "cam";
@@ -68,8 +75,9 @@ export function AsciiCanvas({
     let charW = monoMetrics(fontSize).charW;
     let lineH = monoMetrics(fontSize).lineH;
     // cell aspect (width/height) — compensates tall terminal cells so the
-    // donut renders geometrically round
-    const yScale = charW / lineH;
+    // donut renders geometrically round (re-measured on resize, fonts may
+    // land after mount)
+    let yScale = charW / lineH;
     let raf = 0;
     let running = true;
     let visible = true;
@@ -81,15 +89,24 @@ export function AsciiCanvas({
     let A = 0.7;
     let B = 0.35;
 
-    // ---- cam preset state ----
+    // ---- cam preset state (dual-source signal chain) ----
     const cleanupTimers: number[] = [];
-    let camVideo: HTMLVideoElement | null = null;
+    let camVideo: HTMLVideoElement | null = null; // source ① real webcam
     let camStream: MediaStream | null = null;
+    let synthVideo: HTMLVideoElement | null = null; // source ② fly-through loop
+    let synthUrl: string | null = null;
+    let activeSource: "cam" | "synth" | null = null;
     let camOff: HTMLCanvasElement | null = null;
     let camOffCtx: CanvasRenderingContext2D | null = null;
     let camState: "off" | "requesting" | "live" | "error" = "off";
     let camMsg = "";
     let camNoiseT = 0;
+
+    const announce = (state: string, source: string | null, message?: string) => {
+      window.dispatchEvent(
+        new CustomEvent("nexus:hero-feed", { detail: { state, source, message } })
+      );
+    };
 
     // snapshot support — remembers which buffer the last paint used so a
     // FRAME DUMP can serialize the exact grid on screen (zero per-frame cost)
@@ -131,6 +148,7 @@ export function AsciiCanvas({
       const m = monoMetrics(fontSize);
       charW = m.charW;
       lineH = m.lineH;
+      yScale = charW / lineH;
       cols = Math.ceil(w / charW);
       rows = Math.ceil(h / lineH);
       bright = new Float32Array(cols * rows);
@@ -390,15 +408,36 @@ export function AsciiCanvas({
     }
 
     function drawCamFrame() {
-      if (!camVideo || !camOff || !camOffCtx) return;
-      if (camVideo.readyState < 2 || camVideo.videoWidth === 0) return;
-      // downsample video into the glyph grid (mirrored, selfie-style)
+      const v = activeSource === "cam" ? camVideo : synthVideo;
+      if (!v || !camOff || !camOffCtx) return;
+      if (v.readyState < 2 || v.videoWidth === 0) return;
+      // downsample the active source into the glyph grid — center-crop
+      // (object-cover math) so nothing stretches; webcam is mirrored
       camOff.width = cols;
       camOff.height = rows;
-      camOffCtx.save();
-      camOffCtx.scale(-1, 1);
-      camOffCtx.drawImage(camVideo, -cols, 0, cols, rows);
-      camOffCtx.restore();
+      const vw = v.videoWidth;
+      const vh = v.videoHeight;
+      const target = cols / rows;
+      const src = vw / vh;
+      let sx = 0;
+      let sy = 0;
+      let sw = vw;
+      let sh = vh;
+      if (src > target) {
+        sw = vh * target;
+        sx = (vw - sw) / 2;
+      } else {
+        sh = vw / target;
+        sy = (vh - sh) / 2;
+      }
+      if (activeSource === "cam") {
+        camOffCtx.save();
+        camOffCtx.scale(-1, 1);
+        camOffCtx.drawImage(v, sx, sy, sw, sh, -cols, 0, cols, rows);
+        camOffCtx.restore();
+      } else {
+        camOffCtx.drawImage(v, sx, sy, sw, sh, 0, 0, cols, rows);
+      }
       let data: Uint8ClampedArray;
       try {
         data = camOffCtx.getImageData(0, 0, cols, rows).data;
@@ -420,9 +459,11 @@ export function AsciiCanvas({
 
     async function startCam() {
       camState = "requesting";
+      announce("requesting", null, "REQUESTING CAMERA");
       if (!navigator.mediaDevices?.getUserMedia) {
-        camState = "error";
-        camMsg = "NO CAMERA API";
+        // insecure context / sandboxed iframe → webcam is simply not there;
+        // the show must go on → synth feed
+        void startSynth("NO CAMERA API — SYNTH ENGAGED");
         return;
       }
       try {
@@ -438,16 +479,52 @@ export function AsciiCanvas({
         camVideo = v;
         camOff = document.createElement("canvas");
         camOffCtx = camOff.getContext("2d", { willReadFrequently: true });
+        activeSource = "cam";
         camState = "live";
+        announce("live", "cam", "CAMERA GRANTED");
       } catch (err) {
-        camState = "error";
         const name = err instanceof DOMException ? err.name : "";
-        camMsg =
+        const reason =
           name === "NotAllowedError"
-            ? "PERMISSION DENIED"
+            ? "PERMISSION DENIED — SYNTH ENGAGED"
             : name === "NotFoundError" || name === "OverconstrainedError"
-              ? "NO CAMERA FOUND"
-              : "CAMERA OFFLINE";
+              ? "NO CAMERA FOUND — SYNTH ENGAGED"
+              : "CAMERA OFFLINE — SYNTH ENGAGED";
+        camMsg = reason;
+        void startSynth(reason);
+      }
+    }
+
+    /**
+     * Synth feed — the hero-flight fly-through, blob-loaded and looped,
+     * pushed through the exact same glyph sampler as the webcam. This is
+     * why the cam backdrop now works EVERYWHERE: permission-less preview
+     * iframes, insecure contexts, machines without cameras.
+     */
+    async function startSynth(reason: string) {
+      try {
+        const res = await fetch("/media/hero-flight.mp4");
+        if (!res.ok) throw new Error(String(res.status));
+        const blob = await res.blob();
+        synthUrl = URL.createObjectURL(blob);
+        const v = document.createElement("video");
+        v.muted = true;
+        v.loop = true;
+        v.playsInline = true;
+        v.src = synthUrl;
+        await v.play();
+        synthVideo = v;
+        if (!camOff) {
+          camOff = document.createElement("canvas");
+          camOffCtx = camOff.getContext("2d", { willReadFrequently: true });
+        }
+        activeSource = "synth";
+        camState = "live";
+        announce("live", "synth", reason);
+      } catch {
+        camState = "error";
+        camMsg = "FEED OFFLINE";
+        announce("error", null, camMsg);
       }
     }
 
@@ -458,6 +535,16 @@ export function AsciiCanvas({
         camVideo.srcObject = null;
         camVideo = null;
       }
+      if (synthVideo) {
+        synthVideo.pause();
+        synthVideo.src = "";
+        synthVideo = null;
+      }
+      if (synthUrl) {
+        URL.revokeObjectURL(synthUrl);
+        synthUrl = null;
+      }
+      activeSource = null;
       camOff = null;
       camOffCtx = null;
       camState = "off";
@@ -470,7 +557,8 @@ export function AsciiCanvas({
         return;
       }
       if (camState === "error") {
-        paintNoiseScreen(["▚ CAM SIGNAL LOST ▚", camMsg || "CAMERA OFFLINE"], "switch back to RAIN / WAVE / DONUT");
+        // only reachable when BOTH the webcam and the synth feed failed
+        paintNoiseScreen(["▚ FEED SIGNAL LOST ▚", camMsg || "ALL SOURCES OFFLINE"], "switch back to RAIN / WAVE / DONUT");
         return;
       }
       if (camState !== "live") {
@@ -517,7 +605,7 @@ export function AsciiCanvas({
         // single static frame once the feed (or the fallback) settles
         const id = window.setTimeout(() => {
           if (camState === "live") drawCamFrame();
-          else paintNoiseScreen(["▚ CAM SIGNAL LOST ▚", camMsg || "CAMERA OFFLINE"], "reduced motion: static frame");
+          else paintNoiseScreen(["▚ FEED SIGNAL LOST ▚", camMsg || "ALL SOURCES OFFLINE"], "reduced motion: static frame");
         }, 900);
         cleanupTimers.push(id);
       } else drawWave(0);
@@ -612,7 +700,7 @@ export function AsciiCanvas({
           title: "NO SIGNAL",
           description:
             preset === "cam"
-              ? "the cam feed is offline — nothing to dump yet."
+              ? "the feed is still spooling — try again in a second."
               : "engine still warming up — try again in a second.",
           variant: "destructive",
         });

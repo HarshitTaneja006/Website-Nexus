@@ -1,5 +1,3 @@
-import fs from "fs";
-import path from "path";
 import type { Metadata } from "next";
 import { BootLoader } from "@/components/site/boot-loader";
 import { Navbar } from "@/components/site/navbar";
@@ -16,9 +14,12 @@ import { Footer } from "@/components/site/footer";
 import { KonamiEgg } from "@/components/site/konami-egg";
 
 const SCENE_META: Record<string, { title: string; label: string }> = {
+  nexus: { title: "One City Block. One Shot.", label: "OVERWATCH" },
   gate: { title: "The Campus Grid", label: "THE GATE" },
   lab: { title: "Where Prototypes Breathe", label: "THE LAB" },
   build: { title: "36 Hours. One Shot.", label: "THE BUILD" },
+  uplink: { title: "The Rooftop Frequency", label: "THE UPLINK" },
+  // legacy id — four-scene flight lives on only in old share links
   community: { title: "The Rooftop Frequency", label: "THE UPLINK" },
 };
 
@@ -53,15 +54,6 @@ export async function generateMetadata({
 }
 
 export default function Page() {
-  // decides at SSR whether the blob-scrubbed fly-in clip exists
-  let hasIntroVideo = false;
-  try {
-    const videoPath = path.join(process.cwd(), "public", "media", "hero-flight.mp4");
-    hasIntroVideo = fs.existsSync(videoPath) && fs.statSync(videoPath).size > 10000;
-  } catch {
-    hasIntroVideo = false;
-  }
-
   return (
     <div className="flex min-h-screen flex-col">
       <BootLoader />
@@ -69,7 +61,7 @@ export default function Page() {
       <Navbar />
       <main className="flex-1">
         <Hero />
-        <ScrollFlight hasIntroVideo={hasIntroVideo} />
+        <ScrollFlight />
         <Manifesto />
         <EventsSection />
         <TechNews />

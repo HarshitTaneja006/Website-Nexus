@@ -29,10 +29,11 @@ const GROUPS: { title: string; rows: Row[] }[] = [
   {
     title: "FLIGHT",
     rows: [
-      { keys: ["SCROLL"], desc: "scrub the camera through the four scenes" },
-      { keys: ["#scene-gate … #scene-community"], desc: "deep-link straight into a scene" },
-      { keys: ["?scene=<id>"], desc: "share-grade scene link — unfurls its own OG card" },
-      { keys: ["🔗 LINK"], desc: "per-scene chip copies the ?scene= share URL" },
+      { keys: ["SCROLL"], desc: "scrub one continuous shot — the camera glides (lerp), never snaps" },
+      { keys: ["0", "…", "4"], desc: "jump between acts — 0 overwatch · 1 gate · 2 lab · 3 build · 4 uplink" },
+      { keys: ["#scene-gate … #scene-uplink"], desc: "deep-link straight into an act (legacy #scene-community still lands)" },
+      { keys: ["?scene=<id>"], desc: "share-grade act link — unfurls its own OG card (?scene=nexus = the wide shot)" },
+      { keys: ["🔗 LINK"], desc: "per-act chip copies the ?scene= share URL" },
     ],
   },
   {
@@ -63,7 +64,7 @@ const GROUPS: { title: string; rows: Row[] }[] = [
   {
     title: "GLYPH ENGINE",
     rows: [
-      { keys: ["RAIN / WAVE / DONUT / CAM"], desc: "hero background presets (HUD or palette)" },
+      { keys: ["RAIN / WAVE / DONUT / CAM"], desc: "hero background presets (HUD or palette) — CAM auto-falls back to the synth feed when no webcam" },
       { keys: ["DUMP .TXT / PRINT .PNG"], desc: "export the exact on-screen glyph grid" },
       { keys: ["↑↑↓↓←→←→BA"], desc: "???  — old pilots know this one" },
     ],
@@ -139,7 +140,7 @@ export function ShortcutsDialog() {
           ))}
 
           <p className="mt-5 border-t border-border/60 pt-3 text-[9px] tracking-widest text-muted-foreground/60">
-            NEXUS SHELL v2.6 · MANUAL UPDATED ROUND 11 · PRESS <span className="kbd">?</span> ANYTIME
+            NEXUS SHELL v2.7 · MANUAL UPDATED ROUND 12 · PRESS <span className="kbd">?</span> ANYTIME
           </p>
         </div>
       </DialogContent>

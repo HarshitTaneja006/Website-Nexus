@@ -68,6 +68,9 @@ function Stat({ value, suffix, label, run }: { value: number; suffix: string; la
 export function Hero() {
   const [preset, setPreset] = useState<AsciiPreset>("rain");
   const [runStats, setRunStats] = useState(false);
+  // live feed signal chain readout — what's actually on air in CAM mode
+  const [feedSrc, setFeedSrc] = useState<"cam" | "synth" | null>(null);
+  const [feedMsg, setFeedMsg] = useState<string | null>(null);
   const statsRef = useRef<HTMLDivElement | null>(null);
   const { online } = usePresence();
 
@@ -79,6 +82,22 @@ export function Hero() {
     };
     window.addEventListener("nexus:engine", onEngine);
     return () => window.removeEventListener("nexus:engine", onEngine);
+  }, []);
+
+  // the cam preset broadcasts its signal-chain state (webcam granted vs
+  // synth fallback vs offline) so the HUD shows the true source
+  useEffect(() => {
+    const onFeed = (e: Event) => {
+      const { source, state, message } = (e as CustomEvent<{
+        source: "cam" | "synth" | null;
+        state: string;
+        message?: string;
+      }>).detail;
+      setFeedSrc(source);
+      setFeedMsg(state === "live" ? null : message ?? null);
+    };
+    window.addEventListener("nexus:hero-feed", onFeed);
+    return () => window.removeEventListener("nexus:hero-feed", onFeed);
   }, []);
 
   useEffect(() => {
@@ -134,8 +153,10 @@ export function Hero() {
         <p>FRAME: GLYPH/RASTER</p>
       </div>
 
-      {/* engine switcher */}
-      <div className="absolute right-4 bottom-24 z-10 hidden flex-col items-end gap-1.5 sm:flex md:right-8">
+      {/* engine switcher — z-20: the content column below is also z-10 and
+          later in DOM order, so it would swallow clicks aimed at these
+          buttons (the "camera backdrop doesn't work" bug) */}
+      <div className="absolute right-4 bottom-24 z-20 hidden flex-col items-end gap-1.5 sm:flex md:right-8">
         <span className="font-mono text-[9px] tracking-[0.25em] text-muted-foreground">BG_ENGINE:</span>
         <div className="flex overflow-hidden rounded-sm border border-border bg-card/70 backdrop-blur-sm">
           {(["rain", "wave", "donut", "cam"] as AsciiPreset[]).map((p) => (
@@ -143,7 +164,7 @@ export function Hero() {
               key={p}
               onClick={() => setPreset(p)}
               aria-pressed={preset === p}
-              title={p === "cam" ? "live webcam → ascii feed (permission-gated)" : `hero preset: ${p}`}
+              title={p === "cam" ? "live glyph feed — webcam, auto synth fallback" : `hero preset: ${p}`}
               className={`px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/70 ${
                 preset === p ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"
               }`}
@@ -153,8 +174,14 @@ export function Hero() {
           ))}
         </div>
         {preset === "cam" && (
-          <span className="font-mono text-[9px] tracking-[0.2em] text-amber-300/80">
-            LIVE GLYPH FEED — CAMERA PERMISSION REQUIRED
+          <span
+            className={`font-mono text-[9px] tracking-[0.2em] ${
+              feedSrc === "cam" ? "text-amber-300/80" : feedSrc === "synth" ? "text-primary/80" : "text-muted-foreground/70"
+            }`}
+          >
+            {feedSrc === "cam" && "LIVE GLYPH FEED — SRC: CAM.LIVE ◉"}
+            {feedSrc === "synth" && "LIVE GLYPH FEED — SRC: SYNTH.FEED (CAMERA UNAVAILABLE)"}
+            {!feedSrc && (feedMsg ?? "SPOOLING SIGNAL CHAIN — CAM → SYNTH")}
           </span>
         )}
         {/* frame dump — serialize the live engine grid to .txt / print .png */}

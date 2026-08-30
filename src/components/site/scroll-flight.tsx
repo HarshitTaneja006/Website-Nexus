@@ -1,190 +1,263 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Link2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 /**
- * ScrollFlight — a scroll-scrubbed camera flight through the NEXUS world.
+ * ScrollFlight v2 — ONE scene, ONE continuous camera, FIVE acts.
  *
- * This is an adaptation of the lets-scroll scrub-engine
- * (https://github.com/AIwithhassan/lets-scroll): the scroll position never
- * cuts — it moves time along one continuous camera path. Each scene is a
- * segment with its own virtual camera (scale + pan), and consecutive scenes
- * dissolve across a fixed seam width so the flight reads as a single shot.
- * A blob-loaded, always-seekable intro clip (frame-locked fly-through) is
- * scrubbed with coalesced seeks exactly like the original engine.
+ * Redesign brief (user): "redesign the flight to be only one high quality
+ * scene — improvise, browse ui libraries, grill me."
+ *
+ * The v1 engine crossfaded four separate stills with seam dissolves.
+ * v2 throws the seams away: a single 2688×1536 shot of the NEXUS world
+ * (public/media/world-nexus.webp) becomes the flight, and the scroll
+ * drives ONE virtual camera along a continuous pose path — dolly, pan,
+ * bank — through five keyframed acts. Act boundaries are shared poses,
+ * so there is nothing to crossfade: it reads as a single unbroken take.
+ *
+ * Engine notes (what "browsing ui libraries" bought us):
+ * - Lenis-style lerp: the camera never snaps to scroll — every frame it
+ *   glides toward the scroll-derived pose (`cur += (target-cur)*α`), the
+ *   same exponential-smoothing trick Lenis applies to scrollTop. Wheel
+ *   flicks become dolly momentum; the shot feels filmed, not scrubbed.
+ * - GSAP ScrollTrigger scrub grammar: pin (sticky) + scrub progress + a
+ *   plateau ease per act (dwell at both ends of every keyframe) so each
+ *   act holds its frame long enough to be read.
+ * - Acts are data: pose keyframes (scale / focal point / bank angle),
+ *   copy, accent tint. Adding an act = adding a table row.
+ *
+ * Deep links: #scene-gate|lab|build|uplink (+ legacy #scene-community →
+ * uplink) land mid-shot; ?scene= works too and unfurls its OG card.
+ * Keys 0–4 jump between acts.
  */
 
-interface SceneDef {
+interface Pose {
+  s: number; // camera scale (1 = cover-fit)
+  fx: number; // focal point, fraction of image width
+  fy: number; // focal point, fraction of image height
+  r: number; // bank angle, degrees
+}
+
+interface Act {
   id: string;
   label: string;
   eyebrow: string;
   title: string;
   body: string;
   tags: string[];
-  still: string;
   accent: string;
-  cam: { s0: number; s1: number; x0: number; x1: number; y0: number; y1: number };
+  tint: string; // radial grade color at low alpha
+  from: Pose;
+  to: Pose;
+  w: number; // scroll length, viewport heights
 }
 
-const SCENES: SceneDef[] = [
+const WORLD = "/media/world-nexus.webp";
+
+/** client-only flags (SSR-safe: server snapshot is false) */
+function subscribeNoop(cb: () => void) {
+  void cb;
+  return () => {};
+}
+function useMounted() {
+  return useSyncExternalStore(
+    subscribeNoop,
+    () => true,
+    () => false
+  );
+}
+function useReducedMotion() {
+  return useSyncExternalStore(
+    (cb) => {
+      const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+      mq.addEventListener("change", cb);
+      return () => mq.removeEventListener("change", cb);
+    },
+    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    () => false
+  );
+}
+
+const ACTS: Act[] = [
+  {
+    id: "overwatch",
+    label: "OVERWATCH",
+    eyebrow: "ACT 00 · OVERWATCH",
+    title: "One City Block. One Shot.",
+    body: "Your scroll is the throttle. No cuts, no dissolves — one continuous pass over the block the collective calls home. Five moves, single take.",
+    tags: ["ONE SHOT", "SCROLL-SCRUB", "NIGHT OPS"],
+    accent: "#4ade80",
+    tint: "74,222,128",
+    from: { s: 1.02, fx: 0.5, fy: 0.46, r: 0 },
+    to: { s: 1.3, fx: 0.5, fy: 0.5, r: 0 },
+    w: 1.5,
+  },
   {
     id: "gate",
     label: "THE GATE",
-    eyebrow: "SCENE 01 · ARRIVAL",
+    eyebrow: "ACT 01 · ARRIVAL",
     title: "The Campus Grid",
-    body: "Every build starts here. One plaza, five domains, hundreds of students routing energy into the same network — welcome to the NEXUS node.",
+    body: "Every build starts here. One plaza, one green door, hundreds of students routing energy into the same network — welcome to the NEXUS node.",
     tags: ["COMMUNITY", "VIT CHENNAI", "EST. 2019"],
-    still: "/media/scene-gate.png",
     accent: "#4ade80",
-    cam: { s0: 1.22, s1: 1.02, x0: -2.2, x1: 0, y0: 1.4, y1: -1 },
+    tint: "74,222,128",
+    from: { s: 1.3, fx: 0.5, fy: 0.5, r: 0 },
+    to: { s: 2.0, fx: 0.505, fy: 0.545, r: -1.1 },
+    w: 1.3,
   },
   {
     id: "lab",
     label: "THE LAB",
-    eyebrow: "SCENE 02 · RESEARCH",
+    eyebrow: "ACT 02 · RESEARCH",
     title: "Where Prototypes Breathe",
     body: "Robotics bays, GPU boxes and a soldering bench that never sleeps. This is where 2 a.m. ideas get chassis, firmware and a demo video.",
     tags: ["ROBOTICS", "AI/ML", "IOT"],
-    still: "/media/scene-lab.png",
     accent: "#a7f3d0",
-    cam: { s0: 1.04, s1: 1.22, x0: 0, x1: -2.6, y0: -1, y1: 1.2 },
+    tint: "167,243,208",
+    from: { s: 2.0, fx: 0.505, fy: 0.545, r: -1.1 },
+    to: { s: 1.92, fx: 0.215, fy: 0.645, r: 0.9 },
+    w: 1.3,
   },
   {
     id: "build",
     label: "THE BUILD",
-    eyebrow: "SCENE 03 · SHIP IT",
+    eyebrow: "ACT 03 · SHIP IT",
     title: "36 Hours. One Shot.",
     body: "Hack nights are our heartbeat — desks glow, repos multiply, and by sunrise something exists that didn't yesterday. Demo or it didn't happen.",
     tags: ["HACKATHON", "OPEN SOURCE", "SHIPPING"],
-    still: "/media/scene-build.png",
     accent: "#fbbf24",
-    cam: { s0: 1.18, s1: 1.0, x0: 2.4, x1: 0, y0: -0.8, y1: 0.8 },
+    tint: "251,191,36",
+    from: { s: 1.92, fx: 0.21, fy: 0.61, r: 0.9 },
+    to: { s: 2.3, fx: 0.725, fy: 0.62, r: -0.7 },
+    w: 1.3,
   },
   {
-    id: "community",
+    id: "uplink",
     label: "THE UPLINK",
-    eyebrow: "SCENE 04 · TRANSMIT",
+    eyebrow: "ACT 04 · TRANSMIT",
     title: "The Rooftop Frequency",
-    body: "Talks on the roof, mentorship in the threads, alumni on speed dial. NEXUS doesn't end at graduation — it compounds. Your frequency is next.",
+    body: "Talks on the roof, mentorship in the threads, alumni on speed dial. NEXUS doesn't end at graduation — it compounds. Ride the beam. Your frequency is next.",
     tags: ["MENTORS", "ALUMNI NET", "YOU"],
-    still: "/media/scene-community.png",
     accent: "#4ade80",
-    cam: { s0: 1.0, s1: 1.2, x0: 0, x1: 2.4, y0: 0.6, y1: -1.4 },
+    tint: "74,222,128",
+    from: { s: 2.3, fx: 0.725, fy: 0.62, r: -0.7 },
+    to: { s: 1.14, fx: 0.512, fy: 0.24, r: 0 },
+    w: 1.6,
   },
 ];
 
-const SEAM = 0.16; // crossfade width as fraction of a segment (seam dissolve)
+/** legacy scene id → act id (old share links keep working) */
+const LEGACY_ALIAS: Record<string, string> = {
+  community: "uplink",
+  nexus: "overwatch",
+};
 
-interface Segment {
-  kind: "video" | "still";
-  scene: SceneDef;
-  w: number; // weight in viewport-heights
+function actIndexFromId(id: string): number {
+  const resolved = LEGACY_ALIAS[id] ?? id;
+  return ACTS.findIndex((a) => a.id === resolved);
 }
 
-function easeInOut(t: number) {
-  return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-}
 function clamp01(v: number) {
   return Math.max(0, Math.min(1, v));
 }
+function easeInOut(t: number) {
+  return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+}
+/** plateau ease — dwell 12% at each end of an act so keyframes read */
+function plateau(u: number) {
+  return easeInOut(clamp01((u - 0.12) / 0.76));
+}
+function lerp(a: number, b: number, t: number) {
+  return a + (b - a) * t;
+}
 
-/** Absolute document-Y that centres segment `idx` mid-scrub. */
-function segmentTop(
-  outer: HTMLElement,
-  segments: Segment[],
-  idx: number,
-  vh: number
-): number {
-  // rect-based (offsetTop is 0 here — the section is the offsetParent)
+interface Segment {
+  act: Act;
+  idx: number;
+  w: number;
+}
+
+/** Absolute document-Y that centres act `idx` mid-scrub. */
+function actTop(outer: HTMLElement, segments: Segment[], idx: number, vh: number): number {
   const docTop = outer.getBoundingClientRect().top + window.scrollY;
   let acc = 0;
   for (let i = 0; i < idx; i++) acc += segments[i].w * vh;
   return docTop + acc + segments[idx].w * vh * 0.55;
 }
 
-/** "#scene-lab" → scene index, or -1. */
-function sceneFromHash(hash: string): number {
+/** "#scene-lab" (or legacy "#scene-community") → act index, or -1. */
+function actFromHash(hash: string): number {
   const m = /^#scene-([a-z-]+)$/.exec(hash);
   if (!m) return -1;
-  return SCENES.findIndex((s) => s.id === m[1]);
+  return actIndexFromId(m[1]);
 }
 
-/** "?scene=lab" → scene index, or -1 (share links carry the OG preview). */
-function sceneFromQuery(): number {
+/** "?scene=lab" → act index, or -1 (share links carry the OG preview). */
+function actFromQuery(): number {
   if (typeof window === "undefined") return -1;
   const v = new URLSearchParams(window.location.search).get("scene");
   if (!v) return -1;
-  return SCENES.findIndex((s) => s.id === v);
+  return actIndexFromId(v);
 }
 
-export function ScrollFlight({ hasIntroVideo }: { hasIntroVideo: boolean }) {
+export function ScrollFlight() {
   const outerRef = useRef<HTMLDivElement | null>(null);
   const stickyRef = useRef<HTMLDivElement | null>(null);
-  const layerRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const imgRef = useRef<HTMLImageElement | null>(null);
   const copyRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const videoPosterRef = useRef<HTMLDivElement | null>(null);
   const barRef = useRef<HTMLDivElement | null>(null);
+  const letterTopRef = useRef<HTMLDivElement | null>(null);
+  const letterBotRef = useRef<HTMLDivElement | null>(null);
   const readoutRef = useRef<HTMLSpanElement | null>(null);
+  const teleRef = useRef<HTMLSpanElement | null>(null);
 
-  const [activeIdx, setActiveIdx] = useState(hasIntroVideo ? -1 : 0);
-  const [videoState, setVideoState] = useState<"idle" | "loading" | "ready" | "failed">(
-    hasIntroVideo ? "idle" : "failed"
-  );
-  const activeIdxRef = useRef(activeIdx);
-  const videoStateRef = useRef(videoState);
-  const [reducedMotion, setReducedMotion] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const [sweepKey, setSweepKey] = useState(0);
+  const [imgReady, setImgReady] = useState(false);
+  const reducedMotion = useReducedMotion();
+  const mounted = useMounted();
   const didHashJump = useRef(false);
+  const activeIdxRef = useRef(0);
   const { toast } = useToast();
 
-  useEffect(() => {
-    setMounted(true);
-    setReducedMotion(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-    // prewarm the scene stills so seams stay seamless on first scrub
-    const warm = (src: string) => {
-      const img = new Image();
-      img.decoding = "async";
-      img.src = src;
-    };
-    const id = setTimeout(() => SCENES.forEach((s) => warm(s.still)), 1200);
-    return () => clearTimeout(id);
-  }, []);
-
-  useEffect(() => {
-    videoStateRef.current = videoState;
-  }, [videoState]);
-
-  const segments = useMemo<Segment[]>(() => {
-    const segs: Segment[] = [];
-    if (hasIntroVideo) {
-      segs.push({ kind: "video", scene: SCENES[0], w: 1.6 });
-    }
-    SCENES.forEach((s, i) => {
-      segs.push({ kind: "still", scene: s, w: i === SCENES.length - 1 ? 1.5 : 1.3 });
-    });
-    if (!hasIntroVideo) {
-      // still-only mode: give first scene a little more dwell
-      segs[0].w = 1.5;
-    }
-    return segs;
-  }, [hasIntroVideo]);
-
+  const segments = useMemo<Segment[]>(() => ACTS.map((act, idx) => ({ act, idx, w: act.w })), []);
   const totalW = useMemo(() => segments.reduce((a, s) => a + s.w, 0), [segments]);
 
-  // layer count = segments (one visual layer per segment; video uses its own layer)
-  const layerCount = segments.length;
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      const img = imgRef.current;
+      if (img?.complete && img.naturalWidth > 0) {
+        setImgReady(true);
+        window.clearInterval(id);
+      }
+    }, 180);
+    const stop = window.setTimeout(() => window.clearInterval(id), 12000);
+    return () => {
+      window.clearInterval(id);
+      window.clearTimeout(stop);
+    };
+  }, []);
 
   useEffect(() => {
     const outer = outerRef.current;
     const sticky = stickyRef.current;
-    if (!outer || !sticky) return;
+    const img = imgRef.current;
+    if (!outer || !sticky || !img) return;
 
     let raf = 0;
-    let ticking = false;
+    let visible = true;
     let Dpx = 1;
+    let pRaw = 0; // scroll-derived progress target
+    let lastP = 0;
+    let lastT = performance.now();
+    let spd = 0;
+    let lastAppliedP = -1; // convergence guard: skip DOM writes when settled
+
+    // Lenis-style camera state — glides toward the scroll pose every frame
+    const cur = { s: ACTS[0].from.s, tx: 0, ty: 0, r: 0 };
+    let initialized = false;
 
     const measure = () => {
       const vh = window.innerHeight;
@@ -192,62 +265,10 @@ export function ScrollFlight({ hasIntroVideo }: { hasIntroVideo: boolean }) {
       outer.style.height = `${Dpx + vh}px`;
     };
 
-    // ---------- video blob loading (always seekable, like the engine) ----------
-    let pendingSeek: number | null = null;
-    const video = videoRef.current;
-
-    const primeVideo = async () => {
-      if (!video || videoState !== "idle") return;
-      setVideoState("loading");
-      try {
-        const res = await fetch("/media/hero-flight.mp4");
-        if (!res.ok) throw new Error(String(res.status));
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        video.src = url;
-        video.preload = "auto";
-        video.addEventListener("loadeddata", () => {
-          setVideoState("ready");
-          // re-run the scrub so the segment seeks to the current scroll position
-          window.dispatchEvent(new Event("scroll"));
-        }, { once: true });
-        video.addEventListener("error", () => setVideoState("failed"), { once: true });
-      } catch {
-        setVideoState("failed");
-      }
-    };
-
-    const onSeeked = () => {
-      const v = videoRef.current;
-      if (!v || pendingSeek == null) return;
-      if (Math.abs(pendingSeek - v.currentTime) > 0.04) {
-        v.currentTime = pendingSeek;
-        pendingSeek = null;
-      }
-    };
-    video?.addEventListener("seeked", onSeeked);
-
-    // start loading when the flight is near
-    const io = new IntersectionObserver(
-      ([e]) => {
-        if (e.isIntersecting) {
-          primeVideo();
-          io.disconnect();
-        }
-      },
-      { rootMargin: "120% 0px" }
-    );
-    io.observe(outer);
-
-    // ---------- the scrub ----------
-    const update = () => {
-      ticking = false;
+    /** pose for absolute progress p — continuous across act boundaries */
+    const poseAt = (p: number) => {
+      const D = clamp01(p) * Dpx;
       const vh = window.innerHeight;
-      const rect = outer.getBoundingClientRect();
-      const scrolled = clamp01(-rect.top / Dpx);
-      const D = scrolled * Dpx; // px travelled inside the flight
-
-      // find segment + local u
       let acc = 0;
       let segIdx = segments.length - 1;
       let u = 1;
@@ -260,211 +281,236 @@ export function ScrollFlight({ hasIntroVideo }: { hasIntroVideo: boolean }) {
         }
         acc += segW;
       }
+      const act = segments[segIdx].act;
+      const e = plateau(u);
+      const s = lerp(act.from.s, act.to.s, e);
+      const fx = lerp(act.from.fx, act.to.fx, e);
+      const fy = lerp(act.from.fy, act.to.fy, e);
+      const r = lerp(act.from.r, act.to.r, e);
+      return { segIdx, u, s, fx, fy, r };
+    };
 
-      for (let i = 0; i < layerCount; i++) {
-        const layer = layerRefs.current[i];
+    const update = () => {
+      const vh = window.innerHeight;
+      const rect = outer.getBoundingClientRect();
+      pRaw = clamp01(-rect.top / Dpx);
+
+      // scroll velocity → HUD speed readout (px/s of progress, smoothed)
+      const now = performance.now();
+      const dt = Math.max(0.001, (now - lastT) / 1000);
+      lastT = now;
+      const inst = Math.abs(pRaw - lastP) * Dpx / dt;
+      lastP = pRaw;
+      spd = lerp(spd, inst, 0.12);
+
+      const target = poseAt(pRaw);
+      // focal point → translate %; clamp keeps the frame covered (no edges)
+      let tx = (0.5 - target.fx) * 100;
+      let ty = (0.5 - target.fy) * 100;
+      const maxT = Math.max(0, target.s - 1) * 50 * 0.8;
+      tx = Math.max(-maxT, Math.min(maxT, tx));
+      ty = Math.max(-maxT, Math.min(maxT, ty));
+
+      if (!initialized) {
+        cur.s = target.s;
+        cur.tx = tx;
+        cur.ty = ty;
+        cur.r = target.r;
+        initialized = true;
+      }
+
+      // the Lenis trick — exponential glide toward the pose
+      const a = 0.11;
+      cur.s = lerp(cur.s, target.s, a);
+      cur.tx = lerp(cur.tx, tx, a);
+      cur.ty = lerp(cur.ty, ty, a);
+      cur.r = lerp(cur.r, target.r, a);
+
+      // convergence guard — once the camera has settled on the current
+      // pose AND scroll hasn't moved, skip all DOM writes (idle battery)
+      const delta =
+        Math.abs(cur.s - target.s) +
+        Math.abs(cur.tx - tx) +
+        Math.abs(cur.ty - ty) +
+        Math.abs(cur.r - target.r);
+      const settled = delta < 0.0006 && pRaw === lastAppliedP;
+      lastAppliedP = pRaw;
+      if (settled && initialized) return;
+
+      // camera-out: rotate outermost so coverage math stays valid
+      img.style.transform = `rotate(${cur.r.toFixed(3)}deg) scale(${cur.s.toFixed(4)}) translate3d(${cur.tx.toFixed(3)}%, ${cur.ty.toFixed(3)}%, 0)`;
+
+      // copy overlays
+      for (let i = 0; i < segments.length; i++) {
         const copy = copyRefs.current[i];
-        if (!layer) continue;
-        const seg = segments[i];
-
-        // base opacity: only current segment visible, seam crossfade both sides
+        if (!copy) continue;
         let op = 0;
-        if (i === segIdx) {
-          const fin = i > 0 ? clamp01(u / SEAM) : 1;
-          const fout = i < layerCount - 1 ? clamp01((1 - u) / SEAM) : 1;
-          op = Math.min(fin, fout);
-        } else if (i === segIdx - 1 && u < SEAM) {
-          op = clamp01(1 - u / SEAM); // outgoing layer during seam
+        if (i === target.segIdx) {
+          const { u } = target;
+          const cIn = clamp01((u - 0.14) / 0.2);
+          const cOut = i === segments.length - 1 ? 1 : clamp01((0.9 - u) / 0.16);
+          op = Math.min(cIn, cOut);
         }
-
-        // camera
-        const e = easeInOut(u);
-        const { s0, s1, x0, x1, y0, y1 } = seg.scene.cam;
-        const drift = seg.kind === "video" ? 1.6 : 1;
-        const scale = s0 + (s1 - s0) * e;
-        const tx = (x0 + (x1 - x0) * e) * drift;
-        const ty = (y0 + (y1 - y0) * e) * drift;
-
-        if (seg.kind === "video") {
-          // poster handles the camera move; video sits cover on top when ready
-          if (videoPosterRef.current) {
-            videoPosterRef.current.style.transform = `scale(${scale}) translate3d(${tx}%, ${ty}%, 0)`;
-          }
-          if (video && videoStateRef.current === "ready") {
-            const dur = video.duration || 5;
-            const target = Math.max(0, Math.min(dur - 0.05, u * dur));
-            if (video.seeking) {
-              pendingSeek = target;
-            } else if (Math.abs(video.currentTime - target) > 0.045) {
-              video.currentTime = target;
-            }
-          }
-        } else {
-          const img = layer.querySelector("img");
-          if (img) img.style.transform = `scale(${scale}) translate3d(${tx}%, ${ty}%, 0)`;
-        }
-
-        layer.style.opacity = String(op);
-        layer.style.visibility = op <= 0.001 ? "hidden" : "visible";
-
-        // copy drift: fade in as segment settles, drift up
-        if (copy) {
-          const cIn = clamp01((u - 0.12) / 0.22);
-          const cOut = i === layerCount - 1 ? 1 : clamp01((0.92 - u) / 0.14);
-          const cop = Math.min(cIn, cOut) * (op > 0.4 ? 1 : op * 2);
-          copy.style.opacity = String(clamp01(cop));
-          copy.style.transform = `translateY(${(1 - clamp01(cop)) * 26}px)`;
-          copy.style.pointerEvents = cop > 0.5 ? "auto" : "none";
-        }
+        copy.style.opacity = String(op);
+        copy.style.transform = `translateY(${(1 - op) * 26}px)`;
+        copy.style.pointerEvents = op > 0.5 ? "auto" : "none";
       }
 
-      // readouts
-      if (barRef.current) {
-        barRef.current.style.transform = `scaleX(${scrolled})`;
-      }
-      const nextIdx = segIdx - (hasIntroVideo ? 1 : 0);
-      if (nextIdx !== activeIdxRef.current) {
-        activeIdxRef.current = nextIdx;
-        setActiveIdx(nextIdx);
-        // keep the URL in sync so any scene is deep-linkable (#scene-lab)
-        const curSeg = segments[segIdx];
-        if (curSeg.kind === "still") {
-          const target = `#scene-${curSeg.scene.id}`;
-          if (window.location.hash !== target) {
-            history.replaceState(null, "", target);
-          }
+      // cinema letterbox — eases in once flying, retracts at both ends
+      const bar = 4.2 * clamp01(Math.min(pRaw / 0.055, (1 - pRaw) / 0.055));
+      if (letterTopRef.current) letterTopRef.current.style.height = `${bar}vh`;
+      if (letterBotRef.current) letterBotRef.current.style.height = `${bar}vh`;
+
+      // progress rail
+      if (barRef.current) barRef.current.style.transform = `scaleX(${pRaw})`;
+
+      // act bookkeeping: state, hash, readout, sweep trigger
+      if (target.segIdx !== activeIdxRef.current) {
+        activeIdxRef.current = target.segIdx;
+        setActiveIdx(target.segIdx);
+        setSweepKey((k) => k + 1);
+        const act = segments[target.segIdx].act;
+        if (act.id !== "overwatch") {
+          const targetHash = `#scene-${act.id}`;
+          if (window.location.hash !== targetHash) history.replaceState(null, "", targetHash);
+        } else if (/^#scene-/.test(window.location.hash)) {
+          history.replaceState(null, "", window.location.pathname + window.location.search);
         }
       }
       // scrubbed back above the flight → drop the scene hash so nav anchors stay clean
       if (rect.top > 0 && /^#scene-/.test(window.location.hash)) {
         history.replaceState(null, "", window.location.pathname + window.location.search);
       }
+
+      // HUD readouts
       if (readoutRef.current) {
-        const seg = segments[segIdx];
-        const sceneNo = segIdx - (hasIntroVideo ? 1 : 0);
+        const act = segments[target.segIdx].act;
         readoutRef.current.textContent =
-          seg.kind === "video"
-            ? "FLY-IN · CAMERA ENGAGED"
-            : `SCENE ${String(sceneNo + 1).padStart(2, "0")}/${String(SCENES.length).padStart(2, "0")} — ${seg.scene.label}`;
+          act.id === "overwatch"
+            ? `APPROACH VECTOR · CAMERA ENGAGED · ${String(Math.round(pRaw * 100)).padStart(3, "0")}%`
+            : `ACT ${String(actIndexFromId(act.id)).padStart(2, "0")}/04 — ${act.label.toUpperCase()} · ${String(Math.round(pRaw * 100)).padStart(3, "0")}%`;
+      }
+      if (teleRef.current) {
+        // fun-but-honest telemetry derived from the real camera numbers
+        const az = (-cur.tx * 0.62).toFixed(1).padStart(5);
+        const el = (cur.ty * 0.45).toFixed(1).padStart(5);
+        const alt = Math.round(1450 / cur.s);
+        const tSec = pRaw * 42;
+        const mm = String(Math.floor(tSec / 60)).padStart(2, "0");
+        const ss = String(Math.floor(tSec % 60)).padStart(2, "0");
+        const ff = String(Math.floor((tSec % 1) * 24)).padStart(2, "0");
+        teleRef.current.textContent = `AZ ${az}°  EL ${el}°  ALT ${alt}M  SPD ${String(Math.round(Math.min(999, spd * 0.9))).padStart(3, "0")}U/S  TC T+${mm}:${ss}:${ff}`;
       }
     };
 
-    const onScroll = () => {
-      if (!ticking) {
-        ticking = true;
-        raf = requestAnimationFrame(update);
-      }
+    // rAF loop — runs while the flight is near the viewport; the lerp
+    // keeps animating after scroll stops until the camera settles
+    const tick = () => {
+      raf = requestAnimationFrame(tick);
+      if (!visible) return;
+      update();
     };
 
-    const onResize = () => {
-      measure();
-      onScroll();
-    };
+    const io = new IntersectionObserver(([e]) => (visible = e.isIntersecting), {
+      rootMargin: "60% 0px",
+    });
+    io.observe(outer);
 
-    // deep link: #scene-lab lands mid-scrub on that scene, instantly.
-    // ?scene=lab works too (that's what LINK chips copy — the OG preview
-    // unfurls on social apps); the param is promoted to the canonical
-    // #scene-lab hash and scrubbed from the URL on landing.
-    // Capture BEFORE update() runs — the scrub's "above flight"
-    // branch strips unknown-to-the-DOM hashes on the very first frame.
-    const fromQuery = sceneFromQuery();
-    if (fromQuery >= 0 && sceneFromHash(window.location.hash) < 0) {
-      // promote ?scene=x → the canonical #scene-x hash, keeping any other
-      // params (?event=… deep links ride along untouched)
+    // deep link landing (#scene-lab / ?scene=lab — ?scene is promoted to
+    // the canonical hash first; legacy community/nexus ids still land)
+    const fromQuery = actFromQuery();
+    if (fromQuery >= 0 && actFromHash(window.location.hash) < 0) {
       const rest = new URLSearchParams(window.location.search);
+      const actId = LEGACY_ALIAS[rest.get("scene")!] ?? rest.get("scene")!;
       rest.delete("scene");
       const qs = rest.toString();
       history.replaceState(
         null,
         "",
-        `${window.location.pathname}${qs ? `?${qs}` : ""}#scene-${SCENES[fromQuery].id}`
+        `${window.location.pathname}${qs ? `?${qs}` : ""}#scene-${actId}`
       );
     }
-    const initialSi = didHashJump.current ? -1 : Math.max(sceneFromHash(window.location.hash), fromQuery);
+    const initialAi = didHashJump.current ? -1 : Math.max(actFromHash(window.location.hash), fromQuery);
     didHashJump.current = true;
 
-    const landDeepLink = (segIdx2: number) => {
+    const landDeepLink = (segIdx: number) => {
       measure();
-      window.scrollTo({
-        top: segmentTop(outer, segments, segIdx2, window.innerHeight),
-        behavior: "instant",
-      });
+      window.scrollTo({ top: actTop(outer, segments, segIdx, window.innerHeight), behavior: "instant" });
       update();
     };
 
     measure();
     update();
 
-    if (initialSi >= 0) {
-      const segIdx2 = initialSi + (hasIntroVideo ? 1 : 0);
-      // two frames out — past the browser's own initial scroll handling;
-      // "instant" overrides the global scroll-behavior:smooth so the
-      // landing can't be cancelled mid-animation
-      requestAnimationFrame(() => requestAnimationFrame(() => landDeepLink(segIdx2)));
-      // fonts/images above us settle late and shift the flight's document
-      // offset → re-land on a short loop until the target converges with
-      // reality (any user input hands control back immediately)
+    if (initialAi >= 0) {
+      requestAnimationFrame(() => requestAnimationFrame(() => landDeepLink(initialAi)));
+      // re-land on a short loop until the target converges with reality
       let userMoved = false;
-      const markMoved = () => {
-        userMoved = true;
-      };
+      const markMoved = () => (userMoved = true);
       window.addEventListener("wheel", markMoved, { passive: true });
       window.addEventListener("touchmove", markMoved, { passive: true });
       window.addEventListener("keydown", markMoved, { passive: true });
       const settle = setInterval(() => {
-        if (userMoved) {
-          clearInterval(settle);
-          cleanup();
-          return;
-        }
-        const target = segmentTop(outer, segments, segIdx2, window.innerHeight);
-        if (Math.abs(target - window.scrollY) < 2) {
-          clearInterval(settle);
-          cleanup();
-          return;
-        }
-        landDeepLink(segIdx2);
+        if (userMoved) return flightCleanup();
+        const t = actTop(outer, segments, initialAi, window.innerHeight);
+        if (Math.abs(t - window.scrollY) < 2) return flightCleanup();
+        landDeepLink(initialAi);
       }, 120);
-      const stop = setTimeout(() => {
+      const stop = setTimeout(flightCleanup, 2500);
+      function flightCleanup() {
         clearInterval(settle);
-        cleanup();
-      }, 2500);
-      const cleanup = () => {
         clearTimeout(stop);
         window.removeEventListener("wheel", markMoved);
         window.removeEventListener("touchmove", markMoved);
         window.removeEventListener("keydown", markMoved);
-      };
+      }
     }
 
-    window.addEventListener("scroll", onScroll, { passive: true });
+    // keys 0–4 jump between acts (0 = overwatch approach)
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+      if (!/^[0-4]$/.test(e.key)) return;
+      const idx = Number(e.key);
+      if (idx >= segments.length) return;
+      window.scrollTo({ top: actTop(outer, segments, idx, window.innerHeight), behavior: "smooth" });
+    };
+    window.addEventListener("keydown", onKey);
+
+    const onResize = () => {
+      measure();
+      update();
+    };
+    // no scroll listener needed: update() re-reads the scroll rect inside
+    // the rAF tick, and the lerp keeps gliding after scroll stops
     window.addEventListener("resize", onResize);
+    raf = requestAnimationFrame(tick);
 
     return () => {
       cancelAnimationFrame(raf);
-      window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onResize);
+      window.removeEventListener("keydown", onKey);
       io.disconnect();
-      video?.removeEventListener("seeked", onSeeked);
     };
-  }, [segments, layerCount, totalW, hasIntroVideo]);
+  }, [segments, totalW]);
 
-  const jumpToSegment = (idx: number, smooth = true) => {
-    const vh = window.innerHeight;
+  const jumpToAct = (idx: number) => {
     const outer = outerRef.current;
     if (!outer) return;
-    const top = segmentTop(outer, segments, idx, vh);
-    window.scrollTo({ top, behavior: smooth ? "smooth" : "auto" });
+    window.scrollTo({
+      top: actTop(outer, segments, idx, window.innerHeight),
+      behavior: "smooth",
+    });
   };
 
-  const copySceneLink = (sceneId: string) => {
-    // ?scene= URLs land identically in-browser AND unfurl a scene-specific
-    // OG card (generateMetadata → /api/og?scene=…) on social/IM apps.
-    const url = `${window.location.origin}${window.location.pathname}?scene=${sceneId}`;
+  const copyActLink = (actId: string) => {
+    const shareId = actId === "overwatch" ? "nexus" : actId;
+    const url = `${window.location.origin}${window.location.pathname}?scene=${shareId}`;
     const done = () =>
       toast({
-        title: "SCENE LINK COPIED",
-        description: `?scene=${sceneId} — lands mid-flight on this shot, previews its own card.`,
+        title: "FLIGHT LINK COPIED",
+        description: `?scene=${shareId} — lands mid-shot on this act, previews its own card.`,
       });
     if (navigator.clipboard) {
       navigator.clipboard.writeText(url).then(done).catch(() => {
@@ -475,25 +521,39 @@ export function ScrollFlight({ hasIntroVideo }: { hasIntroVideo: boolean }) {
     }
   };
 
-  // reduced motion: stacked panels (client-only to avoid hydration mismatch)
+  // reduced motion: stacked act cards, each a different crop of the one shot
   if (mounted && reducedMotion) {
     return (
       <section id="flight" className="relative border-y border-border/60 bg-[#060a07]">
-        <SectionHeader />
-        <div className="mx-auto max-w-7xl space-y-6 px-4 pb-16 sm:px-6">
-          {SCENES.map((s, i) => (
-            <article key={s.id} className="hud-corners relative overflow-hidden rounded-md border border-border">
-              <img src={s.still} alt={s.title} className="h-72 w-full object-cover sm:h-96" />
+        <div className="mx-auto max-w-7xl px-4 pt-16 sm:px-6">
+          <p className="font-mono text-[11px] tracking-[0.3em] text-primary">01 / THE FLIGHT</p>
+          <h2 className="font-display mt-3 text-3xl font-bold tracking-tight text-foreground sm:text-5xl">
+            One city block. One shot.
+          </h2>
+          <p className="mt-3 max-w-xl text-sm text-muted-foreground sm:text-base">
+            A single continuous pass over the NEXUS world — presented as five stills
+            (reduced motion).
+          </p>
+        </div>
+        <div className="mx-auto max-w-7xl space-y-6 px-4 pb-16 pt-8 sm:px-6">
+          {ACTS.map((a, i) => (
+            <article key={a.id} className="hud-corners relative overflow-hidden rounded-md border border-border">
+              <img
+                src={WORLD}
+                alt={a.title}
+                className="h-72 w-full object-cover sm:h-96"
+                style={{ objectPosition: `${a.to.fx * 100}% ${a.to.fy * 100}%` }}
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-[#050806] via-transparent to-transparent" />
               <div className="absolute bottom-0 left-0 max-w-xl p-6">
-                <p className="font-mono text-[10px] tracking-[0.3em]" style={{ color: s.accent }}>
-                  {s.eyebrow}
+                <p className="font-mono text-[10px] tracking-[0.3em]" style={{ color: a.accent }}>
+                  {a.eyebrow}
                 </p>
-                <h3 className="font-display mt-2 text-2xl font-bold text-foreground">{s.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{s.body}</p>
+                <h3 className="font-display mt-2 text-2xl font-bold text-foreground">{a.title}</h3>
+                <p className="mt-2 text-sm text-muted-foreground">{a.body}</p>
               </div>
               <span className="absolute right-3 top-3 font-mono text-[10px] text-muted-foreground">
-                {String(i + 1).padStart(2, "0")}/04
+                {String(i).padStart(2, "0")}/04
               </span>
             </article>
           ))}
@@ -504,140 +564,77 @@ export function ScrollFlight({ hasIntroVideo }: { hasIntroVideo: boolean }) {
 
   return (
     <section id="flight" className="relative">
-      <div ref={outerRef} style={{ height: `${totalW * 100}vh` }}>
+      <div ref={outerRef} style={{ height: `${totalW * 100}vh` }} data-qa="flight-outer">
         <div ref={stickyRef} className="sticky top-0 h-screen overflow-hidden bg-[#040705]">
-          {/* ---------- layers ---------- */}
-          {segments.map((seg, i) => (
-            <div
-              key={`${seg.kind}-${seg.scene.id}-${i}`}
-              ref={(el) => {
-                layerRefs.current[i] = el;
-              }}
-              className="absolute inset-0 will-change-transform"
-              style={{ opacity: 0, visibility: "hidden" }}
-              aria-hidden={seg.kind === "video"}
-            >
-              {seg.kind === "video" ? (
-                <>
-                  <div ref={videoPosterRef} className="absolute inset-0 will-change-transform">
-                    <img
-                      src={seg.scene.still}
-                      alt=""
-                      className="h-full w-full object-cover"
-                      onError={(e) => (e.currentTarget.style.opacity = "0")}
-                    />
-                  </div>
-                  <video
-                    ref={videoRef}
-                    className="absolute inset-0 h-full w-full object-cover"
-                    muted
-                    playsInline
-                    preload="auto"
-                    style={{ opacity: videoState === "ready" ? 1 : 0, transition: "opacity 0.5s" }}
-                    tabIndex={-1}
-                  />
-                </>
-              ) : (
-                <>
-                  <img
-                    src={seg.scene.still}
-                    alt={seg.scene.title}
-                    className="h-full w-full object-cover will-change-transform"
-                    onError={(e) => (e.currentTarget.style.opacity = "0")}
-                  />
-                  <div
-                    className="absolute inset-0"
-                    style={{
-                      background:
-                        "radial-gradient(ellipse at 30% 40%, rgba(20,40,24,0.4), rgba(4,7,5,0.9) 80%)",
-                    }}
-                  />
-                </>
-              )}
+          {/* ---------- the one shot ---------- */}
+          <img
+            ref={imgRef}
+            src={WORLD}
+            alt="Aerial night view of the NEXUS world — a glowing miniature tech-campus diorama"
+            fetchPriority="high"
+            decoding="async"
+            onLoad={() => setImgReady(true)}
+            className={`h-full w-full object-cover will-change-transform transition-opacity duration-700 ${imgReady ? "opacity-100" : "opacity-0"}`}
+          />
+          {/* the shot often finishes loading BEFORE hydration attaches the
+              onLoad listener — this effect polls `complete` so the fade-in
+              can never strand at opacity 0 (QA-caught) */}
 
-              {/* copy */}
-              <div
-                ref={(el) => {
-                  copyRefs.current[i] = el;
-                }}
-                className="absolute inset-x-0 bottom-0 pb-24 pt-40 sm:pb-28"
-              >
-                <div className="mx-auto max-w-7xl px-4 sm:px-6">
-                  <div className="max-w-2xl">
-                    <p
-                      className="font-mono text-[10px] tracking-[0.35em] sm:text-[11px]"
-                      style={{ color: seg.scene.accent }}
-                    >
-                      {seg.kind === "video" ? "INCOMING TRANSMISSION · SCROLL TO FLY" : seg.scene.eyebrow}
-                    </p>
-                    <h3 className="font-display mt-3 text-4xl font-bold leading-[1.02] tracking-tight text-foreground text-glow sm:text-6xl">
-                      {seg.kind === "video" ? "Fly the NEXUS world" : seg.scene.title}
-                    </h3>
-                    <p className="mt-4 max-w-xl text-sm leading-relaxed text-foreground/75 sm:text-base">
-                      {seg.kind === "video"
-                        ? "One continuous shot — your scroll is the camera throttle. Dissolve through four scenes of the collective."
-                        : seg.scene.body}
-                    </p>
-                    {seg.kind === "still" && (
-                      <div className="mt-4 flex flex-wrap items-center gap-2">
-                        {seg.scene.tags.map((t) => (
-                          <span
-                            key={t}
-                            className="rounded-sm border border-border/80 bg-black/40 px-2.5 py-1 font-mono text-[9px] tracking-[0.2em] text-foreground/70 backdrop-blur-sm"
-                          >
-                            {t}
-                          </span>
-                        ))}
-                        <button
-                          onClick={() => copySceneLink(seg.scene.id)}
-                          title="copy a deep link to this scene"
-                          aria-label={`Copy deep link to scene ${seg.scene.label}`}
-                          className="flex items-center gap-1.5 rounded-sm border border-border/80 bg-black/40 px-2.5 py-1 font-mono text-[9px] tracking-[0.2em] text-muted-foreground backdrop-blur-sm transition-colors hover:border-primary/60 hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                        >
-                          <Link2 className="h-3 w-3" />
-                          LINK
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
+          {/* per-act color grade (crossfades with the act) */}
+          {ACTS.map((a, i) => (
+            <div
+              key={`tint-${a.id}`}
+              className="pointer-events-none absolute inset-0 transition-opacity duration-700"
+              style={{
+                opacity: activeIdx === i ? 0.14 : 0,
+                background: `radial-gradient(ellipse at 50% 42%, transparent 38%, rgba(${a.tint},0.55) 100%)`,
+                mixBlendMode: "overlay",
+              }}
+            />
           ))}
+
+          {/* act-change light sweep */}
+          {sweepKey > 0 && (
+            <div key={sweepKey} className="flight-sweep pointer-events-none absolute inset-0" aria-hidden="true" />
+          )}
 
           {/* ---------- HUD ---------- */}
           <div className="grain pointer-events-none absolute inset-0" />
           <div className="scanlines pointer-events-none absolute inset-0" />
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_45%,rgba(4,7,5,0.5)_100%)]" />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_45%,rgba(4,7,5,0.55)_100%)]" />
+
+          {/* cinema letterbox */}
+          <div ref={letterTopRef} className="pointer-events-none absolute inset-x-0 top-0 z-20 bg-black" style={{ height: "0vh" }} />
+          <div ref={letterBotRef} className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-black" style={{ height: "0vh" }} />
 
           {/* top readout */}
           <div className="pointer-events-none absolute left-4 top-16 z-10 flex items-center gap-3 font-mono text-[10px] tracking-[0.25em] text-primary/80 sm:left-8">
             <span className="led" />
-            <span ref={readoutRef}>FLY-IN · CAMERA ENGAGED</span>
+            <span ref={readoutRef}>APPROACH VECTOR · CAMERA ENGAGED · 000%</span>
           </div>
 
-          {/* segment rail */}
+          {/* telemetry (desktop) */}
+          <div className="pointer-events-none absolute right-4 top-16 z-10 hidden font-mono text-[9px] tracking-[0.18em] text-primary/45 md:block md:right-8">
+            <span ref={teleRef}>AZ 0.0°  EL 0.0°  ALT 1422M  SPD 000U/S  TC T+00:00:00</span>
+          </div>
+
+          {/* act rail */}
           <div className="absolute right-4 top-1/2 z-10 hidden -translate-y-1/2 flex-col items-end gap-3 sm:flex md:right-8">
             {segments.map((seg, i) => {
-              const sceneNo = i - (hasIntroVideo ? 1 : 0);
-              const label = seg.kind === "video" ? "FLY-IN" : seg.scene.label;
-              const active = activeIdx === sceneNo;
+              const active = activeIdx === i;
               return (
                 <button
-                  key={i}
-                  onClick={() => jumpToSegment(i)}
+                  key={seg.act.id}
+                  onClick={() => jumpToAct(i)}
                   className="group flex items-center gap-2 font-mono text-[9px] tracking-[0.25em] transition-colors"
-                  aria-label={`Jump to ${label}`}
+                  aria-label={`Jump to act ${i} — ${seg.act.label}`}
+                  aria-current={active ? "true" : undefined}
                 >
-                  <span
-                    className={`tabular-nums ${
-                      active ? "text-primary/90" : "text-muted-foreground/40 group-hover:text-muted-foreground"
-                    }`}
-                  >
-                    {seg.kind === "video" ? "00" : String(sceneNo + 1).padStart(2, "0")}
+                  <span className={`tabular-nums ${active ? "text-primary/90" : "text-muted-foreground/40 group-hover:text-muted-foreground"}`}>
+                    {String(i).padStart(2, "0")}
                   </span>
                   <span className={active ? "text-primary text-glow" : "text-muted-foreground/60 group-hover:text-foreground"}>
-                    {label}
+                    {seg.act.label}
                   </span>
                   <span
                     className={`block h-px transition-all duration-300 ${
@@ -649,6 +646,49 @@ export function ScrollFlight({ hasIntroVideo }: { hasIntroVideo: boolean }) {
             })}
           </div>
 
+          {/* copy overlays */}
+          {ACTS.map((a, i) => (
+            <div
+              key={`copy-${a.id}`}
+              ref={(el) => {
+                copyRefs.current[i] = el;
+              }}
+              className="absolute inset-x-0 bottom-0 z-10 pb-24 pt-40 sm:pb-28"
+              style={{ opacity: i === 0 ? undefined : 0 }}
+            >
+              <div className="mx-auto max-w-7xl px-4 sm:px-6">
+                <div className="max-w-2xl">
+                  <p className="font-mono text-[10px] tracking-[0.35em] sm:text-[11px]" style={{ color: a.accent }}>
+                    {a.eyebrow}
+                  </p>
+                  <h3 className="font-display mt-3 text-4xl font-bold leading-[1.02] tracking-tight text-foreground text-glow sm:text-6xl">
+                    {a.title}
+                  </h3>
+                  <p className="mt-4 max-w-xl text-sm leading-relaxed text-foreground/75 sm:text-base">{a.body}</p>
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    {a.tags.map((t) => (
+                      <span
+                        key={t}
+                        className="rounded-sm border border-border/80 bg-black/40 px-2.5 py-1 font-mono text-[9px] tracking-[0.2em] text-foreground/70 backdrop-blur-sm"
+                      >
+                        {t}
+                      </span>
+                    ))}
+                    <button
+                      onClick={() => copyActLink(a.id)}
+                      title="copy a deep link to this act"
+                      aria-label={`Copy deep link to act ${a.label}`}
+                      className="flex items-center gap-1.5 rounded-sm border border-border/80 bg-black/40 px-2.5 py-1 font-mono text-[9px] tracking-[0.2em] text-muted-foreground backdrop-blur-sm transition-colors hover:border-primary/60 hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    >
+                      <Link2 className="h-3 w-3" />
+                      LINK
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+
           {/* bottom progress */}
           <div className="absolute inset-x-0 bottom-0 z-10 h-[3px] bg-black/50">
             <div
@@ -658,26 +698,13 @@ export function ScrollFlight({ hasIntroVideo }: { hasIntroVideo: boolean }) {
             />
           </div>
 
-          {/* engine credit */}
-          <div className="pointer-events-none absolute bottom-3 right-4 z-10 font-mono text-[8px] tracking-[0.2em] text-muted-foreground/50 sm:right-8">
-            SCRUB ENGINE · LETS-SCROLL (ADAPTED)
+          {/* keys hint + engine credit */}
+          <div className="pointer-events-none absolute bottom-3 right-4 z-10 hidden items-center gap-4 font-mono text-[8px] tracking-[0.2em] text-muted-foreground/50 sm:flex sm:right-8">
+            <span>KEYS 0–4 JUMP ACTS</span>
+            <span>ONE SHOT · LETS-SCROLL (ADAPTED)</span>
           </div>
         </div>
       </div>
     </section>
-  );
-}
-
-function SectionHeader() {
-  return (
-    <div className="mx-auto max-w-7xl px-4 pt-16 sm:px-6">
-      <p className="font-mono text-[11px] tracking-[0.3em] text-primary">01 / THE FLIGHT</p>
-      <h2 className="font-display mt-3 text-3xl font-bold tracking-tight text-foreground sm:text-5xl">
-        Fly the NEXUS world
-      </h2>
-      <p className="mt-3 max-w-xl text-sm text-muted-foreground sm:text-base">
-        A scroll-scrubbed camera flight — one continuous shot through our world.
-      </p>
-    </div>
   );
 }
