@@ -14,7 +14,7 @@ const LINES = [
   "$ nexus --boot",
   "[ok] core systems online",
   "[ok] ascii engine v2.1 · mode 32k",
-  "[ok] scroll-flight camera rig mounted",
+  "[ok] glyph foundry forge mounted",
   "[ok] events db synced",
   "[ok] news uplink connected",
   "> welcome, visitor",

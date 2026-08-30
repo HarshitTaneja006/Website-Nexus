@@ -25,7 +25,7 @@ export const ENGINE_EVENT = "nexus:engine";
 
 const SECTIONS = [
   { href: "#top", label: "TOP", hint: "back to the surface" },
-  { href: "#flight", label: "FLIGHT", hint: "scroll-scrubbed camera flight" },
+  { href: "#forge", label: "FOUNDRY", hint: "ascii particle forge — words from glyphs" },
   { href: "#about", label: "MANIFESTO", hint: "what nexus compiles" },
   { href: "#events", label: "EVENTS", hint: "transmit schedule + rsvp" },
   { href: "#news", label: "NEWS", hint: "live uplink" },

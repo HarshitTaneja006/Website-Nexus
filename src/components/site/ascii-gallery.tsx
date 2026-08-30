@@ -51,8 +51,8 @@ export function AsciiGallery() {
     const idx = frameFromHash();
     if (idx == null) return;
     document.getElementById("gallery")?.scrollIntoView({ behavior: "instant" });
-    // defer past the jump's scroll event (the flight engine writes #scene-*
-    // during the pass-through), then open the lightbox and re-assert the hash
+    // defer past the jump's scroll event, then open the lightbox and
+    // re-assert the hash
     const id = window.setTimeout(() => {
       linked.current = true;
       setLightbox(idx);

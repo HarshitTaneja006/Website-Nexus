@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://nexus-website-inky.vercel.app"),
   title: "NEXUS — Innovate. Lead. Build.",
   description:
-    "NEXUS is the student tech collective of VIT Chennai. A redesigned terminal-grade home: scroll-driven flight, live ASCII engines, events, news and more.",
+    "NEXUS is the student tech collective of VIT Chennai. A redesigned terminal-grade home: the glyph foundry, live ASCII engines, events, news and more.",
   keywords: [
     "NEXUS",
     "VIT Chennai",
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "NEXUS — Innovate. Lead. Build.",
     description:
-      "The student tech collective of VIT Chennai. Scroll to fly through our world.",
+      "The student tech collective of VIT Chennai. Watch words get forged from pure glyphs.",
     siteName: "NEXUS",
     images: [
       { url: "/media/og.png", width: 1344, height: 768, alt: "NEXUS — the campus grid" },
@@ -57,7 +57,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "NEXUS — Innovate. Lead. Build.",
     description:
-      "The student tech collective of VIT Chennai. Scroll to fly through our world.",
+      "The student tech collective of VIT Chennai. Watch words get forged from pure glyphs.",
     images: ["/media/og.png"],
   },
 };

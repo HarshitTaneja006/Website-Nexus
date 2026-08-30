@@ -519,8 +519,7 @@ export function EventsSection() {
     const upcoming = new Date(ev.startsAt).getTime() >= Date.now();
     if (upcoming) setDialogEv(ev);
     else setDetailEv(ev);
-    // the flight engine writes #scene-* from the scroll event fired by the
-    // jump above — re-assert #events once that event has been flushed
+    // re-assert the #events hash once the jump's scroll events have flushed
     window.setTimeout(() => replaceUrl(`${window.location.pathname}#events`), 160);
     toast({
       title: upcoming ? "DEEP LINK — RSVP PRESELECTED" : "DEEP LINK — ARCHIVE BRIEF",

@@ -115,6 +115,20 @@ export function monoMetrics(fontSize: number): MonoMetrics {
 /* render — supersampled box filter → tonal grid → glyphs              */
 /* ------------------------------------------------------------------ */
 
+/**
+ * 4×4 ordered-dither matrix (Bayer), normalized 0..1 — mean 0.46875.
+ * Added (zero-mean) to the cell luminance just before glyph quantization,
+ * it trades tonal banding for spatial detail: flat midtones become
+ * structured glyph texture instead of mud. This is the single biggest
+ * perceived-clarity win for ASCII images after sampling quality.
+ */
+const BAYER4 = [
+  0, 8, 2, 10,
+  12, 4, 14, 6,
+  3, 11, 1, 9,
+  15, 7, 13, 5,
+].map((v) => v / 16);
+
 export interface AsciiRenderOptions {
   /** number of character columns */
   cols: number;
@@ -155,6 +169,13 @@ export interface AsciiRenderOptions {
    * as "defined" without halos.
    */
   sharpen?: number;
+  /**
+   * ordered-dither strength (0..1, default 0) — 1 adds a full glyph step of
+   * Bayer threshold noise before quantization. Kills tonal banding in flat
+   * areas (skies, walls) and raises perceived resolution; 0.5–0.8 is the
+   * sweet spot for photographic sources.
+   */
+  dither?: number;
   /** glyph-cell aspect (charW/lineH); defaults to measured mono metrics */
   cellAspect?: number;
 }
@@ -340,17 +361,23 @@ export function renderAscii(
     }
   }
 
-  // ---- glyph mapping ----
+  // ---- glyph mapping (Bayer ordered dithering happens right here, so it
+  // aligns with the quantizer and skips the binary-cutoff path) ----
   const lines: string[] = [];
   const colors: (string | null)[][] = [];
   const n = ramp.length - 1;
+  const ditherStep = opts.dither && opts.dither > 0 ? opts.dither / n : 0;
 
   for (let y = 0; y < rows; y++) {
     let line = "";
     const rowColors: (string | null)[] = [];
     for (let x = 0; x < cols; x++) {
       const idx = y * cols + x;
-      const v = lum[idx];
+      let v = lum[idx];
+      if (ditherStep > 0) {
+        v += (BAYER4[(y & 3) * 4 + (x & 3)] - 0.46875) * ditherStep;
+        v = v < 0 ? 0 : v > 1 ? 1 : v;
+      }
       if (mode === "pixel") {
         // colored block glyph █ — the "--pixel" flag of ASCILINE
         const gi = v < 0.08 ? 0 : Math.max(1, Math.round(v * n));

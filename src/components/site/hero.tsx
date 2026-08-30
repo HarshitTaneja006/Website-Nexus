@@ -243,10 +243,10 @@ export function Hero() {
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <a
-            href="#flight"
+            href="#forge"
             className="group inline-flex items-center gap-2 rounded-sm bg-primary px-6 py-3 font-mono text-xs font-bold tracking-widest text-primary-foreground transition-all hover:shadow-[0_0_28px_rgba(74,222,128,0.45)]"
           >
-            ENTER THE FLIGHT
+            ENTER THE FOUNDRY
             <ArrowDown className="h-3.5 w-3.5 transition-transform group-hover:translate-y-0.5" />
           </a>
           <a

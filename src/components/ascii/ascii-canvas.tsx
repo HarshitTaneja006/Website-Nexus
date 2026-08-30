@@ -457,42 +457,148 @@ export function AsciiCanvas({
       paintGrid();
     }
 
+    /* --------------------------------------------------------------
+     * Cross-browser camera plumbing.
+     * "Works on some browsers, not others" — the usual culprits, each
+     * handled explicitly below:
+     *   1. insecure context (http / sandboxed preview iframe without
+     *      allow="camera") → getUserMedia missing or SecurityError;
+     *   2. permission hard-denied in browser settings (Chrome resolves
+     *      instantly, Safari just hangs) → Permissions pre-check;
+     *   3. camera held by another app (NotReadableError — Zoom/Meet);
+     *   4. Safari/iOS play() quirks: detached <video> may reject with
+     *      AbortError or simply never start → race loadeddata, then
+     *      attach to the DOM as a last resort;
+     *   5. strict constraints on laptops without exact camera modes
+     *      → a fallback constraint chain (ideal → any → facingMode).
+     * Every failure path funnels into the SYNTH feed — the backdrop
+     * always shows a live glyph stream, whatever the browser decided.
+     * ------------------------------------------------------------ */
+    function waitVideoReady(v: HTMLVideoElement, timeoutMs: number): Promise<boolean> {
+      return new Promise((resolve) => {
+        if (v.readyState >= 2) {
+          resolve(true);
+          return;
+        }
+        let settled = false;
+        const done = (ok: boolean) => {
+          if (settled) return;
+          settled = true;
+          v.removeEventListener("loadeddata", onData);
+          window.clearTimeout(tid);
+          resolve(ok);
+        };
+        const onData = () => done(true);
+        v.addEventListener("loadeddata", onData);
+        const tid = window.setTimeout(() => done(v.readyState >= 2), timeoutMs);
+      });
+    }
+
+    async function playVideo(v: HTMLVideoElement): Promise<boolean> {
+      try {
+        await v.play();
+      } catch {
+        /* AbortError / NotAllowedError — the readiness poll decides */
+      }
+      if (await waitVideoReady(v, 2500)) return true;
+      // Safari last resort: detached videos sometimes refuse to start —
+      // mount one off-screen and try once more
+      if (!v.isConnected) {
+        v.style.cssText =
+          "position:fixed;left:-9999px;top:-9999px;width:2px;height:2px;opacity:0;pointer-events:none;";
+        document.body.appendChild(v);
+        try {
+          await v.play();
+        } catch {
+          /* ignored — the readiness poll decides */
+        }
+        if (await waitVideoReady(v, 2500)) return true;
+      }
+      return false;
+    }
+
     async function startCam() {
       camState = "requesting";
       announce("requesting", null, "REQUESTING CAMERA");
+      if (window.isSecureContext === false) {
+        void startSynth("INSECURE CONTEXT — SYNTH ENGAGED");
+        return;
+      }
       if (!navigator.mediaDevices?.getUserMedia) {
-        // insecure context / sandboxed iframe → webcam is simply not there;
-        // the show must go on → synth feed
         void startSynth("NO CAMERA API — SYNTH ENGAGED");
         return;
       }
+      // Chrome answers permissions.query instantly; Safari/Firefox throw
+      // on the name — either way the fallback chain below still runs
       try {
-        camStream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 640 }, height: { ideal: 480 } },
-          audio: false,
-        });
-        const v = document.createElement("video");
-        v.muted = true;
-        v.playsInline = true;
-        v.srcObject = camStream;
-        await v.play();
-        camVideo = v;
-        camOff = document.createElement("canvas");
-        camOffCtx = camOff.getContext("2d", { willReadFrequently: true });
-        activeSource = "cam";
-        camState = "live";
-        announce("live", "cam", "CAMERA GRANTED");
-      } catch (err) {
-        const name = err instanceof DOMException ? err.name : "";
+        const perm = await navigator.permissions?.query?.({ name: "camera" as PermissionName });
+        if (perm?.state === "denied") {
+          void startSynth("CAMERA BLOCKED IN BROWSER SETTINGS — SYNTH ENGAGED");
+          return;
+        }
+      } catch {
+        /* unsupported permission name — keep going */
+      }
+
+      // fallback chain: preferred shape → any camera → user-facing only
+      const chain: MediaStreamConstraints[] = [
+        { video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" }, audio: false },
+        { video: true, audio: false },
+        { video: { facingMode: "user" }, audio: false },
+      ];
+      let stream: MediaStream | null = null;
+      let lastErr: unknown = null;
+      for (const c of chain) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia(c);
+          break;
+        } catch (e) {
+          lastErr = e;
+          // hard permission denial won't heal by re-asking — stop hammering
+          if (e instanceof DOMException && e.name === "NotAllowedError") break;
+        }
+      }
+      if (!stream) {
+        const name = lastErr instanceof DOMException ? lastErr.name : "";
         const reason =
           name === "NotAllowedError"
             ? "PERMISSION DENIED — SYNTH ENGAGED"
-            : name === "NotFoundError" || name === "OverconstrainedError"
-              ? "NO CAMERA FOUND — SYNTH ENGAGED"
-              : "CAMERA OFFLINE — SYNTH ENGAGED";
-        camMsg = reason;
+            : name === "SecurityError"
+              ? "BLOCKED BY BROWSER POLICY — SYNTH ENGAGED"
+              : name === "NotFoundError"
+                ? "NO CAMERA FOUND — SYNTH ENGAGED"
+                : name === "NotReadableError"
+                  ? "CAMERA BUSY (OTHER APP?) — SYNTH ENGAGED"
+                  : name === "OverconstrainedError"
+                    ? "NO MATCHING CAMERA — SYNTH ENGAGED"
+                    : "CAMERA OFFLINE — SYNTH ENGAGED";
         void startSynth(reason);
+        return;
       }
+
+      camStream = stream;
+      const v = document.createElement("video");
+      v.muted = true;
+      v.setAttribute("muted", ""); // attribute form — iOS Safari honor
+      v.playsInline = true;
+      v.setAttribute("playsinline", "");
+      v.autoplay = true;
+      v.srcObject = stream;
+      const ok = await playVideo(v);
+      if (!ok) {
+        v.srcObject = null;
+        v.remove();
+        camStream.getTracks().forEach((tr) => tr.stop());
+        camStream = null;
+        void startSynth("CAMERA FEED TIMEOUT — SYNTH ENGAGED");
+        return;
+      }
+      camVideo = v;
+      camOff = document.createElement("canvas");
+      camOffCtx = camOff.getContext("2d", { willReadFrequently: true });
+      activeSource = "cam";
+      camState = "live";
+      announce("live", "cam", "CAMERA GRANTED");
     }
 
     /**
@@ -509,10 +615,14 @@ export function AsciiCanvas({
         synthUrl = URL.createObjectURL(blob);
         const v = document.createElement("video");
         v.muted = true;
+        v.setAttribute("muted", "");
         v.loop = true;
         v.playsInline = true;
+        v.setAttribute("playsinline", "");
+        v.autoplay = true;
         v.src = synthUrl;
-        await v.play();
+        const ok = await playVideo(v);
+        if (!ok) throw new Error("synth feed timeout");
         synthVideo = v;
         if (!camOff) {
           camOff = document.createElement("canvas");
@@ -533,11 +643,13 @@ export function AsciiCanvas({
       camStream = null;
       if (camVideo) {
         camVideo.srcObject = null;
+        camVideo.remove(); // playVideo() may have mounted it for Safari
         camVideo = null;
       }
       if (synthVideo) {
         synthVideo.pause();
         synthVideo.src = "";
+        synthVideo.remove();
         synthVideo = null;
       }
       if (synthUrl) {

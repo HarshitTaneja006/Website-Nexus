@@ -9,7 +9,7 @@ import { ShortcutsDialog, SHORTCUTS_EVENT } from "@/components/site/shortcuts-di
 import { usePresence } from "@/hooks/use-presence";
 
 const LINKS = [
-  { href: "#flight", label: "FLIGHT" },
+  { href: "#forge", label: "FOUNDRY" },
   { href: "#about", label: "ABOUT" },
   { href: "#events", label: "EVENTS" },
   { href: "#news", label: "NEWS" },

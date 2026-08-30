@@ -27,13 +27,13 @@ const GROUPS: { title: string; rows: Row[] }[] = [
     ],
   },
   {
-    title: "FLIGHT",
+    title: "FOUNDRY",
     rows: [
-      { keys: ["SCROLL"], desc: "scrub one continuous shot — the camera glides (lerp), never snaps" },
-      { keys: ["0", "…", "4"], desc: "jump between acts — 0 overwatch · 1 gate · 2 lab · 3 build · 4 uplink" },
-      { keys: ["#scene-gate … #scene-uplink"], desc: "deep-link straight into an act (legacy #scene-community still lands)" },
-      { keys: ["?scene=<id>"], desc: "share-grade act link — unfurls its own OG card (?scene=nexus = the wide shot)" },
-      { keys: ["🔗 LINK"], desc: "per-act chip copies the ?scene= share URL" },
+      { keys: ["TYPE"], desc: "forge any word — the particle field re-casts it from glyphs" },
+      { keys: ["D"], desc: "detonate — blast the current word into the flow field" },
+      { keys: ["P"], desc: "pause / resume the forge cycle" },
+      { keys: ["CLICK / DRAG"], desc: "stir the glyph field — particles flee your pointer" },
+      { keys: ["TXT / PNG"], desc: "dump the live forge grid or print it" },
     ],
   },
   {
@@ -140,7 +140,7 @@ export function ShortcutsDialog() {
           ))}
 
           <p className="mt-5 border-t border-border/60 pt-3 text-[9px] tracking-widest text-muted-foreground/60">
-            NEXUS SHELL v2.7 · MANUAL UPDATED ROUND 12 · PRESS <span className="kbd">?</span> ANYTIME
+            NEXUS SHELL v2.8 · MANUAL UPDATED ROUND 15 · PRESS <span className="kbd">?</span> ANYTIME
           </p>
         </div>
       </DialogContent>

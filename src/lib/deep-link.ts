@@ -3,7 +3,6 @@
  * Every important surface is addressable:
  *   ?event=<slug>#events   → RSVP dialog (upcoming) / full brief (past)
  *   #frame-<n>             → gallery lightbox on frame n (1-based)
- *   #scene-<name>          → scroll-flight scene (handled in scroll-flight.tsx)
  */
 
 /** Current origin + pathname without query/hash (safe on the server). */

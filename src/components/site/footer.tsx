@@ -12,7 +12,7 @@ const ASCII_MARK = String.raw`███╗   ██╗███████╗�
 ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝`;
 
 const LINKS = [
-  { href: "#flight", label: "The Flight" },
+  { href: "#forge", label: "The Foundry" },
   { href: "#about", label: "Manifesto" },
   { href: "#events", label: "Events" },
   { href: "#stack", label: "Stack" },
@@ -111,7 +111,7 @@ export function Footer() {
           <p>© 2026 NEXUS CLUB · ALL RIGHTS RESERVED</p>
           <p className="flex flex-wrap items-center justify-center gap-1.5">
             RENDERED WITH <Heart className="h-3 w-3 text-primary/70" /> ·
-            <span className="text-primary/60">lets-scroll</span> scrub engine ·
+            <span className="text-primary/60">glyph-forge</span> particle engine ·
             <span className="text-primary/60">asciline</span>-style ascii
           </p>
           <button

@@ -18,6 +18,14 @@ import { useToast } from "@/hooks/use-toast";
  *   - the v2 render pipeline (box-filter supersampling + unsharp
  *     definition pass) replaces the single-point sampling;
  *   - canvas DPR headroom raised to 3 for retina-crisp glyph edges.
+ *
+ * v3 (clarity round):
+ *   - Bayer ORDERED DITHERING before glyph quantization — flat midtones
+ *     become structured glyph texture instead of banded mud (the single
+ *     biggest perceived-resolution win);
+ *   - wide 70-glyph DETAIL ramp for grids ≥110 columns — more tonal steps
+ *     = smoother gradients on the large cards;
+ *   - supersample raised to 4× — every cell is a true 4×4 area average.
  */
 
 interface AsciiImageProps {
@@ -68,12 +76,13 @@ export function AsciiImage({ src, label, caption, onExpand, compact = false }: A
     const frame = renderAscii(img, {
       cols,
       rows,
-      ramp: mode === "pixel" ? RAMPS.blocks : RAMPS.mid,
+      ramp: mode === "pixel" ? RAMPS.blocks : cols >= 110 ? RAMPS.detail : RAMPS.mid,
       mode: mode === "photo" ? "ascii" : mode,
       gamma: 0.8,
       colorize: mode === "pixel",
-      supersample: 3,
-      sharpen: mode === "ascii" ? 0.45 : 0.2,
+      supersample: 4,
+      sharpen: mode === "ascii" ? 0.5 : 0.2,
+      dither: mode === "ascii" ? 0.7 : 0.45,
     });
     frameRef.current = frame;
     setGrid({ cols: frame.cols, rows: frame.rows });

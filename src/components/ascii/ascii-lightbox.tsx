@@ -89,12 +89,13 @@ export function AsciiLightbox({
 
     const frame = renderAscii(img, {
       cols,
-      ramp: mode === "pixel" ? RAMPS.blocks : RAMPS.mid,
+      ramp: mode === "pixel" ? RAMPS.blocks : cols >= 110 ? RAMPS.detail : RAMPS.mid,
       mode: mode === "photo" ? "ascii" : mode,
       gamma: 0.75,
       colorize: mode === "pixel",
-      supersample: 3,
-      sharpen: mode === "ascii" ? 0.4 : 0.2,
+      supersample: 4,
+      sharpen: mode === "ascii" ? 0.45 : 0.2,
+      dither: mode === "ascii" ? 0.65 : 0.4,
     });
     frameRef.current = frame;
     setGrid({ cols: frame.cols, rows: frame.rows });
