@@ -29,12 +29,19 @@ export function Footer() {
         <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr]">
           {/* brand */}
           <div>
-            <pre
-              aria-hidden="true"
-              className="glitch-hover select-none text-[5px] leading-[1.2] text-primary/50 transition-colors duration-300 hover:text-primary sm:text-[6.5px]"
-            >
-              {ASCII_MARK}
-            </pre>
+            <div className="flex items-center gap-4">
+              <img
+                src="/logo.svg"
+                alt="NEXUS club logo — navy hexagon with white isometric N"
+                className="h-12 w-12 shrink-0 opacity-95 transition-opacity duration-300 hover:opacity-100"
+              />
+              <pre
+                aria-hidden="true"
+                className="glitch-hover select-none text-[5px] leading-[1.2] text-primary/50 transition-colors duration-300 hover:text-primary sm:text-[6.5px]"
+              >
+                {ASCII_MARK}
+              </pre>
+            </div>
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
               The student tech collective of VIT Chennai — empowering the next
               generation of innovators through collaboration, learning and

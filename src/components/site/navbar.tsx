@@ -101,9 +101,12 @@ export function Navbar() {
       >
         <nav className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6" aria-label="Main">
           <a href="#top" className="group flex items-center gap-2 font-mono text-sm font-bold tracking-widest">
-            <span className="grid h-7 w-7 place-items-center rounded-sm border border-primary/40 bg-primary/10 text-primary transition-all group-hover:bg-primary/20">
-              N
-            </span>
+            <img
+              src="/logo.svg"
+              alt=""
+              aria-hidden="true"
+              className="h-7 w-7 rounded-sm transition-transform duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_6px_rgba(74,222,128,0.45)]"
+            />
             <span className="text-glow text-foreground">
               NEXUS<span className="cursor-blink text-primary">_</span>
             </span>

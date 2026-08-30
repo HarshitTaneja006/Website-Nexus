@@ -208,6 +208,11 @@ export function Hero() {
 
       {/* main content */}
       <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-4 pt-24 text-center sm:px-6">
+        <img
+          src="/logo.svg"
+          alt="NEXUS club logo"
+          className="mb-5 h-11 w-11 sm:h-12 sm:w-12 drop-shadow-[0_0_14px_rgba(63,90,143,0.55)]"
+        />
         <p className="mb-5 font-mono text-[11px] tracking-[0.3em] text-primary/80">
           <span className="text-amber-300">$</span> whoami
         </p>
