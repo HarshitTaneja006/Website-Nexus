@@ -12,4 +12,4 @@ export const db =
     log: isDev ? ["query", "warn", "error"] : ["error"],
   });
 
-if (isDev) globalForPrisma.prisma = db;
+globalForPrisma.prisma = db;
