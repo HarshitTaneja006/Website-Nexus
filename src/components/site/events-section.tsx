@@ -836,7 +836,7 @@ export function EventsSection() {
             <div className="min-w-0 px-5 pb-5 pt-4">
               {/* ASCII banner header — typeset by the same glyph engine */}
               <div className="rounded-sm border border-border/60 bg-[#070d08] px-3 py-3">
-                <AsciiBanner text={detailEv.title} cols={90} />
+                <AsciiBanner text={detailEv.title} />
               </div>
 
               <div className="mt-4 flex flex-wrap items-center gap-2">

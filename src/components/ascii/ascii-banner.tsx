@@ -1,37 +1,41 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { monoMetrics, paintAscii, textToAsciiFrame } from "@/lib/ascii";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { monoFontStack, monoMetrics } from "@/lib/ascii";
+import { layoutBanner } from "@/lib/banner-font";
 
 /**
- * AsciiBanner — typesets a short string as an ASCII glyph banner. Client-only
- * (canvas + layout fonts); renders nothing on the server pass.
+ * AsciiBanner v2 — typesets a title as a figlet-grade block-letter banner.
  *
- * v2 (clarity round):
- *   - painted BOLD (700) at 10px — small regular glyphs antialiase into a
- *     haze on dark backgrounds; heavy ink per cell is what reads as "clear"
- *   - grid is FIT TO THE BOX: cols are clamped so the logical canvas width
- *     matches the container, then CSS size is pinned to the logical size —
- *     the dpr× bitmap lands 1:1 on device pixels (no resample, no blur)
- *   - re-typeset once webfonts settle (fallback-face metrics never persist)
+ * The banner is REAL TEXT (<pre>) rendered by the browser's mono face —
+ * no canvas, no resampling, selectable, pixel-crisp at any DPR. The glyph
+ * grid and exact font size are solved mathematically from the measured box
+ * (see banner-font.ts); re-solved on resize and once webfonts settle so
+ * fallback-face metrics never persist.
  */
-export function AsciiBanner({
-  text,
-  cols = 110,
-  maxLineChars = 16,
-  className = "",
-}: {
-  text: string;
-  cols?: number;
-  maxLineChars?: number;
-  className?: string;
-}) {
+export function AsciiBanner({ text, className = "" }: { text: string; className?: string }) {
   const wrapRef = useRef<HTMLDivElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [boxW, setBoxW] = useState(0);
   const [fontsSettled, setFontsSettled] = useState(false);
 
-  // re-typeset when the real mono face arrives — metrics measured against a
-  // fallback stack would smear every run
+  // measure the box (debounced — resize re-solves the layout)
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    let t: ReturnType<typeof setTimeout> | null = null;
+    const ro = new ResizeObserver(() => {
+      if (t) clearTimeout(t);
+      t = setTimeout(() => setBoxW(wrap.clientWidth), 90);
+    });
+    ro.observe(wrap);
+    setBoxW(wrap.clientWidth);
+    return () => {
+      ro.disconnect();
+      if (t) clearTimeout(t);
+    };
+  }, []);
+
+  // re-solve once the real mono face arrives (metrics change)
   useEffect(() => {
     let alive = true;
     document.fonts?.ready.then(() => {
@@ -42,46 +46,32 @@ export function AsciiBanner({
     };
   }, []);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const wrap = wrapRef.current;
-    if (!canvas) return;
-
-    const fontSize = 10;
-    const dpr = Math.min(3, window.devicePixelRatio || 1);
-    // fit the glyph grid to the box: clamp cols so the LOGICAL canvas width
-    // lands on the container width (1:1 device-pixel mapping, zero resample)
-    const { charW } = monoMetrics(fontSize, 700);
-    const avail = wrap?.clientWidth ?? 0;
-    const fitCols = avail > 48 ? Math.max(40, Math.min(cols, Math.floor(avail / charW))) : cols;
-
-    const frame = textToAsciiFrame(text, { cols: fitCols, maxLineChars });
-    if (!frame.lines.length) return;
-
-    const { width, height } = paintAscii(canvas, frame, {
-      fg: "#4ade80",
-      bright: "#eaffef",
-      bg: null,
-      fontSize,
-      fontWeight: 700,
-      dpr,
-    });
-    if (width && height) {
-      // CSS size = logical size → the (dpr×) bitmap maps exactly onto
-      // device pixels; crisp at any retina density
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${height}px`;
-    }
-  }, [text, cols, maxLineChars, fontsSettled]);
+  const layout = useMemo(() => {
+    if (!boxW) return null;
+    const { charW } = monoMetrics(12, 700);
+    return layoutBanner(text, boxW, charW);
+  }, [text, boxW, fontsSettled]);
 
   return (
     <div ref={wrapRef} className={className}>
-      <canvas
-        ref={canvasRef}
-        aria-hidden="true"
-        className="mx-auto block"
-        style={{ imageRendering: "auto" }}
-      />
+      {layout && (
+        <pre
+          role="img"
+          aria-label={text}
+          className="m-0 max-w-full overflow-x-auto"
+          style={{
+            fontFamily: monoFontStack(),
+            fontWeight: 700,
+            fontSize: `${layout.fontSize}px`,
+            lineHeight: 1,
+            whiteSpace: "pre",
+            color: "#4ade80",
+            textShadow: "0 0 12px rgba(74,222,128,0.3)",
+          }}
+        >
+          {layout.rows.join("\n")}
+        </pre>
+      )}
     </div>
   );
 }
