@@ -73,8 +73,14 @@ export function TechNews() {
       const r = await fetch("/api/news");
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || "uplink fault");
-      setItems(data.items as NewsItem[]);
-      setDegraded(Boolean(data.degraded));
+      const fetchedItems = Array.isArray(data?.items) ? (data.items as NewsItem[]) : [];
+      if (fetchedItems.length === 0) {
+        setItems(FALLBACK);
+        setDegraded(true);
+      } else {
+        setItems(fetchedItems);
+        setDegraded(Boolean(data.degraded));
+      }
     } catch {
       setItems(FALLBACK);
       setDegraded(true);
