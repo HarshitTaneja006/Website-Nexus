@@ -41,14 +41,24 @@ export function Navbar() {
   }, []);
 
   useEffect(() => {
+    const tzPart =
+      new Intl.DateTimeFormat("en-US", { timeZoneName: "short" })
+        .formatToParts(new Date())
+        .find((p) => p.type === "timeZoneName")?.value || "";
+
     const fmt = new Intl.DateTimeFormat("en-GB", {
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit",
       hour12: false,
-      timeZone: "Asia/Calcutta",
     });
-    const tick = () => setTime(fmt.format(new Date()));
+
+    const tick = () => {
+      const now = new Date();
+      const formatted = fmt.format(now);
+      setTime(tzPart ? `${formatted} ${tzPart}` : formatted);
+    };
+
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
@@ -159,7 +169,7 @@ export function Navbar() {
               </span>
             </div>
             <div className="hidden items-center gap-2 font-mono text-[10px] text-muted-foreground md:flex">
-              <span className="tabular-nums">{time} IST</span>
+              <span className="tabular-nums">{time}</span>
             </div>
             <Button asChild size="sm" className="hidden font-mono text-[11px] tracking-widest sm:inline-flex">
               <a href="#join">JOIN_US</a>
@@ -246,7 +256,7 @@ export function Navbar() {
             <span className="led" />
             {online == null ? "--" : online} ON GRID
           </span>
-          <span className="tabular-nums">{time} IST</span>
+          <span className="tabular-nums">{time}</span>
           <button
             onClick={() => setOpen(false)}
             aria-label="Close menu"

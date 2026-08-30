@@ -714,18 +714,18 @@ export function EventsSection() {
 
       {/* RSVP dialog */}
       <Dialog open={!!dialogEv} onOpenChange={(o) => !o && setDialogEv(null)}>
-        <DialogContent className="border-border bg-card sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-display text-xl text-foreground">
+        <DialogContent className="w-[calc(100%-1.5rem)] max-w-md border-border bg-card p-4 sm:p-6">
+          <DialogHeader className="gap-1 sm:gap-2 text-left">
+            <DialogTitle className="font-display text-lg sm:text-xl text-foreground">
               RSVP · {dialogEv?.title}
             </DialogTitle>
-            <DialogDescription className="font-mono text-[11px] text-muted-foreground">
+            <DialogDescription className="font-mono text-[10px] sm:text-[11px] text-muted-foreground">
               reserve a seat on the list. confirmation hits your inbox.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-2">
-            <div className="grid gap-2">
-              <Label htmlFor="rsvp-name" className="font-mono text-[10px] tracking-widest text-muted-foreground">
+          <div className="grid gap-3 sm:gap-4 py-2">
+            <div className="grid gap-1.5 sm:gap-2">
+              <Label htmlFor="rsvp-name" className="font-mono text-[9px] sm:text-[10px] tracking-widest text-muted-foreground">
                 NAME
               </Label>
               <Input
@@ -733,11 +733,11 @@ export function EventsSection() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="ada lovelace"
-                className="border-border bg-secondary/40 font-mono"
+                className="h-9 sm:h-8 border-border bg-secondary/40 font-mono text-xs"
               />
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="rsvp-email" className="font-mono text-[10px] tracking-widest text-muted-foreground">
+            <div className="grid gap-1.5 sm:gap-2">
+              <Label htmlFor="rsvp-email" className="font-mono text-[9px] sm:text-[10px] tracking-widest text-muted-foreground">
                 EMAIL
               </Label>
               <Input
@@ -746,15 +746,15 @@ export function EventsSection() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@vitstudent.ac.in"
-                className="border-border bg-secondary/40 font-mono"
+                className="h-9 sm:h-8 border-border bg-secondary/40 font-mono text-xs"
               />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="mt-2">
             <Button
               onClick={submitRsvp}
               disabled={submitting}
-              className="w-full font-mono text-xs tracking-widest"
+              className="h-9 sm:h-8 w-full font-mono text-xs tracking-widest"
             >
               {submitting ? "TRANSMITTING…" : "CONFIRM_RSVP"}
             </Button>
@@ -766,10 +766,10 @@ export function EventsSection() {
           programmatic clipboard path (preview iframes, restricted webviews).
           Our own DOM is the one copy channel no permissions policy can take. */}
       <Dialog open={manualShare !== null} onOpenChange={(o) => !o && setManualShare(null)}>
-        <DialogContent className="border-border bg-card sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-display text-xl text-foreground">MANUAL.COPY</DialogTitle>
-            <DialogDescription className="font-mono text-[11px] text-muted-foreground">
+        <DialogContent className="w-[calc(100%-1.5rem)] max-w-md border-border bg-card p-4 sm:p-6">
+          <DialogHeader className="gap-1 sm:gap-2 text-left">
+            <DialogTitle className="font-display text-lg sm:text-xl text-foreground">MANUAL.COPY</DialogTitle>
+            <DialogDescription className="font-mono text-[10px] sm:text-[11px] text-muted-foreground">
               this viewport blocks clipboard writes — click the field (auto-selects) and press Ctrl+C.
             </DialogDescription>
           </DialogHeader>
@@ -787,12 +787,12 @@ export function EventsSection() {
             onFocus={(e) => e.currentTarget.select()}
             className="thin-scroll w-full resize-none rounded-sm border border-input bg-background/70 p-2.5 font-mono text-xs leading-relaxed text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
           />
-          <DialogFooter className="flex-row gap-2">
+          <DialogFooter className="flex-row gap-2 mt-2">
             <Button
               size="sm"
               variant="ghost"
               onClick={() => setManualShare(null)}
-              className="h-8 px-3 font-mono text-[10px] tracking-widest text-muted-foreground hover:bg-primary/10 hover:text-primary"
+              className="h-8 flex-1 sm:flex-none px-3 font-mono text-[10px] tracking-widest text-muted-foreground hover:bg-primary/10 hover:text-primary"
             >
               CLOSE
             </Button>
@@ -811,7 +811,7 @@ export function EventsSection() {
                   });
                 }
               }}
-              className="h-8 border border-primary/40 bg-primary/10 px-4 font-mono text-[10px] tracking-widest text-primary hover:bg-primary/20"
+              className="h-8 flex-1 sm:flex-none border border-primary/40 bg-primary/10 px-4 font-mono text-[10px] tracking-widest text-primary hover:bg-primary/20"
             >
               <ClipboardCopy className="h-3.5 w-3.5" />
               RETRY.COPY
@@ -827,19 +827,19 @@ export function EventsSection() {
           if (!o) setDetailEv(null);
         }}
       >
-        <DialogContent className="thin-scroll max-h-[85vh] overflow-y-auto overflow-x-hidden border-border bg-card p-0 sm:max-w-lg">
-          <DialogHeader className="min-w-0 border-b border-border/70 bg-secondary/40 px-5 py-3">
+        <DialogContent className="thin-scroll max-h-[92vh] w-[calc(100%-1.5rem)] overflow-y-auto overflow-x-hidden border-border bg-card p-0 sm:max-w-xl">
+          <DialogHeader className="min-w-0 border-b border-border/70 bg-secondary/40 px-4 py-2.5 sm:px-5 sm:py-3">
             <DialogTitle className="sr-only">{detailEv?.title}</DialogTitle>
             <DialogDescription className="sr-only">full event brief</DialogDescription>
           </DialogHeader>
           {detailEv && (
-            <div className="min-w-0 px-5 pb-5 pt-4">
+            <div className="min-w-0 px-3.5 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
               {/* ASCII banner header — typeset by the same glyph engine */}
-              <div className="rounded-sm border border-border/60 bg-[#070d08] px-3 py-3">
+              <div className="overflow-x-auto rounded-sm border border-border/60 bg-[#070d08] p-2 sm:p-3">
                 <AsciiBanner text={detailEv.title} />
               </div>
 
-              <div className="mt-4 flex flex-wrap items-center gap-2">
+              <div className="mt-3 sm:mt-4 flex flex-wrap items-center gap-2">
                 <span
                   className={`rounded-sm px-2 py-0.5 font-mono text-[9px] tracking-[0.2em] ${
                     detailEv.category === "HACKATHON"
@@ -865,17 +865,17 @@ export function EventsSection() {
                 </span>
               </div>
 
-              <p className="mt-4 text-sm leading-relaxed text-foreground/85">
+              <p className="mt-3 sm:mt-4 text-xs sm:text-sm leading-relaxed text-foreground/85">
                 {detailEv.description}
               </p>
 
-              <div className="mt-4 grid gap-2 rounded-sm border border-border/60 bg-secondary/30 p-3 font-mono text-[11px]">
+              <div className="mt-3 sm:mt-4 grid gap-2 rounded-sm border border-border/60 bg-secondary/30 p-2.5 sm:p-3 font-mono text-[10px] sm:text-[11px]">
                 <span className="flex items-center gap-2 text-foreground/80">
-                  <CalendarDays className="h-3.5 w-3.5 text-primary/70" />
+                  <CalendarDays className="h-3.5 w-3.5 text-primary/70 shrink-0" />
                   {fmtFull.format(new Date(detailEv.startsAt))} IST
                 </span>
                 <span className="flex items-center gap-2 text-foreground/80">
-                  <MapPin className="h-3.5 w-3.5 text-primary/70" />
+                  <MapPin className="h-3.5 w-3.5 text-primary/70 shrink-0" />
                   {detailEv.venue}
                 </span>
               </div>
@@ -887,7 +887,7 @@ export function EventsSection() {
                 const poster = POSTERS[detailEv.slug];
                 if (!poster) return null;
                 return (
-                  <div className="poster-frame mt-4 overflow-hidden rounded-md">
+                  <div className="poster-frame mt-3 sm:mt-4 overflow-hidden rounded-md">
                     <AsciiImage
                       {...poster}
                       compact
@@ -911,12 +911,12 @@ export function EventsSection() {
                 ))}
               </div>
 
-              <div className="mt-5 flex flex-wrap items-center justify-end gap-2 border-t border-border/50 pt-4">
+              <div className="mt-4 sm:mt-5 flex flex-wrap items-center justify-end gap-2 border-t border-border/50 pt-3 sm:pt-4">
                 <Button
                   size="sm"
                   variant="ghost"
                   onClick={() => doShare(detailEv)}
-                  className="h-8 px-3 font-mono text-[10px] tracking-widest text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                  className="h-8 flex-1 sm:flex-none px-3 font-mono text-[10px] tracking-widest text-muted-foreground hover:bg-primary/10 hover:text-primary"
                 >
                   <Share2 className="h-3.5 w-3.5" />
                   SHARE
@@ -941,7 +941,7 @@ export function EventsSection() {
                           description: `${detailEv.slug}.ics downloaded — see you there.`,
                         });
                       }}
-                      className="h-8 px-3 font-mono text-[10px] tracking-widest text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                      className="h-8 flex-1 sm:flex-none px-3 font-mono text-[10px] tracking-widest text-muted-foreground hover:bg-primary/10 hover:text-primary"
                     >
                       <CalendarPlus className="h-3.5 w-3.5" />
                       .ICS
@@ -952,7 +952,7 @@ export function EventsSection() {
                         setDetailEv(null);
                         setDialogEv(detailEv);
                       }}
-                      className="h-8 border border-primary/40 bg-primary/10 px-4 font-mono text-[10px] tracking-widest text-primary hover:bg-primary/20"
+                      className="h-8 flex-1 sm:flex-none border border-primary/40 bg-primary/10 px-4 font-mono text-[10px] tracking-widest text-primary hover:bg-primary/20"
                     >
                       RSVP_
                     </Button>
