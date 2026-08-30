@@ -35,7 +35,7 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "NEXUS Club, VIT Chennai" }],
   icons: {
-    icon: "/logo.svg",
+    icon: "/favicon.svg",
   },
   alternates: {
     types: {
