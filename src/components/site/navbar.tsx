@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CommandPalette } from "@/components/site/command-palette";
@@ -79,6 +79,17 @@ export function Navbar() {
     };
   }, [open]);
 
+  // Escape closes the mobile menu (and returns focus to the toggle)
+  const toggleRef = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
   return (
     <>
       <CommandPalette open={paletteOpen} setOpen={setPaletteOpen} />
@@ -93,10 +104,17 @@ export function Navbar() {
       </div>
 
       <header
-        className={`fixed inset-x-0 top-0 z-[60] transition-all duration-300 ${
+        className={`fixed inset-x-0 top-0 transition-all duration-300 ${
+          // when the mobile menu is open the header must sit ABOVE the
+          // overlay (z-65) — otherwise the overlay swallows the tap on the
+          // X toggle and touch users have no way to close the menu
+          open ? "z-[70]" : "z-[60]"
+        } ${
           scrolled
             ? "border-b border-border/60 bg-[#050806]/85 backdrop-blur-md"
-            : "border-b border-transparent bg-transparent"
+            : open
+              ? "border-b border-border/40 bg-[#050806]/60 backdrop-blur-md"
+              : "border-b border-transparent bg-transparent"
         }`}
       >
         <nav className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6" aria-label="Main">
@@ -163,6 +181,7 @@ export function Navbar() {
               ?
             </button>
             <button
+              ref={toggleRef}
               className="grid h-9 w-9 place-items-center rounded-sm border border-border text-foreground lg:hidden"
               onClick={() => setOpen(!open)}
               aria-label={open ? "Close menu" : "Open menu"}
@@ -174,13 +193,31 @@ export function Navbar() {
         </nav>
       </header>
 
-      {/* mobile overlay */}
+      {/* mobile overlay — closes via link tap, backdrop tap, the header X
+          (now layered above it), or Escape; inert when hidden so nothing
+          inside is focusable off-screen */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Site menu"
+        aria-hidden={!open}
+        inert={!open}
+        onClick={(e) => {
+          // tap anywhere outside the links → dismiss (touch "outside click")
+          if (e.target === e.currentTarget) setOpen(false);
+        }}
         className={`scanlines fixed inset-0 z-[65] flex flex-col bg-[#050806]/97 backdrop-blur-md transition-all duration-300 lg:hidden ${
-          open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
+          open ? "pointer-events-auto visible opacity-100" : "pointer-events-none invisible opacity-0"
         }`}
       >
-        <div className="grid-bg flex flex-1 flex-col justify-center gap-1 px-8">
+        <div
+          className="grid-bg flex flex-1 flex-col justify-center gap-1 px-8"
+          onClick={(e) => {
+            // the links sheet spans most of the screen — empty areas of it
+            // count as backdrop too (only taps on actual links navigate)
+            if (e.target === e.currentTarget) setOpen(false);
+          }}
+        >
           {LINKS.map((l, i) => (
             <a
               key={l.href}
@@ -210,6 +247,14 @@ export function Navbar() {
             {online == null ? "--" : online} ON GRID
           </span>
           <span className="tabular-nums">{time} IST</span>
+          <button
+            onClick={() => setOpen(false)}
+            aria-label="Close menu"
+            className="ml-auto flex min-h-10 items-center gap-2 rounded-sm border border-border bg-[#0a120c]/80 px-4 text-[11px] tracking-[0.25em] text-foreground transition-colors hover:border-primary/50 hover:text-primary"
+          >
+            <X className="h-3.5 w-3.5" />
+            CLOSE
+          </button>
         </div>
       </div>
     </>

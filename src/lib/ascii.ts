@@ -18,6 +18,13 @@
  *      contrast lost to downsampling (definition without haloing);
  *   4. paintAscii sizes canvases pixel-exactly from the measured metrics —
  *      frames are displayed 1:1 instead of being CSS-upscaled.
+ *
+ * v5 (weight-aware crispness):
+ *   - monoMetrics(fontSize, weight) measures the SAME weight that
+ *     paintAscii draws — bold mono advances differ from regular, and
+ *     measuring one while painting the other smears runs;
+ *   - paintAscii accepts fontWeight — bold glyphs carry far more ink per
+ *     cell, which is what makes small ASCII renders read as "crisp".
  */
 
 export type AsciiMode = "ascii" | "pixel" | "photo";
@@ -71,17 +78,22 @@ export interface MonoMetrics {
   lineH: number;
 }
 
-const metricsCache = new Map<number, MonoMetrics>();
+const metricsCache = new Map<string, MonoMetrics>();
 let fontsRehooked = false;
 
 /**
  * MEASURED monospace cell metrics for a given px size (cached).
  * Assumed 0.6em advances are what made v1 renders fuzzy — real fonts
  * differ by a few percent, and 60 columns of accumulated drift smears text.
+ *
+ * v5: weight-aware — bold mono can carry a different advance than regular,
+ * and measuring one weight while painting another re-introduces drift.
+ * The cache key now includes the weight.
  */
-export function monoMetrics(fontSize: number): MonoMetrics {
+export function monoMetrics(fontSize: number, weight: string | number = 400): MonoMetrics {
   const size = Math.max(3, Math.round(fontSize * 100) / 100);
-  const hit = metricsCache.get(size);
+  const key = `${weight}@${size}`;
+  const hit = metricsCache.get(key);
   if (hit) return hit;
 
   let m: MonoMetrics = { charW: size * 0.6, lineH: size * 1.05 };
@@ -89,14 +101,14 @@ export function monoMetrics(fontSize: number): MonoMetrics {
     const off = document.createElement("canvas");
     const ctx = off.getContext("2d");
     if (ctx) {
-      ctx.font = `${size}px ${monoFontStack()}`;
+      ctx.font = `${weight} ${size}px ${monoFontStack()}`;
       const w = ctx.measureText("0123456789mwMW@#%").width / 16;
       if (w > 0) m = { charW: w, lineH: Math.round(size * 105) / 100 };
     }
   } catch {
     /* keep the classic 0.6 estimate */
   }
-  metricsCache.set(size, m);
+  metricsCache.set(key, m);
 
   // webfont finished loading after we measured? drop the cache so the next
   // render re-measures with the real face (one-shot hook)
@@ -427,6 +439,8 @@ export function paintAscii(
     bg?: string | null;
     bright?: string;
     fontSize?: number;
+    /** glyph weight — must match the monoMetrics() weight used for the grid */
+    fontWeight?: string | number;
     dpr?: number;
     /** override measured metrics (already-normalized cells) */
     charW?: number;
@@ -437,7 +451,8 @@ export function paintAscii(
   if (!ctx || !frame.lines.length) return { width: 0, height: 0 };
   const dpr = Math.min(3, Math.max(1, o.dpr ?? (window.devicePixelRatio || 1)));
   const fontSize = o.fontSize ?? 10;
-  const m = monoMetrics(fontSize);
+  const weight = o.fontWeight ?? 400;
+  const m = monoMetrics(fontSize, weight);
   const charW = o.charW ?? m.charW;
   const lineHeight = o.lineH ?? m.lineH;
 
@@ -456,7 +471,7 @@ export function paintAscii(
     ctx.fillRect(0, 0, width, height);
   }
 
-  ctx.font = `${fontSize}px ${monoFontStack()}`;
+  ctx.font = `${weight} ${fontSize}px ${monoFontStack()}`;
   ctx.textBaseline = "top";
 
   const bright = o.bright ?? null;

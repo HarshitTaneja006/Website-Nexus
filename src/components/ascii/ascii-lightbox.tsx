@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Download, FileImage, X, ZoomIn, ClipboardCopy, Link2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, FileImage, X, ZoomIn, ClipboardCopy, Link2, Blend } from "lucide-react";
 import { monoMetrics, paintAscii, RAMPS, renderAscii, frameToText, frameToPngBlob, type AsciiFrame, type AsciiMode } from "@/lib/ascii";
 import { useToast } from "@/hooks/use-toast";
 
@@ -9,6 +9,19 @@ import { useToast } from "@/hooks/use-toast";
  * AsciiLightbox — fullscreen viewer that re-renders a gallery shot as
  * high-resolution ASCII (ASCILINE-style mapper pushed to 60–260 cols).
  * Arrow keys navigate shots, Esc closes, slider dials the glyph density.
+ *
+ * v2 (continuity round):
+ *   - opens in the CARD's render state (initialMode/initialMix) — expanded
+ *     frames no longer silently reset to ascii;
+ *   - PHOTO mode now actually shows the photo: a real <img> underlay sits
+ *     behind the glyph canvas (v1 painted glyphs on a transparent bg with
+ *     nothing behind — "photo" mode was just sparse glyphs on black);
+ *   - BLEND slider (same semantics as the cards: 100 = full ascii,
+ *     0 = full photo) drives the underlay/canvas crossfade;
+ *   - canvas gets an explicit CSS px size after every paint — v1 left the
+ *     style size unset, so on retina the bitmap (w×dpr) laid out at dpr×
+ *     CSS px and object-contain resampled it (the big-view blur);
+ *   - repaints once webfonts settle (metrics vs fallback-face drift).
  */
 
 export interface LightboxShot {
@@ -25,6 +38,8 @@ export function AsciiLightbox({
   onClose,
   onNavigate,
   deepLink,
+  initialMode = "photo",
+  initialMix = 50,
 }: {
   shots: LightboxShot[];
   index: number;
@@ -32,6 +47,9 @@ export function AsciiLightbox({
   onNavigate: (next: number) => void;
   /** when provided, renders a LINK chip that copies a shareable deep URL for the current frame */
   deepLink?: (index: number) => string;
+  /** render state inherited from the expanding card */
+  initialMode?: AsciiMode;
+  initialMix?: number;
 }) {
   const shot = shots[index];
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -41,7 +59,9 @@ export function AsciiLightbox({
   const { toast } = useToast();
 
   const [ready, setReady] = useState(false);
-  const [mode, setMode] = useState<AsciiMode>("ascii");
+  // open exactly where the card was — photo/50 by default, never a hard reset
+  const [mode, setMode] = useState<AsciiMode>(initialMode);
+  const [mix, setMix] = useState(initialMix); // 100 = full ascii, 0 = full photo
   const [zoom, setZoom] = useState(150); // target column count
   const [grid, setGrid] = useState({ cols: 0, rows: 0 });
 
@@ -80,8 +100,8 @@ export function AsciiLightbox({
 
     // cell geometry from MEASURED metrics — v1 hardcoded 0.6em/1.06em and
     // drifted against the painted font
-    const fontSize = 12;
-    const { charW, lineH } = monoMetrics(fontSize);
+    const fontSize = 13;
+    const { charW, lineH } = monoMetrics(fontSize, 600);
     const cellAspect = charW / lineH;
     const colsByW = maxW / charW;
     const colsByH = maxH / (lineH * aspect * cellAspect);
@@ -100,13 +120,20 @@ export function AsciiLightbox({
     frameRef.current = frame;
     setGrid({ cols: frame.cols, rows: frame.rows });
 
-    paintAscii(canvas, frame, {
+    const size = paintAscii(canvas, frame, {
       fg: "#4ade80",
       bright: "#eaffef",
       bg: mode === "photo" ? null : "#050a06",
       fontSize,
+      fontWeight: 600,
       dpr: Math.min(3, window.devicePixelRatio || 1),
     });
+    // explicit CSS size — without it the bitmap (css×dpr device px) lays out
+    // at dpr× css px on retina and object-contain resamples it into blur
+    if (size.width && size.height) {
+      canvas.style.width = `${size.width}px`;
+      canvas.style.height = `${size.height}px`;
+    }
   }, [mode, zoom]);
 
   // repaint on mode/zoom/ready changes
@@ -114,6 +141,18 @@ export function AsciiLightbox({
     if (!ready) return;
     rafRef.current = requestAnimationFrame(paint);
     return () => cancelAnimationFrame(rafRef.current);
+  }, [ready, paint]);
+
+  // webfonts settle AFTER first paint? repaint with the real face
+  useEffect(() => {
+    if (!ready) return;
+    let alive = true;
+    document.fonts?.ready.then(() => {
+      if (alive) paint();
+    });
+    return () => {
+      alive = false;
+    };
   }, [ready, paint]);
 
   // repaint on window resize (debounced)
@@ -305,7 +344,8 @@ export function AsciiLightbox({
         </div>
       </div>
 
-      {/* canvas stage */}
+      {/* canvas stage — photo underlay + glyph canvas share one shrink-wrap
+          box so the blend aligns with the frame */}
       <div className="scanlines relative flex flex-1 items-center justify-center overflow-hidden p-4">
         {!ready && (
           <div className="flex items-center gap-2 font-mono text-[11px] text-muted-foreground">
@@ -313,12 +353,24 @@ export function AsciiLightbox({
             decoding frame…
           </div>
         )}
-        <canvas
-          ref={canvasRef}
-          aria-hidden="true"
-          className="max-h-full max-w-full object-contain transition-opacity duration-300"
-          style={{ imageRendering: "auto", opacity: ready ? 1 : 0 }}
-        />
+        <div className="relative max-h-full max-w-full">
+          <img
+            src={shot.src}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 h-full w-full object-cover"
+            style={{ opacity: mode === "photo" ? 1 : 1 - mix / 100 }}
+          />
+          <canvas
+            ref={canvasRef}
+            aria-hidden="true"
+            className="block max-h-full max-w-full object-contain"
+            style={{
+              imageRendering: "auto",
+              opacity: ready ? (mode === "photo" ? mix / 100 : 1) : 0,
+            }}
+          />
+        </div>
         {/* prev / next */}
         <button
           onClick={() => step(-1)}
@@ -341,6 +393,20 @@ export function AsciiLightbox({
         <span className="tabular-nums">
           GRID {grid.cols || "—"}×{grid.rows || "—"} GLYPHS
         </span>
+        <div className="flex items-center gap-2.5">
+          <Blend className="h-3.5 w-3.5 text-primary/70" />
+          <span className="hidden sm:inline">BLEND</span>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={mix}
+            onChange={(e) => setMix(Number(e.target.value))}
+            aria-label="ASCII to photo blend"
+            className="h-1 w-20 cursor-pointer appearance-none rounded bg-border accent-[#4ade80] sm:w-32"
+          />
+          <span className="w-8 tabular-nums text-primary/80">{mix}%</span>
+        </div>
         <div className="flex items-center gap-2.5">
           <ZoomIn className="h-3.5 w-3.5 text-primary/70" />
           <span className="hidden sm:inline">DENSITY</span>

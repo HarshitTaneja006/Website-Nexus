@@ -31,13 +31,26 @@ import { useToast } from "@/hooks/use-toast";
  *   slider parked at 50 — photo readable at first glance, glyphs woven
  *   through it; the slider is now a pure blend control in every mode
  *   (no auto tab-flip on release). compact posters stay pure ASCII.
+ *
+ * v5 (crisp + continuity round):
+ *   - glyph size tiers raised (8/10/11px) and painted BOLD (700) — small
+ *     regular-weight glyphs antialias into mush on dark bg; bold ink per
+ *     cell is the difference between "fuzzy texture" and "defined art";
+ *   - the ascii canvas is ALWAYS mounted and controlled purely by opacity:
+ *     unmounting it at mix=0 and remounting left a blank canvas with no
+ *     repaint trigger (the "slider to zero and back = dead ascii" bug);
+ *   - re-render once webfonts settle (document.fonts.ready) so metrics
+ *     measured against a fallback face never persist;
+ *   - EXPAND now hands the card's {mode, mix} to the lightbox — extended
+ *     view opens exactly where the card was (no silent reset to ascii).
  */
 
 interface AsciiImageProps {
   src: string;
   label: string;
   caption: string;
-  onExpand?: () => void;
+  /** expanded — receives the card's current render state for the lightbox */
+  onExpand?: (state: { mode: AsciiMode; mix: number }) => void;
   /**
    * compact: poster mode — no mode tabs, no blend slider. Just the live
    * glyph render, the .TXT dump and the expand affordance (event dialogs).
@@ -72,9 +85,10 @@ export function AsciiImage({ src, label, caption, onExpand, compact = false }: A
     const h = wrap.clientHeight;
     if (!w || !h) return;
 
-    // bigger glyphs than v1 (7–9px vs 6–8px) — small type fuzzes on canvas
-    const fontSize = w < 420 ? 7 : w < 760 ? 8 : 9;
-    const { charW, lineH } = monoMetrics(fontSize);
+    // v5 tiers: 8/10/11px BOLD — bigger cells + heavy ink read as crisp;
+    // the old 7–9px regular weights antialiased into an illegible haze
+    const fontSize = w < 420 ? 8 : w < 760 ? 10 : 11;
+    const { charW, lineH } = monoMetrics(fontSize, 700);
     // exact-fit grid → intrinsic canvas size == display size (1:1, no stretch)
     const cols = Math.max(32, Math.round(w / charW));
     const rows = Math.max(14, Math.round(h / lineH));
@@ -98,6 +112,7 @@ export function AsciiImage({ src, label, caption, onExpand, compact = false }: A
       bright: "#eaffef",
       bg: "#070d08",
       fontSize,
+      fontWeight: 700,
       dpr: Math.min(3, window.devicePixelRatio || 1),
     });
   }, [mode]);
@@ -121,6 +136,19 @@ export function AsciiImage({ src, label, caption, onExpand, compact = false }: A
     const id = requestAnimationFrame(() => renderNow());
     return () => cancelAnimationFrame(id);
   }, [mode, ready, renderNow]);
+
+  // webfonts settle AFTER first paint? re-render with the real face —
+  // metrics measured against a fallback stack would smear every run
+  useEffect(() => {
+    if (!ready) return;
+    let alive = true;
+    document.fonts?.ready.then(() => {
+      if (alive) renderNow();
+    });
+    return () => {
+      alive = false;
+    };
+  }, [ready, renderNow]);
 
   // resize re-render (debounced)
   useEffect(() => {
@@ -150,7 +178,6 @@ export function AsciiImage({ src, label, caption, onExpand, compact = false }: A
     URL.revokeObjectURL(url);
     toast({ title: "FRAME DUMPED", description: `${frame.cols}×${frame.rows} glyphs → .txt` });
   }, [label, mode, src, toast]);
-
   return (
     <figure className="group relative flex h-full flex-col overflow-hidden rounded-md border border-border bg-card">
       {/* window chrome */}
@@ -194,18 +221,18 @@ export function AsciiImage({ src, label, caption, onExpand, compact = false }: A
           style={{ opacity: mode === "photo" ? 1 : 1 - mix / 100 }}
           loading="lazy"
         />
-        {/* ascii layer — exact-fit frame, ≤ half a glyph of stretch */}
-        {showAscii && (
-          <canvas
-            ref={canvasRef}
-            className="absolute inset-0 h-full w-full object-cover"
-            style={{
-              opacity: mode === "photo" ? mix / 100 : 1,
-              imageRendering: "auto",
-            }}
-            aria-hidden="true"
-          />
-        )}
+        {/* ascii layer — always mounted (opacity-controlled): unmounting it
+            at mix=0 and remounting left a blank canvas with no repaint */}
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 h-full w-full object-cover"
+          style={{
+            opacity: mode === "photo" ? mix / 100 : 1,
+            visibility: showAscii ? "visible" : "hidden",
+            imageRendering: "auto",
+          }}
+          aria-hidden="true"
+        />
         {!ready && (
           <div className="absolute inset-0 grid place-items-center">
             <div className="flex items-center gap-2 font-mono text-[11px] text-muted-foreground">
@@ -217,8 +244,8 @@ export function AsciiImage({ src, label, caption, onExpand, compact = false }: A
         {/* expand affordance */}
         {onExpand && ready && (
           <button
-            onClick={onExpand}
-            aria-label={`Open ${label} in full-res ASCII lightbox`}
+            onClick={() => onExpand({ mode, mix })}
+            aria-label={`Open ${label} in full-res viewer`}
             className="absolute bottom-2.5 right-2.5 z-10 flex items-center gap-1.5 rounded-sm border border-primary/30 bg-[#050a06]/85 px-2.5 py-1.5 font-mono text-[9px] tracking-[0.2em] text-primary/90 opacity-0 backdrop-blur-sm transition-all duration-200 hover:border-primary/60 hover:bg-primary/15 hover:text-primary focus-visible:opacity-100 group-hover:opacity-100"
           >
             <Expand className="h-3 w-3" />

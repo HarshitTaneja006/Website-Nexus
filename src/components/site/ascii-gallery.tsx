@@ -6,6 +6,7 @@ import { AsciiCamFeed } from "@/components/ascii/ascii-camfeed";
 import { AsciiLightbox, type LightboxShot } from "@/components/ascii/ascii-lightbox";
 import { useReveal } from "@/components/site/use-reveal";
 import { buildFrameDeepLink, replaceUrl } from "@/lib/deep-link";
+import type { AsciiMode } from "@/lib/ascii";
 
 const SHOTS: LightboxShot[] = [
   {
@@ -41,7 +42,13 @@ function frameFromHash(): number | null {
 
 export function AsciiGallery() {
   const { ref, seen } = useReveal<HTMLDivElement>();
-  const [lightbox, setLightbox] = useState<number | null>(null);
+  // the lightbox carries the expanding card's render state so the extended
+  // view opens exactly where the card was (mode/mix continuity)
+  const [lightbox, setLightbox] = useState<{
+    index: number;
+    mode: AsciiMode;
+    mix: number;
+  } | null>(null);
   // guards the StrictMode double-run of the deep-link effect
   const linked = useRef(false);
 
@@ -55,7 +62,7 @@ export function AsciiGallery() {
     // re-assert the hash
     const id = window.setTimeout(() => {
       linked.current = true;
-      setLightbox(idx);
+      setLightbox({ index: idx, mode: "photo", mix: 50 });
       replaceUrl(buildFrameDeepLink(idx + 1));
     }, 160);
     return () => {
@@ -66,11 +73,20 @@ export function AsciiGallery() {
     };
   }, []);
 
-  // keep the hash in sync with the open frame; strip it when closed
-  const openFrame = useCallback((i: number) => {
-    setLightbox(i);
-    replaceUrl(buildFrameDeepLink(i + 1));
-  }, []);
+  // keep the hash in sync with the open frame; strip it when closed.
+  // `init` rides along only on card EXPAND — arrow-key navigation keeps
+  // whatever mode/blend the viewer already had.
+  const openFrame = useCallback(
+    (i: number, init?: { mode: AsciiMode; mix: number }) => {
+      setLightbox((prev) => ({
+        index: i,
+        mode: init?.mode ?? prev?.mode ?? "photo",
+        mix: init?.mix ?? prev?.mix ?? 50,
+      }));
+      replaceUrl(buildFrameDeepLink(i + 1));
+    },
+    []
+  );
 
   const closeFrame = useCallback(() => {
     setLightbox(null);
@@ -105,7 +121,7 @@ export function AsciiGallery() {
               <AsciiImage
                 key={s.src}
                 {...s}
-                onExpand={() => openFrame(i)}
+                onExpand={(state) => openFrame(i, state)}
               />
             ))}
           </div>
@@ -115,9 +131,11 @@ export function AsciiGallery() {
       {lightbox !== null && (
         <AsciiLightbox
           shots={SHOTS}
-          index={lightbox}
+          index={lightbox.index}
+          initialMode={lightbox.mode}
+          initialMix={lightbox.mix}
           onClose={closeFrame}
-          onNavigate={openFrame}
+          onNavigate={(next) => openFrame(next)}
           deepLink={(i) => buildFrameDeepLink(i + 1)}
         />
       )}
