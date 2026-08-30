@@ -49,6 +49,18 @@ function timeAgo(iso: string | null): string {
   return `${Math.round(h / 24)}d ago`;
 }
 
+function safeExternalUrl(raw: string): string {
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      return parsed.href;
+    }
+  } catch {
+    // fallback
+  }
+  return "#news";
+}
+
 export function TechNews() {
   const [items, setItems] = useState<NewsItem[] | null>(null);
   const [degraded, setDegraded] = useState(false);
@@ -121,7 +133,7 @@ export function TechNews() {
               : items.slice(0, 6).map((n, i) => (
                   <a
                     key={`${n.url}-${i}`}
-                    href={n.url}
+                    href={safeExternalUrl(n.url)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="group relative flex flex-col overflow-hidden rounded-md border border-border bg-card p-4 pl-5 transition-all duration-300 hover:border-primary/40 hover:bg-secondary/30 hover:shadow-[0_0_24px_rgba(74,222,128,0.07)]"

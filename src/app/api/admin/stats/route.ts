@@ -1,28 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createHash, timingSafeEqual } from "crypto";
 import { db } from "@/lib/db";
+import { verifyAdminAuth, maskEmail } from "@/lib/admin-auth";
 
 /**
- * GET /api/admin/stats?key=… (or x-admin-key header)
- * Restricted ops data for the NEXUS OPS CONSOLE: RSVP counts per event,
- * join requests, and the presence-service peak. Key-checked; the default
- * dev key is "nexus-admin" (override with ADMIN_KEY env).
+ * GET /api/admin/stats
+ * Headers: x-admin-key: <key> or Authorization: Bearer <key>
+ * Restricted ops data for the NEXUS OPS CONSOLE.
+ * Requires admin authorization.
  */
 
-const DEFAULT_KEY = "nexus-admin";
-
-function keyOk(provided: string | null): boolean {
-  if (!provided) return false;
-  const a = createHash("sha256").update(provided).digest();
-  const b = createHash("sha256").update(process.env.ADMIN_KEY || DEFAULT_KEY).digest();
-  return timingSafeEqual(a, b);
-}
-
-function maskEmail(email: string): string {
-  const [user, domain] = email.split("@");
-  if (!domain) return "***";
-  return `${user.slice(0, 1)}${"*".repeat(Math.max(2, Math.min(6, user.length - 1)))}@${domain}`;
-}
+export const dynamic = "force-dynamic";
 
 async function presenceStats(): Promise<{ count: number | null; peak: number | null }> {
   try {
@@ -39,10 +26,10 @@ async function presenceStats(): Promise<{ count: number | null; peak: number | n
 }
 
 export async function GET(req: NextRequest) {
-  const key = req.headers.get("x-admin-key") || req.nextUrl.searchParams.get("key");
-  if (!keyOk(key)) {
+  const auth = verifyAdminAuth(req);
+  if (!auth.ok) {
     return NextResponse.json(
-      { error: "ACCESS DENIED — invalid ops key" },
+      { error: auth.error || "ACCESS DENIED — invalid ops credentials" },
       { status: 401, headers: { "cache-control": "no-store" } }
     );
   }
@@ -146,6 +133,9 @@ export async function GET(req: NextRequest) {
     );
   } catch (err) {
     console.error("admin/stats error:", err);
-    return NextResponse.json({ error: "ops uplink failure" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to retrieve ops statistics" },
+      { status: 500, headers: { "cache-control": "no-store" } }
+    );
   }
 }

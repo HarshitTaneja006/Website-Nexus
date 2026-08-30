@@ -122,10 +122,11 @@ function isQualityHit(url: string, title: string): boolean {
     /\b(sign up|log in)\b/, // auth walls
   ];
   if (badPatterns.some((p) => p.test(t))) return false;
-  // root URLs are homepages, not articles
+  // strictly enforce http/https protocol (reject javascript:, data:, file:, etc.)
   try {
-    const { pathname } = new URL(url);
-    if (pathname === "/" || pathname.length < 2) return false;
+    const parsed = new URL(url);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return false;
+    if (parsed.pathname === "/" || parsed.pathname.length < 2) return false;
   } catch {
     return false; // unparseable URL
   }
@@ -203,7 +204,7 @@ export async function GET() {
         if (age != null && age > MAX_AGE_MS) continue; // stale article
         seen.add(r.url);
         const item: NewsItem = {
-          title: r.name.trim().slice(0, 160),
+          title: r.name.replace(/[\x00-\x1F\x7F]/g, "").trim().slice(0, 160),
           url: r.url,
           source: r.host_name ? hostLabel(r.host_name) : "WIRE",
           published,

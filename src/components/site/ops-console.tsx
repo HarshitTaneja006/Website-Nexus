@@ -83,7 +83,12 @@ export function OpsConsole() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`/api/admin/stats?key=${encodeURIComponent(k.trim())}`, { cache: "no-store" });
+        const res = await fetch("/api/admin/stats", {
+          headers: {
+            "x-admin-key": k.trim(),
+          },
+          cache: "no-store",
+        });
         if (res.status === 401) {
           setError("ACCESS DENIED — wrong key");
           setStats(null);
