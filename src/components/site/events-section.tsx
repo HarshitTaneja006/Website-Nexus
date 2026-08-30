@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { CalendarDays, CalendarPlus, CalendarRange, ClipboardCopy, Link2, ListOrdered, MapPin, Rss, ScanLine, Share2, Timer, Users } from "lucide-react";
 import { AsciiBanner } from "@/components/ascii/ascii-banner";
 import { AsciiImage } from "@/components/ascii/ascii-image";
-import { AsciiLightbox, type LightboxShot } from "@/components/ascii/ascii-lightbox";
+import type { LightboxShot } from "@/components/ascii/ascii-lightbox";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -484,7 +484,6 @@ export function EventsSection() {
   const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
   const [dialogEv, setDialogEv] = useState<EventDTO | null>(null);
   const [detailEv, setDetailEv] = useState<EventDTO | null>(null);
-  const [posterLightbox, setPosterLightbox] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -825,19 +824,16 @@ export function EventsSection() {
       <Dialog
         open={!!detailEv}
         onOpenChange={(o) => {
-          if (!o) {
-            setDetailEv(null);
-            setPosterLightbox(false);
-          }
+          if (!o) setDetailEv(null);
         }}
       >
-        <DialogContent className="thin-scroll max-h-[85vh] overflow-y-auto border-border bg-card p-0 sm:max-w-lg">
-          <DialogHeader className="border-b border-border/70 bg-secondary/40 px-5 py-3">
+        <DialogContent className="thin-scroll max-h-[85vh] overflow-y-auto overflow-x-hidden border-border bg-card p-0 sm:max-w-lg">
+          <DialogHeader className="min-w-0 border-b border-border/70 bg-secondary/40 px-5 py-3">
             <DialogTitle className="sr-only">{detailEv?.title}</DialogTitle>
             <DialogDescription className="sr-only">full event brief</DialogDescription>
           </DialogHeader>
           {detailEv && (
-            <div className="px-5 pb-5 pt-4">
+            <div className="min-w-0 px-5 pb-5 pt-4">
               {/* ASCII banner header — typeset by the same glyph engine */}
               <div className="rounded-sm border border-border/60 bg-[#070d08] px-3 py-3">
                 <AsciiBanner text={detailEv.title} cols={90} />
@@ -884,7 +880,9 @@ export function EventsSection() {
                 </span>
               </div>
 
-              {/* ASCII.POSTER — this event's still, live through the glyph engine */}
+              {/* LIVE.POSTER — this event's still through the glyph engine,
+                  parked on the gallery default (photo, blend 50); read-only
+                  here on purpose: no EXPAND, no mode tabs */}
               {(() => {
                 const poster = POSTERS[detailEv.slug];
                 if (!poster) return null;
@@ -893,7 +891,8 @@ export function EventsSection() {
                     <AsciiImage
                       {...poster}
                       compact
-                      onExpand={() => setPosterLightbox(true)}
+                      initialMode="photo"
+                      initialMix={50}
                     />
                   </div>
                 );
@@ -964,16 +963,6 @@ export function EventsSection() {
           )}
         </DialogContent>
       </Dialog>
-
-      {/* poster lightbox — sits above the brief dialog (z-90, capture-phase ESC) */}
-      {posterLightbox && detailEv && POSTERS[detailEv.slug] && (
-        <AsciiLightbox
-          shots={[POSTERS[detailEv.slug]]}
-          index={0}
-          onClose={() => setPosterLightbox(false)}
-          onNavigate={() => {}}
-        />
-      )}
     </section>
   );
 }

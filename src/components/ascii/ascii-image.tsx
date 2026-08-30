@@ -52,15 +52,18 @@ interface AsciiImageProps {
   /** expanded — receives the card's current render state for the lightbox */
   onExpand?: (state: { mode: AsciiMode; mix: number }) => void;
   /**
-   * compact: poster mode — no mode tabs, no blend slider. Just the live
-   * glyph render, the .TXT dump and the expand affordance (event dialogs).
+   * compact: poster mode — no mode tabs, no blend slider, no EXPAND. Just
+   * the live render + the .TXT dump (event dialogs).
    */
   compact?: boolean;
+  /** override the opening render state (defaults: compact → ascii/100, full → photo/50) */
+  initialMode?: AsciiMode;
+  initialMix?: number;
 }
 
 const MODES: AsciiMode[] = ["ascii", "pixel", "photo"];
 
-export function AsciiImage({ src, label, caption, onExpand, compact = false }: AsciiImageProps) {
+export function AsciiImage({ src, label, caption, onExpand, compact = false, initialMode, initialMix }: AsciiImageProps) {
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
@@ -68,9 +71,11 @@ export function AsciiImage({ src, label, caption, onExpand, compact = false }: A
   const renderTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [ready, setReady] = useState(false);
-  // full cards open in PHOTO (blended) — compact posters stay pure ASCII
-  const [mode, setMode] = useState<AsciiMode>(compact ? "ascii" : "photo");
-  const [mix, setMix] = useState(compact ? 100 : 50); // 100 = full ascii, 0 = full photo
+  // full cards open in PHOTO (blended); compact posters default pure ASCII
+  // unless the caller overrides (event-dialog posters open photo/50 like
+  // the gallery cards)
+  const [mode, setMode] = useState<AsciiMode>(initialMode ?? (compact ? "ascii" : "photo"));
+  const [mix, setMix] = useState(initialMix ?? (compact ? 100 : 50)); // 100 = full ascii, 0 = full photo
   const [grid, setGrid] = useState({ cols: 0, rows: 0 });
   const [srcDims, setSrcDims] = useState({ w: 0, h: 0 });
   const { toast } = useToast();
@@ -206,7 +211,7 @@ export function AsciiImage({ src, label, caption, onExpand, compact = false }: A
         )}
         {compact && (
           <span className="font-mono text-[9px] tracking-[0.25em] text-primary/60" aria-hidden="true">
-            ASCII.POSTER
+            LIVE.POSTER
           </span>
         )}
       </figcaption>
