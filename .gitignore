@@ -50,5 +50,10 @@ test
 prompt
 
 server.log
+# platform tool debris / gateway mounts
+/tool-results/
+/download/
+/upload/
+/tests/
 # Skills directory
 /skills/

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CalendarDays, CalendarPlus, CalendarRange, Link2, ListOrdered, MapPin, Rss, ScanLine, Share2, Timer, Users } from "lucide-react";
+import { CalendarDays, CalendarPlus, CalendarRange, ClipboardCopy, Link2, ListOrdered, MapPin, Rss, ScanLine, Share2, Timer, Users } from "lucide-react";
 import { AsciiBanner } from "@/components/ascii/ascii-banner";
 import { AsciiImage } from "@/components/ascii/ascii-image";
 import { AsciiLightbox, type LightboxShot } from "@/components/ascii/ascii-lightbox";
@@ -221,16 +221,19 @@ function ScheduleTimeline({ items }: { items: ScheduleItem[] }) {
 function EventCard({
   ev,
   onRsvp,
+  onShare,
   onDetail,
   featured,
 }: {
   ev: EventDTO;
   onRsvp: (ev: EventDTO) => void;
+  onShare: (ev: EventDTO) => void;
   onDetail: (ev: EventDTO) => void;
   featured?: boolean;
 }) {
   const d = new Date(ev.startsAt);
   const isPast = d.getTime() < Date.now();
+  const { toast } = useToast();
   return (
     <article
       className={`group relative flex flex-col overflow-hidden rounded-md border bg-card transition-all duration-300 hover:border-primary/40 hover:shadow-[0_0_30px_rgba(74,222,128,0.08)] ${
@@ -323,22 +326,7 @@ function EventCard({
               variant="ghost"
               aria-label={`Share ${ev.title}`}
               title="share invite"
-              onClick={async () => {
-                const res = await shareEvent({
-                  slug: ev.slug,
-                  title: ev.title,
-                  description: ev.description,
-                });
-                toast({
-                  title: res.ok
-                    ? res.via === "share"
-                      ? "SIGNAL BEAMED"
-                      : "COPIED TO CLIPBOARD"
-                    : "SIGNAL BLOCKED",
-                  description: res.message,
-                  variant: res.ok ? undefined : "destructive",
-                });
-              }}
+              onClick={() => onShare(ev)}
               className="h-8 px-2.5 font-mono text-[10px] tracking-widest text-muted-foreground hover:bg-primary/10 hover:text-primary"
             >
               <Share2 className="h-3.5 w-3.5" />
@@ -554,6 +542,34 @@ export function EventsSection() {
   // the full-brief dialog serves BOTH tabs — past transmits are read-only
   const detailIsPast = detailEv ? new Date(detailEv.startsAt).getTime() < Date.now() : false;
 
+  // manual-copy fallback text — shown when the viewport blocks every
+  // programmatic clipboard path (restricted iframes / webviews)
+  const [manualShare, setManualShare] = useState<string | null>(null);
+
+  const doShare = async (ev: EventDTO) => {
+    const res = await shareEvent({ slug: ev.slug, title: ev.title, description: ev.description });
+    if (!res.ok && res.via === "manual" && res.text) {
+      // every write path blocked → open the always-works manual panel
+      setManualShare(res.text);
+      toast({
+        title: "CLIPBOARD LOCKED",
+        description: "manual copy panel opened — select the invite and Ctrl+C.",
+      });
+      return;
+    }
+    toast({
+      title: res.ok
+        ? res.via === "share"
+          ? "SIGNAL BEAMED"
+          : "COPIED TO CLIPBOARD"
+        : res.via === "share"
+          ? "SHARE CANCELLED"
+          : "SIGNAL BLOCKED",
+      description: res.message,
+      variant: res.ok || res.via === "share" ? undefined : "destructive",
+    });
+  };
+
   const submitRsvp = async () => {
     if (!dialogEv) return;
     if (!name.trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
@@ -653,7 +669,7 @@ export function EventsSection() {
           {/* featured */}
           {tab === "upcoming" && featured && (
             <div className="mt-8">
-              <EventCard ev={featured} onRsvp={setDialogEv} onDetail={setDetailEv} featured />
+              <EventCard ev={featured} onRsvp={setDialogEv} onShare={doShare} onDetail={setDetailEv} featured />
             </div>
           )}
 
@@ -671,7 +687,7 @@ export function EventsSection() {
               : shown
                   .filter((e) => e.id !== featured?.id || tab === "past")
                   .map((ev) => (
-                    <EventCard key={ev.id} ev={ev} onRsvp={setDialogEv} onDetail={setDetailEv} />
+                    <EventCard key={ev.id} ev={ev} onRsvp={setDialogEv} onShare={doShare} onDetail={setDetailEv} />
                   ))}
           </div>
 
@@ -742,6 +758,64 @@ export function EventsSection() {
               className="w-full font-mono text-xs tracking-widest"
             >
               {submitting ? "TRANSMITTING…" : "CONFIRM_RSVP"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* MANUAL.COPY — last-resort share panel for viewports that block every
+          programmatic clipboard path (preview iframes, restricted webviews).
+          Our own DOM is the one copy channel no permissions policy can take. */}
+      <Dialog open={manualShare !== null} onOpenChange={(o) => !o && setManualShare(null)}>
+        <DialogContent className="border-border bg-card sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display text-xl text-foreground">MANUAL.COPY</DialogTitle>
+            <DialogDescription className="font-mono text-[11px] text-muted-foreground">
+              this viewport blocks clipboard writes — click the field (auto-selects) and press Ctrl+C.
+            </DialogDescription>
+          </DialogHeader>
+          <textarea
+            readOnly
+            value={manualShare ?? ""}
+            aria-label="Event invite text"
+            rows={4}
+            ref={(el) => {
+              if (el) {
+                el.focus();
+                el.select();
+              }
+            }}
+            onFocus={(e) => e.currentTarget.select()}
+            className="thin-scroll w-full resize-none rounded-sm border border-input bg-background/70 p-2.5 font-mono text-xs leading-relaxed text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          />
+          <DialogFooter className="flex-row gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setManualShare(null)}
+              className="h-8 px-3 font-mono text-[10px] tracking-widest text-muted-foreground hover:bg-primary/10 hover:text-primary"
+            >
+              CLOSE
+            </Button>
+            <Button
+              size="sm"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(manualShare ?? "");
+                  toast({ title: "COPIED TO CLIPBOARD", description: "invite beamed." });
+                  setManualShare(null);
+                } catch {
+                  toast({
+                    title: "STILL LOCKED",
+                    description: "select the text and press Ctrl+C instead.",
+                    variant: "destructive",
+                  });
+                }
+              }}
+              className="h-8 border border-primary/40 bg-primary/10 px-4 font-mono text-[10px] tracking-widest text-primary hover:bg-primary/20"
+            >
+              <ClipboardCopy className="h-3.5 w-3.5" />
+              RETRY.COPY
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -842,22 +916,7 @@ export function EventsSection() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={async () => {
-                    const res = await shareEvent({
-                      slug: detailEv.slug,
-                      title: detailEv.title,
-                      description: detailEv.description,
-                    });
-                    toast({
-                      title: res.ok
-                        ? res.via === "share"
-                          ? "SIGNAL BEAMED"
-                          : "COPIED TO CLIPBOARD"
-                        : "SIGNAL BLOCKED",
-                      description: res.message,
-                      variant: res.ok ? undefined : "destructive",
-                    });
-                  }}
+                  onClick={() => doShare(detailEv)}
                   className="h-8 px-3 font-mono text-[10px] tracking-widest text-muted-foreground hover:bg-primary/10 hover:text-primary"
                 >
                   <Share2 className="h-3.5 w-3.5" />
