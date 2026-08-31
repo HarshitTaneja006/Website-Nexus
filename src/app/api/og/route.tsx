@@ -1,4 +1,6 @@
 import { ImageResponse } from "next/og";
+import { readFile } from "fs/promises";
+import path from "path";
 
 /**
  * GET /api/og — the site's social card. A phosphor-terminal share image
@@ -12,6 +14,10 @@ export const revalidate = 3600;
 
 export async function GET() {
   const accent = "#4ade80";
+  // Load a local copy of the Geist font used by the site and pass it
+  // to ImageResponse so satori doesn't attempt dynamic font downloads.
+  const fontPath = path.join(process.cwd(), "node_modules", "next", "dist", "compiled", "@vercel", "og", "Geist-Regular.ttf");
+  const fontData = await readFile(fontPath);
 
   return new ImageResponse(
     (
@@ -124,7 +130,7 @@ export async function GET() {
               12.9066° N, 80.0406° E · NODE: VIT-CHENNAI
             </span>
             <span style={{ fontSize: 15, letterSpacing: 5, color: accent }}>
-              INNOVATE ◆ LEAD ◆ BUILD
+              INNOVATE · LEAD · BUILD
             </span>
           </div>
           {/* scanline strip */}
@@ -146,6 +152,14 @@ export async function GET() {
       headers: {
         "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
       },
+      fonts: [
+        {
+          name: "Geist",
+          data: fontData,
+          style: "normal",
+          weight: 700,
+        },
+      ],
     }
   );
 }

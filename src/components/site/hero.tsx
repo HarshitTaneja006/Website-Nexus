@@ -235,9 +235,9 @@ export function Hero() {
 
         <p className="mt-6 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 font-mono text-sm tracking-[0.35em] text-foreground/90 sm:text-base">
           <span>INNOVATE</span>
-          <span className="text-primary">◆</span>
+          <span className="text-primary">·</span>
           <span>LEAD</span>
-          <span className="text-primary">◆</span>
+          <span className="text-primary">·</span>
           <span className="text-glow-amber text-amber-300">BUILD</span>
         </p>
 
@@ -289,7 +289,7 @@ export function Hero() {
               {TICKER.map((t) => (
                 <span key={`${half}-${t}`} className="flex items-center font-mono text-[11px] tracking-[0.25em] text-muted-foreground">
                   <span className="px-5">{t}</span>
-                  <span className="text-primary/60">◆</span>
+                  <span className="text-primary/60">·</span>
                 </span>
               ))}
             </div>
