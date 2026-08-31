@@ -21,7 +21,7 @@ const PILLARS = [
 const DOMAINS = [
   { name: "AI & ML", load: 92 },
   { name: "Web Engineering", load: 88 },
-  { name: "Mobile", load: 74 },
+  { name: "Fullstack Web", load: 84 },
   { name: "Cloud & DevOps", load: 81 },
   { name: "Cybersecurity", load: 69 },
 ];

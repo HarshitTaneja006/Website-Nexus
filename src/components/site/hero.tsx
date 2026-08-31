@@ -19,14 +19,14 @@ const STATS = [
 ];
 
 const TICKER = [
+  "WEB DEVELOPMENT",
   "AI / ML",
-  "WEB ENGINEERING",
-  "MOBILE",
+  "FULLSTACK WEB",
   "CLOUD & DEVOPS",
   "CYBERSECURITY",
-  "ROBOTICS",
   "OPEN SOURCE",
   "HACKATHONS",
+  "SYSTEMS",
 ];
 
 function useCountUp(target: number, run: boolean, duration = 1400) {
@@ -242,7 +242,7 @@ export function Hero() {
         </p>
 
         <p className="mt-6 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-          One club, five domains, zero spectator mode. We build robots, break
+          One club, five domains, zero spectator mode. We craft software, break
           clouds, train models and ship products — together.
         </p>
 

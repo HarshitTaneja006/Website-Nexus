@@ -18,10 +18,10 @@ const DOMAINS = [
     tools: ["Next.js", "React", "Tailwind", "tRPC", "WebSockets"],
   },
   {
-    name: "Mobile Apps",
-    cmd: "mobile",
-    desc: "Native feel, student budgets. Compose-first Android, Swift study groups, and Flutter for the speedruns.",
-    tools: ["Kotlin", "Jetpack Compose", "Swift", "Flutter", "Expo"],
+    name: "Fullstack Web Dev",
+    cmd: "webdev",
+    desc: "End-to-end web applications. Modern UI frameworks, REST/GraphQL APIs, database design and scalable web architecture.",
+    tools: ["React", "Node.js", "Express", "PostgreSQL", "Tailwind"],
   },
   {
     name: "Cloud Computing",
