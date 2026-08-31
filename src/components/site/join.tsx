@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Github, Instagram, Linkedin, Mail, MapPin, Send } from "lucide-react";
+import { Github, Instagram, Linkedin, Mail, MapPin, MessageCircle, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,12 +18,13 @@ import { useReveal } from "@/components/site/use-reveal";
 
 const BRANCHES = ["CSE Core", "CSE Spec.", "IT", "ECE", "EEE", "Mech", "Civil", "Other"];
 const YEARS = ["1st Year", "2nd Year", "3rd Year", "4th Year", "PG"];
-const INTERESTS = ["Web Development", "AI / ML", "Fullstack Web", "Cloud", "Cybersecurity", "DevOps & Systems"];
+const INTERESTS = ["AI / ML", "Web", "Mobile", "Cloud", "Cybersecurity", "Robotics"];
 
 const SOCIALS = [
-  { icon: Github, label: "GitHub", href: "https://github.com/Nexus-VITC" },
-  { icon: Instagram, label: "Instagram", href: "https://www.instagram.com/nexus_vitc" },
-  { icon: Linkedin, label: "LinkedIn", href: "https://www.linkedin.com/company/nexusvitchennai/" },
+  { icon: Github, label: "GitHub", href: "https://github.com/" },
+  { icon: Instagram, label: "Instagram", href: "https://instagram.com/" },
+  { icon: Linkedin, label: "LinkedIn", href: "https://linkedin.com/" },
+  { icon: MessageCircle, label: "Discord", href: "https://discord.com/" },
 ];
 
 export function Join() {

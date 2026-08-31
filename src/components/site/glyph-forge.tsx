@@ -47,7 +47,7 @@ import { useToast } from "@/hooks/use-toast";
 type Phase = "forge" | "hold" | "scatter";
 
 const DEFAULT_WORDS = ["INNOVATE", "LEAD", "BUILD", "NEXUS", "SHIP IT"];
-const DOMAIN_CHIPS = ["AI/ML", "WEB", "FULLSTACK", "CLOUD", "CYBER"];
+const DOMAIN_CHIPS = ["AI/ML", "WEB", "ROBOTICS", "CLOUD", "CYBER"];
 
 /** per-particle glyph vocabulary */
 const EDGE_CHARS = "·:=+*";

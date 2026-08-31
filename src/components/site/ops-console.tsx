@@ -143,7 +143,7 @@ export function OpsConsole() {
         "",
         "NEXT STEPS",
         "1. RSVP to what looks fun  → #events on the site",
-        "2. Pick a build crew: web dev · ai/ml · fullstack · cloud · cyber",
+        "2. Pick a build crew: robotics · ai/ml · web · cloud · cyber",
         "3. Watch the wire for transmits (RSS in the footer)",
         ...(next ? ["", `FLAGSHIP INCOMING: ${next.title} — ${next.when}`] : []),
         "",
