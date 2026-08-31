@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     "tech club",
     "hackathon",
     "AI",
-    "robotics",
+    "software development",
     "cybersecurity",
   ],
   authors: [{ name: "NEXUS Club, VIT Chennai" }],
