@@ -217,7 +217,7 @@ export function CommandPalette({
           <CommandItem
             value="open source github"
             onSelect={() =>
-              run(() => window.open("https://github.com/pranav-2399/nexus-website", "_blank", "noopener"))
+              run(() => window.open("https://github.com/Nexus-VITC", "_blank", "noopener"))
             }
             className="gap-3 text-xs"
           >

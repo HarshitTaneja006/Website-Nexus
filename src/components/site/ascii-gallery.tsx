@@ -17,7 +17,7 @@ const SHOTS: LightboxShot[] = [
   {
     src: "/media/gallery-2.png",
     label: "BENCH_04.RAW",
-    caption: "Hands assembling a small robot on a workbench",
+    caption: "Hands working on a software project on a workbench",
   },
   {
     src: "/media/gallery-3.png",
