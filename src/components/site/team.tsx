@@ -16,14 +16,14 @@ const CREW = [
     glyph: "AK",
     quote: "Support leadership and drive initiatives. Representing the Vice Chairperson.",
   },
+  // {
+  //   name: "Sanchari Das",
+  //   role: "JOINT SECRETARY",
+  //   glyph: "SD",
+  //   quote: "Connect teams and streamline coordination. Presenting the Joint Secretary.",
+  // },
   {
-    name: "Sanchari Das",
-    role: "JOINT SECRETARY",
-    glyph: "SD",
-    quote: "Connect teams and streamline coordination. Presenting the Joint Secretary.",
-  },
-  {
-    name: "Pratik Bangwera",
+    name: "Pratik Bangerwa",
     role: "GENERAL SECRETARY",
     glyph: "PB",
     quote: "Manage communication, records, and coordination. Representing the General Secretary.",
