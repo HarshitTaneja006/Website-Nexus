@@ -20,7 +20,7 @@ const TTL = 10 * 60 * 1000; // 10 minutes
 
 const FALLBACK_ITEMS: NewsItem[] = [
   {
-    title: "Small models keep eating the agent stack — and budgets love it",
+    title: "Small models keep eating the agent stack - and budgets love it",
     url: "https://www.technologyreview.com/",
     source: "MIT TECH REVIEW",
     published: new Date().toISOString(),

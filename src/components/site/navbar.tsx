@@ -116,7 +116,7 @@ export function Navbar() {
       <header
         className={`fixed inset-x-0 top-0 transition-all duration-300 ${
           // when the mobile menu is open the header must sit ABOVE the
-          // overlay (z-65) — otherwise the overlay swallows the tap on the
+          // overlay (z-65) - otherwise the overlay swallows the tap on the
           // X toggle and touch users have no way to close the menu
           open ? "z-[70]" : "z-[60]"
         } ${
@@ -203,7 +203,7 @@ export function Navbar() {
         </nav>
       </header>
 
-      {/* mobile overlay — closes via link tap, backdrop tap, the header X
+      {/* mobile overlay - closes via link tap, backdrop tap, the header X
           (now layered above it), or Escape; inert when hidden so nothing
           inside is focusable off-screen */}
       <div
@@ -223,7 +223,7 @@ export function Navbar() {
         <div
           className="grid-bg flex flex-1 flex-col justify-center gap-1 px-8"
           onClick={(e) => {
-            // the links sheet spans most of the screen — empty areas of it
+            // the links sheet spans most of the screen - empty areas of it
             // count as backdrop too (only taps on actual links navigate)
             if (e.target === e.currentTarget) setOpen(false);
           }}

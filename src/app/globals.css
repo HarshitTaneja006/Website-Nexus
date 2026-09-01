@@ -202,7 +202,7 @@
   }
 }
 
-/* nav-link hover sweep — underline grows from the left, phosphor tinted */
+/* nav-link hover sweep - underline grows from the left, phosphor tinted */
 .nav-sweep {
   position: relative;
 }
@@ -327,7 +327,7 @@
   border-bottom: 1px solid var(--hud-glow);
   border-right: 1px solid var(--hud-glow);
 }
-/* amber state variant — panels in "live/linked" mode (newsletter, REC) */
+/* amber state variant - panels in "live/linked" mode (newsletter, REC) */
 .hud-corners-amber {
   --hud-glow: rgba(251, 191, 36, 0.75);
 }
@@ -400,7 +400,7 @@ div[id="top"] {
   white-space: nowrap;
 }
 
-/* ---------- MY.RSVP rows — staggered terminal readout ---------- */
+/* ---------- MY.RSVP rows - staggered terminal readout ---------- */
 .rsvp-row {
   opacity: 0;
   animation: rsvp-row-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
@@ -419,7 +419,7 @@ div[id="top"] {
   }
 }
 
-/* ---------- OPS ledger rows — phosphor rail on hover ---------- */
+/* ---------- OPS ledger rows - phosphor rail on hover ---------- */
 .ledger-row {
   border-left: 2px solid transparent;
   transition:

@@ -6,34 +6,34 @@ import { monoMetrics, paintAscii, RAMPS, renderAscii, frameToText, type AsciiFra
 import { useToast } from "@/hooks/use-toast";
 
 /**
- * AsciiImage — renders a real image as live ASCII text on a canvas.
+ * AsciiImage - renders a real image as live ASCII text on a canvas.
  * Mode switcher mirrors ASCILINE's output modes:
  *   ASCII (glyphs) / PIXEL (colored blocks) / PHOTO (original pixels).
  * A crossfade slider blends between the ASCII layer and the photo.
  *
  * v2 (crisp rewrite):
  *   - grid is EXACT-FIT: cols/rows are derived from the measured cell
- *     metrics and the real box size, so the canvas is displayed 1:1 —
+ *     metrics and the real box size, so the canvas is displayed 1:1 -
  *     v1 rendered at ~77% and let object-cover upscale it 1.3× (blur);
  *   - the v2 render pipeline (box-filter supersampling + unsharp
  *     definition pass) replaces the single-point sampling;
  *   - canvas DPR headroom raised to 3 for retina-crisp glyph edges.
  *
  * v3 (clarity round):
- *   - Bayer ORDERED DITHERING before glyph quantization — flat midtones
+ *   - Bayer ORDERED DITHERING before glyph quantization - flat midtones
  *     become structured glyph texture instead of banded mud (the single
  *     biggest perceived-resolution win);
- *   - wide 70-glyph DETAIL ramp for grids ≥110 columns — more tonal steps
+ *   - wide 70-glyph DETAIL ramp for grids ≥110 columns - more tonal steps
  *     = smoother gradients on the large cards;
- *   - supersample raised to 4× — every cell is a true 4×4 area average.
+ *   - supersample raised to 4× - every cell is a true 4×4 area average.
  *
  * v4 (defaults round): full cards open in PHOTO mode with the blend
- *   slider parked at 50 — photo readable at first glance, glyphs woven
+ *   slider parked at 50 - photo readable at first glance, glyphs woven
  *   through it; the slider is now a pure blend control in every mode
  *   (no auto tab-flip on release). compact posters stay pure ASCII.
  *
  * v5 (crisp + continuity round):
- *   - glyph size tiers raised (8/10/11px) and painted BOLD (700) — small
+ *   - glyph size tiers raised (8/10/11px) and painted BOLD (700) - small
  *     regular-weight glyphs antialias into mush on dark bg; bold ink per
  *     cell is the difference between "fuzzy texture" and "defined art";
  *   - the ascii canvas is ALWAYS mounted and controlled purely by opacity:
@@ -41,7 +41,7 @@ import { useToast } from "@/hooks/use-toast";
  *     repaint trigger (the "slider to zero and back = dead ascii" bug);
  *   - re-render once webfonts settle (document.fonts.ready) so metrics
  *     measured against a fallback face never persist;
- *   - EXPAND now hands the card's {mode, mix} to the lightbox — extended
+ *   - EXPAND now hands the card's {mode, mix} to the lightbox - extended
  *     view opens exactly where the card was (no silent reset to ascii).
  */
 
@@ -49,10 +49,10 @@ interface AsciiImageProps {
   src: string;
   label: string;
   caption: string;
-  /** expanded — receives the card's current render state for the lightbox */
+  /** expanded - receives the card's current render state for the lightbox */
   onExpand?: (state: { mode: AsciiMode; mix: number }) => void;
   /**
-   * compact: poster mode — no mode tabs, no blend slider, no EXPAND. Just
+   * compact: poster mode - no mode tabs, no blend slider, no EXPAND. Just
    * the live render + the .TXT dump (event dialogs).
    */
   compact?: boolean;
@@ -90,7 +90,7 @@ export function AsciiImage({ src, label, caption, onExpand, compact = false, ini
     const h = wrap.clientHeight;
     if (!w || !h) return;
 
-    // v5 tiers: 8/10/11px BOLD — bigger cells + heavy ink read as crisp;
+    // v5 tiers: 8/10/11px BOLD - bigger cells + heavy ink read as crisp;
     // the old 7–9px regular weights antialiased into an illegible haze
     const fontSize = w < 420 ? 8 : w < 760 ? 10 : 11;
     const { charW, lineH } = monoMetrics(fontSize, 700);
@@ -145,7 +145,7 @@ export function AsciiImage({ src, label, caption, onExpand, compact = false, ini
     return () => cancelAnimationFrame(id);
   }, [mode, ready, renderNow]);
 
-  // webfonts settle AFTER first paint? re-render with the real face —
+  // webfonts settle AFTER first paint? re-render with the real face -
   // metrics measured against a fallback stack would smear every run
   useEffect(() => {
     if (!ready) return;
@@ -229,7 +229,7 @@ export function AsciiImage({ src, label, caption, onExpand, compact = false, ini
           style={{ opacity: mode === "photo" ? 1 : 1 - mix / 100 }}
           loading="lazy"
         />
-        {/* ascii layer — always mounted (opacity-controlled): unmounting it
+        {/* ascii layer - always mounted (opacity-controlled): unmounting it
             at mix=0 and remounting left a blank canvas with no repaint */}
         <canvas
           ref={canvasRef}
@@ -268,8 +268,8 @@ export function AsciiImage({ src, label, caption, onExpand, compact = false, ini
       {/* footer readout */}
       <div className="flex items-center justify-between gap-3 border-t border-border/70 bg-secondary/30 px-3 py-2">
         <span className="font-mono text-[10px] text-muted-foreground">
-          GRID {grid.cols || "—"}×{grid.rows || "—"} · SRC{" "}
-          {srcDims.w ? `${srcDims.w}×${srcDims.h}` : "—"}
+          GRID {grid.cols || "-"}×{grid.rows || "-"} · SRC{" "}
+          {srcDims.w ? `${srcDims.w}×${srcDims.h}` : "-"}
         </span>
         <div className="flex items-center gap-2">
           <button

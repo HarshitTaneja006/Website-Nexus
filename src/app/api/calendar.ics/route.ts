@@ -5,7 +5,7 @@ import { buildVCalendar } from "@/lib/ics";
 export const dynamic = "force-dynamic";
 
 /**
- * GET /api/calendar.ics — subscribable RFC 5545 calendar of the whole
+ * GET /api/calendar.ics - subscribable RFC 5545 calendar of the whole
  * transmit schedule. Point Google Calendar / Apple Calendar / any client
  * at this URL and every NEXUS event lands on the grid.
  */
@@ -31,7 +31,7 @@ export async function GET(req: Request) {
         url: `${base}/#events`,
       })),
       {
-        name: "NEXUS — VIT Chennai · Transmit Schedule",
+        name: "NEXUS - VIT Chennai · Transmit Schedule",
         description:
           "Every NEXUS event on one feed. Subscribe once, never miss a transmit.",
       }

@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Keyboard } from "lucide-react";
 
 /**
- * ShortcutsDialog — the site's MAN page. `?` (shift+/) opens it anywhere
+ * ShortcutsDialog - the site's MAN page. `?` (shift+/) opens it anywhere
  * outside a text field; the ⌘K palette and the footer can also dispatch
  * the `nexus:shortcuts` CustomEvent.
  */
@@ -21,7 +21,7 @@ const GROUPS: { title: string; rows: Row[] }[] = [
   {
     title: "SHELL",
     rows: [
-      { keys: ["⌘", "K"], desc: "command palette — navigate, switch engines, ops" },
+      { keys: ["⌘", "K"], desc: "command palette - navigate, switch engines, ops" },
       { keys: ["?"], desc: "this manual" },
       { keys: ["ESC"], desc: "close the topmost surface (palette / dialogs / lightbox)" },
     ],
@@ -29,10 +29,10 @@ const GROUPS: { title: string; rows: Row[] }[] = [
   {
     title: "FOUNDRY",
     rows: [
-      { keys: ["TYPE"], desc: "forge any word — the particle field re-casts it from glyphs" },
-      { keys: ["D"], desc: "detonate — blast the current word into the flow field" },
+      { keys: ["TYPE"], desc: "forge any word - the particle field re-casts it from glyphs" },
+      { keys: ["D"], desc: "detonate - blast the current word into the flow field" },
       { keys: ["P"], desc: "pause / resume the forge cycle" },
-      { keys: ["CLICK / DRAG"], desc: "stir the glyph field — particles flee your pointer" },
+      { keys: ["CLICK / DRAG"], desc: "stir the glyph field - particles flee your pointer" },
       { keys: ["TXT / PNG"], desc: "dump the live forge grid or print it" },
     ],
   },
@@ -40,14 +40,14 @@ const GROUPS: { title: string; rows: Row[] }[] = [
     title: "GALLERY",
     rows: [
       { keys: ["←", "→"], desc: "navigate frames while the lightbox is open" },
-      { keys: ["#frame-1 … 4"], desc: "deep-link a frame — LINK chip copies it" },
+      { keys: ["#frame-1 … 4"], desc: "deep-link a frame - LINK chip copies it" },
       { keys: ["TXT / PNG"], desc: "dump the live glyph grid or print it" },
     ],
   },
   {
     title: "EVENTS",
     rows: [
-      { keys: ["?event=<slug>"], desc: "deep-link an event — RSVP pre-opens (archive → brief)" },
+      { keys: ["?event=<slug>"], desc: "deep-link an event - RSVP pre-opens (archive → brief)" },
       { keys: ["?noboot"], desc: "skip the boot sequence (QA / demo replays)" },
       { keys: ["SHARE"], desc: "invite text carries the ?event= deep link" },
       { keys: ["MY.RSVP"], desc: "scan any email against the RSVP ledger" },
@@ -57,16 +57,16 @@ const GROUPS: { title: string; rows: Row[] }[] = [
     title: "WIRE & FEEDS",
     rows: [
       { keys: ["?unsub=<email>"], desc: "one-click opt-out from the signal wire" },
-      { keys: ["/api/feed.xml"], desc: "RSS — events + news" },
+      { keys: ["/api/feed.xml"], desc: "RSS - events + news" },
       { keys: ["/api/calendar.ics"], desc: "subscribe all events (VALARM 24h + 60m)" },
     ],
   },
   {
     title: "GLYPH ENGINE",
     rows: [
-      { keys: ["RAIN / WAVE / DONUT / CAM"], desc: "hero background presets (HUD or palette) — CAM auto-falls back to the synth feed when no webcam" },
+      { keys: ["RAIN / WAVE / DONUT / CAM"], desc: "hero background presets (HUD or palette) - CAM auto-falls back to the synth feed when no webcam" },
       { keys: ["DUMP .TXT / PRINT .PNG"], desc: "export the exact on-screen glyph grid" },
-      { keys: ["↑↑↓↓←→←→BA"], desc: "???  — old pilots know this one" },
+      { keys: ["↑↑↓↓←→←→BA"], desc: "???  - old pilots know this one" },
     ],
   },
 ];
@@ -88,7 +88,7 @@ export function ShortcutsDialog() {
         t &&
         (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)
       ) {
-        return; // typing — let "?" be a character
+        return; // typing - let "?" be a character
       }
       e.preventDefault();
       setOpen((o) => !o);
@@ -103,7 +103,7 @@ export function ShortcutsDialog() {
         <DialogHeader className="border-b border-border/70 bg-secondary/40 px-5 py-3">
           <DialogTitle className="flex items-center gap-2 text-sm tracking-[0.25em] text-primary">
             <Keyboard className="h-3.5 w-3.5" />
-            NEXUS(1) — SHELL MANUAL
+            NEXUS(1) - SHELL MANUAL
           </DialogTitle>
           <DialogDescription className="text-[10px] tracking-widest text-muted-foreground">
             every key, deep link and feed the grid responds to

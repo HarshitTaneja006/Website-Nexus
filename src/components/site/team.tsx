@@ -116,7 +116,7 @@ export function Team() {
               CAT /var/log/chairperson.msg
             </p>
             <blockquote className="font-display mt-4 max-w-3xl text-xl font-medium leading-relaxed text-foreground sm:text-2xl">
-              "Welcome to NEXUS. We're not gathering around technology —
+              "Welcome to NEXUS. We're not gathering around technology -
               we're <span className="text-glow text-primary">compiling the future</span> one
               commit at a time. Bring your curiosity; the toolchain is ready."
             </blockquote>

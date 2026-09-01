@@ -14,7 +14,7 @@ const DOMAINS = [
   {
     name: "Web Engineering",
     cmd: "web",
-    desc: "TypeScript all the way down. Design systems, edge rendering and realtime apps — this very site is one of our artifacts.",
+    desc: "TypeScript all the way down. Design systems, edge rendering and realtime apps - this very site is one of our artifacts.",
     tools: ["Next.js", "React", "Tailwind", "tRPC", "WebSockets"],
   },
   {
@@ -134,7 +134,7 @@ export function TechStack() {
                           <span className="text-muted-foreground/60">/</span>
                         </span>
                         <span className="ml-2 hidden truncate text-xs text-muted-foreground sm:block">
-                          — {d.name}
+                          - {d.name}
                         </span>
                         <span
                           className={`ml-auto font-mono text-[9px] tracking-widest transition-colors ${

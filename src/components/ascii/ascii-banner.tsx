@@ -5,9 +5,9 @@ import { monoFontStack, monoMetrics } from "@/lib/ascii";
 import { layoutBanner } from "@/lib/banner-font";
 
 /**
- * AsciiBanner v2 — typesets a title as a figlet-grade block-letter banner.
+ * AsciiBanner v2 - typesets a title as a figlet-grade block-letter banner.
  *
- * The banner is REAL TEXT (<pre>) rendered by the browser's mono face —
+ * The banner is REAL TEXT (<pre>) rendered by the browser's mono face -
  * no canvas, no resampling, selectable, pixel-crisp at any DPR. The glyph
  * grid and exact font size are solved mathematically from the measured box
  * (see banner-font.ts); re-solved on resize and once webfonts settle so
@@ -18,7 +18,7 @@ export function AsciiBanner({ text, className = "" }: { text: string; className?
   const [boxW, setBoxW] = useState(0);
   const [fontsSettled, setFontsSettled] = useState(false);
 
-  // measure the box (debounced — resize re-solves the layout)
+  // measure the box (debounced - resize re-solves the layout)
   useEffect(() => {
     const wrap = wrapRef.current;
     if (!wrap) return;

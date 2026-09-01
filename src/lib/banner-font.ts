@@ -1,17 +1,17 @@
 /**
- * banner-font.ts — figlet-grade block-letter banner engine (v2, from scratch).
+ * banner-font.ts - figlet-grade block-letter banner engine (v2, from scratch).
  *
  * WHY the old pipeline failed: text was typeset at 480px, downsampled into
  * ~90 binary columns, and each letterart pixel became one painted `#` CELL.
  * A letter therefore had only ~7×5 cells TOTAL, strokes 1 cell wide painted
- * at ~6px pitch merged into solid bands — unreadable mush.
+ * at ~6px pitch merged into solid bands - unreadable mush.
  *
- * THE FIX — letters live in CHARACTER space:
+ * THE FIX - letters live in CHARACTER space:
  *   - every letter is a hand-designed 7-row bitmap where each pixel IS one
  *     full `█` character cell (solid ink strokes, guaranteed 1-col counters
  *     between strokes);
  *   - real text, rendered by the browser's mono font → proper hinting,
- *     subpixel AA, selectable — no canvas resampling at all;
+ *     subpixel AA, selectable - no canvas resampling at all;
  *   - layout is solved, not guessed:
  *       charW(F)  = charW₁₂ · F/12                (font advance scales linearly)
  *       colsAvail = floor(boxW / charW(F))
@@ -100,7 +100,7 @@ function wordRows(word: string): string[] {
     for (let r = 0; r < BANNER_ROW_H; r++) rows[r] += g[r] + " ";
   }
   // CRITICAL: every row must be EXACTLY `width` cols. Rows ending in a
-  // void get trimmed by the painter's instinct — but when word rows are
+  // void get trimmed by the painter's instinct - but when word rows are
   // later joined with a fixed word gap, a short row shifts everything to
   // its right and shears vertical strokes apart (the "mushed FROM" bug).
   return rows.map((r) => r.replace(/\s+$/, "").padEnd(width, " "));
@@ -160,7 +160,7 @@ function assembleRows(lines: string[][]): string[] {
 }
 
 export interface BannerLayout {
-  /** Printable rows ('█' ink / ' ' void) — join with '\n'. */
+  /** Printable rows ('█' ink / ' ' void) - join with '\n'. */
   rows: string[];
   /** Solved font size in px (exact-fill for the measured box). */
   fontSize: number;
@@ -207,7 +207,7 @@ export function layoutBanner(text: string, boxW: number, charW12: number): Banne
   // prefer the roomier 2-line shape only when it costs little size;
   // 4 lines is the last resort for structurally long titles (e.g.
   // "FOUNDERS FIRECHAT: BUILDING IN INDIA" can never wrap to 3 lines
-  // at a legible size — dropping the banner entirely is worse than
+  // at a legible size - dropping the banner entirely is worse than
   // one extra row band).
   if (two && two.fontSize >= 9.5 && (!three || two.fontSize >= three.fontSize * 0.8)) return two;
   return three ?? four ?? two;

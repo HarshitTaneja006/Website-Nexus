@@ -14,7 +14,7 @@ interface NewsItem {
 
 const FALLBACK: NewsItem[] = [
   {
-    title: "Small models keep eating the agent stack — and budgets love it",
+    title: "Small models keep eating the agent stack - and budgets love it",
     url: "https://www.technologyreview.com/",
     source: "MIT Tech Review",
     published: null,
@@ -40,7 +40,7 @@ const FALLBACK: NewsItem[] = [
 ];
 
 function timeAgo(iso: string | null): string {
-  if (!iso) return "—";
+  if (!iso) return "-";
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.round(diff / 60000);
   if (m < 60) return `${Math.max(1, m)}m ago`;
@@ -111,7 +111,7 @@ export function TechNews() {
                 href="/api/feed.xml"
                 target="_blank"
                 rel="noopener noreferrer"
-                title="subscribe to the wire — RSS"
+                title="subscribe to the wire - RSS"
                 aria-label="RSS wire feed"
                 className="grid h-8 w-8 place-items-center rounded-sm border border-border text-muted-foreground transition-colors hover:border-amber-300/50 hover:text-amber-300"
               >
@@ -144,7 +144,7 @@ export function TechNews() {
                     rel="noopener noreferrer"
                     className="group relative flex flex-col overflow-hidden rounded-md border border-border bg-card p-4 pl-5 transition-all duration-300 hover:border-primary/40 hover:bg-secondary/30 hover:shadow-[0_0_24px_rgba(96,165,250,0.07)]"
                   >
-                    {/* left accent rail — lights up on hover */}
+                    {/* left accent rail - lights up on hover */}
                     <span
                       aria-hidden="true"
                       className="absolute inset-y-0 left-0 w-[2px] bg-gradient-to-b from-primary/0 via-primary/60 to-primary/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"

@@ -1,29 +1,29 @@
 /**
- * ascii.ts — NEXUS glyph engine v2.
+ * ascii.ts - NEXUS glyph engine v2.
  *
  * Heavily inspired by ASCILINE (https://github.com/YusufB5/ASCILINE):
  * "turns the browser canvas into a typographic display surface" by mapping
  * pixel luminance/color to text glyphs. This is the static-image flavour of
- * that idea — the animated presets (rain / donut / wave) live in
+ * that idea - the animated presets (rain / donut / wave) live in
  * components/ascii/ascii-canvas.tsx.
  *
  * v2 rendering pipeline (the crisp rewrite):
- *   1. fonts are resolved to REAL families — canvas ctx.font cannot resolve
+ *   1. fonts are resolved to REAL families - canvas ctx.font cannot resolve
  *      CSS var(), so the actual --font-geist-mono family list is read from
  *      computed style and the advance width is MEASURED, never assumed;
  *   2. sources are box-filtered through a supersampled offscreen canvas
- *      (default 3× the glyph grid) so every cell is a true area average —
+ *      (default 3× the glyph grid) so every cell is a true area average -
  *      no single-point moiré;
  *   3. optional unsharp mask on the cell-luminance grid restores local
  *      contrast lost to downsampling (definition without haloing);
- *   4. paintAscii sizes canvases pixel-exactly from the measured metrics —
+ *   4. paintAscii sizes canvases pixel-exactly from the measured metrics -
  *      frames are displayed 1:1 instead of being CSS-upscaled.
  *
  * v5 (weight-aware crispness):
  *   - monoMetrics(fontSize, weight) measures the SAME weight that
- *     paintAscii draws — bold mono advances differ from regular, and
+ *     paintAscii draws - bold mono advances differ from regular, and
  *     measuring one while painting the other smears runs;
- *   - paintAscii accepts fontWeight — bold glyphs carry far more ink per
+ *   - paintAscii accepts fontWeight - bold glyphs carry far more ink per
  *     cell, which is what makes small ASCII renders read as "crisp".
  */
 
@@ -31,11 +31,11 @@ export type AsciiMode = "ascii" | "pixel" | "photo";
 
 /** Character ramps, dark → bright (like ASCILINE's AsciiMapper). */
 export const RAMPS = {
-  /** compact classic ramp — good for display-sized renders */
+  /** compact classic ramp - good for display-sized renders */
   short: " .':-=+*#%@",
   /** phosphor-flavoured ramp with block glyphs (PIXEL mode) */
   blocks: " .·:;=+x%#@",
-  /** 18-step tonal ramp — default for image renders: smooth but crisp */
+  /** 18-step tonal ramp - default for image renders: smooth but crisp */
   mid: " .,:;i!~=+*xoq#%@",
   /** classic donut.c luminance string (12 steps, bright → dense) */
   donut: ".,-~:;=!*#$@",
@@ -45,7 +45,7 @@ export const RAMPS = {
 } as const;
 
 /* ------------------------------------------------------------------ */
-/* font plumbing — the #1 crispness fix                                */
+/* font plumbing - the #1 crispness fix                                */
 /* ------------------------------------------------------------------ */
 
 const FALLBACK_STACK =
@@ -74,7 +74,7 @@ export function monoFontStack(): string {
 export interface MonoMetrics {
   /** real advance width of one glyph cell in CSS px */
   charW: number;
-  /** line height in CSS px (1.05em — matches the paint row stride) */
+  /** line height in CSS px (1.05em - matches the paint row stride) */
   lineH: number;
 }
 
@@ -83,10 +83,10 @@ let fontsRehooked = false;
 
 /**
  * MEASURED monospace cell metrics for a given px size (cached).
- * Assumed 0.6em advances are what made v1 renders fuzzy — real fonts
+ * Assumed 0.6em advances are what made v1 renders fuzzy - real fonts
  * differ by a few percent, and 60 columns of accumulated drift smears text.
  *
- * v5: weight-aware — bold mono can carry a different advance than regular,
+ * v5: weight-aware - bold mono can carry a different advance than regular,
  * and measuring one weight while painting another re-introduces drift.
  * The cache key now includes the weight.
  */
@@ -117,18 +117,18 @@ export function monoMetrics(fontSize: number, weight: string | number = 400): Mo
     try {
       void document.fonts?.ready.then(() => metricsCache.clear());
     } catch {
-      /* no fonts API — estimates stay */
+      /* no fonts API - estimates stay */
     }
   }
   return m;
 }
 
 /* ------------------------------------------------------------------ */
-/* render — supersampled box filter → tonal grid → glyphs              */
+/* render - supersampled box filter → tonal grid → glyphs              */
 /* ------------------------------------------------------------------ */
 
 /**
- * 4×4 ordered-dither matrix (Bayer), normalized 0..1 — mean 0.46875.
+ * 4×4 ordered-dither matrix (Bayer), normalized 0..1 - mean 0.46875.
  * Added (zero-mean) to the cell luminance just before glyph quantization,
  * it trades tonal banding for spatial detail: flat midtones become
  * structured glyph texture instead of mud. This is the single biggest
@@ -160,29 +160,29 @@ export interface AsciiRenderOptions {
   /** color the glyphs with the source pixel color (ascii mode) */
   colorize?: boolean;
   /**
-   * binary cutoff (0..1) — when set, output collapses to ramp[0] / ramp[last]
+   * binary cutoff (0..1) - when set, output collapses to ramp[0] / ramp[last]
    * around this luminance. Perfect for block-letter text banners.
    */
   binary?: number;
   /**
-   * percentile-based histogram stretch (default true) — rescues dark/flat
+   * percentile-based histogram stretch (default true) - rescues dark/flat
    * sources by remapping the 2nd..98th luminance percentiles to 0..1
    */
   autoLevels?: boolean;
   /**
    * box-filter supersample factor (1..4, default 3). Each glyph cell is the
-   * average of an SS×SS block — kills the single-point sampling moiré that
+   * average of an SS×SS block - kills the single-point sampling moiré that
    * made v1 renders sparkle inaccurately.
    */
   supersample?: number;
   /**
-   * unsharp-mask amount (0..1, default 0) on the cell-luminance grid —
+   * unsharp-mask amount (0..1, default 0) on the cell-luminance grid -
    * restores the local contrast that downsampling softens. 0.3–0.5 reads
    * as "defined" without halos.
    */
   sharpen?: number;
   /**
-   * ordered-dither strength (0..1, default 0) — 1 adds a full glyph step of
+   * ordered-dither strength (0..1, default 0) - 1 adds a full glyph step of
    * Bayer threshold noise before quantization. Kills tonal banding in flat
    * areas (skies, walls) and raises perceived resolution; 0.5–0.8 is the
    * sweet spot for photographic sources.
@@ -353,7 +353,7 @@ export function renderAscii(
         }
       }
       if (hi - lo < 0.12) {
-        lo = 0; // nearly flat frame — don't overstretch noise
+        lo = 0; // nearly flat frame - don't overstretch noise
         hi = 1;
       }
     }
@@ -391,7 +391,7 @@ export function renderAscii(
         v = v < 0 ? 0 : v > 1 ? 1 : v;
       }
       if (mode === "pixel") {
-        // colored block glyph █ — the "--pixel" flag of ASCILINE
+        // colored block glyph █ - the "--pixel" flag of ASCILINE
         const gi = v < 0.08 ? 0 : Math.max(1, Math.round(v * n));
         line += gi === 0 ? " " : "█";
         rowColors.push(
@@ -420,7 +420,7 @@ export function renderAscii(
 }
 
 /* ------------------------------------------------------------------ */
-/* paint — measured metrics, pixel-exact canvases, two-tone pop        */
+/* paint - measured metrics, pixel-exact canvases, two-tone pop        */
 /* ------------------------------------------------------------------ */
 
 /** glyphs dense enough to get the "hot phosphor" tint */
@@ -428,7 +428,7 @@ const BRIGHT_CHARS = "@#%&8BWM";
 
 /**
  * Paint an AsciiFrame onto a visible canvas with phosphor styling.
- * Returns the CSS-pixel size of the painted grid — size the host element
+ * Returns the CSS-pixel size of the painted grid - size the host element
  * from it (or leave the canvas stretched by ≤ half a glyph; invisible).
  */
 export function paintAscii(
@@ -439,7 +439,7 @@ export function paintAscii(
     bg?: string | null;
     bright?: string;
     fontSize?: number;
-    /** glyph weight — must match the monoMetrics() weight used for the grid */
+    /** glyph weight - must match the monoMetrics() weight used for the grid */
     fontWeight?: string | number;
     dpr?: number;
     /** override measured metrics (already-normalized cells) */
@@ -481,7 +481,7 @@ export function paintAscii(
     let x = 0;
     let run = "";
     let runColor: string | null = o.fg;
-    // flush current run when color changes — minimizes fillStyle churn
+    // flush current run when color changes - minimizes fillStyle churn
     const flush = () => {
       if (!run) return;
       ctx.fillStyle = runColor ?? o.fg;
@@ -492,7 +492,7 @@ export function paintAscii(
     for (let cx = 0; cx < line.length; cx++) {
       const ch = line[cx];
       const c = rowColors?.[cx] ?? null;
-      // densest glyphs pop with the hot-phosphor tint — adds definition
+      // densest glyphs pop with the hot-phosphor tint - adds definition
       const color =
         c ?? (bright && BRIGHT_CHARS.includes(ch) ? bright : o.fg);
       if (color !== runColor) {
@@ -513,7 +513,7 @@ export function colsForWidth(widthPx: number, targetCharW = 8): number {
 }
 
 /**
- * Serialize an AsciiFrame to a plain-text artifact — the terminal-native
+ * Serialize an AsciiFrame to a plain-text artifact - the terminal-native
  * export format of the engine (ASCILINE's "canvas as typographic surface",
  * piped to a file). Pure text: no codec, no gpu, just glyphs.
  */
@@ -523,7 +523,7 @@ export function frameToText(
 ): string {
   const header = [
     "──────────────────────────────────────────────",
-    " NEXUS ASCII EXPORT — phosphor frame dump",
+    " NEXUS ASCII EXPORT - phosphor frame dump",
     ` GRID      ${frame.cols}×${frame.rows} glyphs`,
     meta?.label ? ` LABEL     ${meta.label}` : null,
     meta?.mode ? ` MODE      ${meta.mode}` : null,
@@ -539,7 +539,7 @@ export function frameToText(
 }
 
 /**
- * Serialize an AsciiFrame to a PNG "typographic print" — the same glyph grid
+ * Serialize an AsciiFrame to a PNG "typographic print" - the same glyph grid
  * re-painted at print size onto an offscreen canvas with a phosphor palette
  * and a metadata footer strip. Async: resolves once toBlob() settles.
  */
@@ -576,7 +576,7 @@ export function frameToPngBlob(
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, width, height);
 
-  // glyphs — paint row by row (bright tint for the densest glyphs)
+  // glyphs - paint row by row (bright tint for the densest glyphs)
   ctx.font = `${fontSize}px ${monoFontStack()}`;
   ctx.textBaseline = "top";
   const dense = frame.cols > 160;

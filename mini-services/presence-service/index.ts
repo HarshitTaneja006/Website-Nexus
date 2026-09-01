@@ -2,7 +2,7 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 
 /**
- * presence-service — NEXUS "builders on grid" live counter.
+ * presence-service - NEXUS "builders on grid" live counter.
  * Tracks connected sockets and broadcasts the fleet size to everyone.
  * Deliberately tiny: one number, pushed on every join/leave + a 15s heartbeat.
  */
@@ -30,7 +30,7 @@ function broadcast() {
 io.on("connection", (socket) => {
   broadcast();
 
-  // clients may report activity bursts (e.g. command palette open) — ack unused,
+  // clients may report activity bursts (e.g. command palette open) - ack unused,
   // kept for future per-room features
   socket.on("activity", () => {
     /* reserved */
@@ -46,7 +46,7 @@ httpServer.listen(PORT, () => {
 });
 
 // REST sidecar for the OPS console: /api/admin/stats proxies this (server-side
-// only — never exposed through the gateway). Separate port because socket.io
+// only - never exposed through the gateway). Separate port because socket.io
 // owns every request path on the main server.
 const STATS_PORT = 3004;
 createServer((_req, res) => {

@@ -1,5 +1,5 @@
 /**
- * ics.ts — RFC 5545 building blocks, server-safe (no window/DOM).
+ * ics.ts - RFC 5545 building blocks, server-safe (no window/DOM).
  * Shared by the client-side per-event .ics downloader (event-share.ts)
  * and the site-wide /api/calendar.ics subscription feed.
  */
@@ -46,8 +46,8 @@ export function foldIcsLine(line: string): string {
 function buildValarm(minutesBefore: number, title: string, venue: string): string {
   const desc =
     minutesBefore >= 1440
-      ? `[NEXUS] "${title}" starts tomorrow — ${venue}`
-      : `[NEXUS] "${title}" starts in ${minutesBefore} min — ${venue}`;
+      ? `[NEXUS] "${title}" starts tomorrow - ${venue}`
+      : `[NEXUS] "${title}" starts in ${minutesBefore} min - ${venue}`;
   return [
     "BEGIN:VALARM",
     "ACTION:DISPLAY",
@@ -57,7 +57,7 @@ function buildValarm(minutesBefore: number, title: string, venue: string): strin
   ].join("\r\n");
 }
 
-/** One VEVENT block (with two display reminders: 24h and 60m before — upcoming events only). */
+/** One VEVENT block (with two display reminders: 24h and 60m before - upcoming events only). */
 export function buildVEvent(ev: IcsEventInput, calName: string): string {
   const dtstamp = icsDate(new Date().toISOString());
   const dtstart = icsDate(ev.startsAt);

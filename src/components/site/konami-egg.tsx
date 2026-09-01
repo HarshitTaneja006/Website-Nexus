@@ -5,7 +5,7 @@ import { ENGINE_EVENT } from "@/components/site/command-palette";
 import { useToast } from "@/hooks/use-toast";
 
 /**
- * KonamiEgg — ↑↑↓↓←→←→BA overdrive.
+ * KonamiEgg - ↑↑↓↓←→←→BA overdrive.
  * Flashes a full-screen ASCII NEXUS banner (figlet-style), toasts, and
  * kicks the hero engine into donut mode. Purely additive, zero effect on
  * normal interaction.
@@ -58,7 +58,7 @@ export function KonamiEgg() {
         window.dispatchEvent(new CustomEvent(ENGINE_EVENT, { detail: "donut" }));
         toast({
           title: "CHEAT CODE ACCEPTED",
-          description: "OVERDRIVE — donut engine to max lum",
+          description: "OVERDRIVE - donut engine to max lum",
         });
       }
     };

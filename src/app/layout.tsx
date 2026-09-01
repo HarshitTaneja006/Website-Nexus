@@ -21,7 +21,7 @@ const spaceGrotesk = Space_Grotesk({
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://nexus-website-inky.vercel.app"),
-  title: "NEXUS — Innovate. Lead. Build.",
+  title: "NEXUS - Innovate. Lead. Build.",
   description:
     "NEXUS is the student tech collective of VIT Chennai. A redesigned terminal-grade home: the glyph foundry, live ASCII engines, events, news and more.",
   keywords: [
@@ -44,18 +44,18 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "NEXUS — Innovate. Lead. Build.",
+    title: "NEXUS - Innovate. Lead. Build.",
     description:
       "The student tech collective of VIT Chennai. Watch words get forged from pure glyphs.",
     siteName: "NEXUS",
     images: [
-      { url: "/media/og.png", width: 1344, height: 768, alt: "NEXUS — the campus grid" },
+      { url: "/media/og.png", width: 1344, height: 768, alt: "NEXUS - the campus grid" },
     ],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "NEXUS — Innovate. Lead. Build.",
+    title: "NEXUS - Innovate. Lead. Build.",
     description:
       "The student tech collective of VIT Chennai. Watch words get forged from pure glyphs.",
     images: ["/media/og.png"],
