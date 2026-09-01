@@ -4,95 +4,89 @@ const db = new PrismaClient()
 
 const day = 24 * 60 * 60 * 1000
 const now = Date.now()
+const DEFAULT_POSTER_BASE = 'https://placehold.co/800x1000/07111f/60a5fa?text='
+const DEFAULT_GENERIC_POSTER_URL = `${DEFAULT_POSTER_BASE}EVENT+POSTER`
+const posterUrlFor = (title: string) =>
+  `${DEFAULT_POSTER_BASE}${encodeURIComponent(title.trim().toUpperCase()).replace(/%20/g, '+')}`
 
 const events = [
   {
-    slug: 'nexus-hack-5.0',
-    title: 'NEXUS HACK 5.0',
-    description:
-      'Our flagship 36-hour hackathon. 200+ builders, real industry problem statements, cloud compute clusters & AI credits, and a prize pool worth ₹1L. Ships demo or it didn\'t happen.',
+    slug: 'v-medithon-25',
+    title: 'V-Medithon 25',
+    description: '',
     category: 'HACKATHON',
-    venue: 'Tech Park Auditorium, VIT Chennai',
-    startsAt: new Date(now + 12 * day),
-    endsAt: new Date(now + 13 * day + 12 * 60 * 60 * 1000),
-    tags: 'hackathon,fullstack,cloud,ai',
+    venue: 'Kamaraj Auditorium',
+    startsAt: new Date('2025-09-02'),
+    endsAt: new Date('2025-09-03'),
+    tags: 'hackathon',
     featured: true,
-    posterUrl: 'https://placehold.co/800x1000/07111f/60a5fa?text=NEXUS+HACK+5.0',
-    registrationLink: 'https://example.com/register/nexus-hack-5',
+    posterUrl: null,
+    registrationLink: null,
   },
   {
-    slug: 'intro-to-transformers',
-    title: 'Transformers, From Scratch',
-    description:
-      'A hands-on code-along: attention, positional encoding and a working mini-GPT in 200 lines of Python. Bring a laptop, leave with a trained model.',
-    category: 'WORKSHOP',
-    venue: 'AI Lab, CB Block',
-    startsAt: new Date(now + 4 * day + 18 * 60 * 60 * 1000),
-    tags: 'ai/ml,python,pytorch',
+    slug: 'nexus-forum-25',
+    title: 'Nexus Forum',
+    description: '',
+    category: 'PODCAST',
+    venue: 'MG Auditorium',
+    startsAt: new Date('2025-09-19'),
+    endsAt: null,
+    tags: 'podcast,community',
     featured: false,
-    posterUrl: 'https://placehold.co/800x1000/07111f/60a5fa?text=TRANSFORMERS',
+    posterUrl: null,
+    registrationLink: null,
   },
   {
-    slug: 'cloud-native-sunday',
-    title: 'Cloud Native Sunday: K8s Playground',
-    description:
-      'Spin up a cluster, deploy a service, break it, fix it. A chill Sunday session for anyone curious about containers and orchestration.',
+    slug: 'introduction-to-machine-learning',
+    title: 'Introduction To Machine Learning',
+    description: '',
     category: 'WORKSHOP',
-    venue: 'Cloud Lab, CD Block',
-    startsAt: new Date(now + 9 * day + 10 * 60 * 60 * 1000),
-    tags: 'cloud,docker,kubernetes',
+    venue: 'Online',
+    startsAt: new Date('2025-06-22'),
+    endsAt: null,
+    tags: 'machine-learning,ai',
     featured: false,
-    posterUrl: 'https://placehold.co/800x1000/07111f/60a5fa?text=K8S+PLAYGROUND',
-    registrationLink: 'https://example.com/register/cloud-native-sunday',
+    posterUrl: null,
+    registrationLink: null,
   },
   {
-    slug: 'fullstack-showdown',
-    title: 'Full-Stack DevShowdown',
-    description:
-      'Real-time frontend and backend speed build. 4 hours to architect, code and ship a full-stack product with live webhooks and websocket feeds.',
+    slug: 'Introduction to Deep Learning',
+    title: 'Introduction to Deep Learning',
+    description: '',
+    category: 'WORKSHOP',
+    venue: 'Online',
+    startsAt: new Date('2025-06-24'),
+    endsAt: null,
+    tags: 'deep-learning,ai',
+    featured: false,
+    posterUrl: null,
+    registrationLink: null,
+  },
+  {
+    slug: 'code-nexus',
+    title: 'Code Nexus',
+    description: 'FULLSTACK DEVELOPMENT WORKSHOP',
+    category: 'WORKSHOP',
+    venue: 'Kamaraj Auditorium',
+    startsAt: new Date('2025-08-01'),
+    endsAt: null,
+    tags: 'fullstack,development,workshop',
+    featured: false,
+    posterUrl: null,
+    registrationLink: null,
+  },
+  {
+    slug: 'decode-x',
+    title: 'Decode X',
+    description: '',
     category: 'COMPETITION',
-    venue: 'Computing Lab 3 + Online',
-    startsAt: new Date(now + 20 * day + 19 * 60 * 60 * 1000),
-    tags: 'web,fullstack,typescript,realtime',
+    venue: 'AB3 - 501',
+    startsAt: new Date('2025-10-31'),
+    endsAt: null,
+    tags: 'competition',
     featured: false,
-    posterUrl: 'https://placehold.co/800x1000/07111f/60a5fa?text=DEV+SHOWDOWN',
-  },
-  {
-    slug: 'android-from-zero',
-    title: 'Android From Zero: Jetpack Compose',
-    description:
-      'Build and ship your first Android app in one evening. Compose fundamentals, state, and a splash of Material 3.',
-    category: 'WORKSHOP',
-    venue: 'Mobile Lab, CB Block',
-    startsAt: new Date(now - 6 * day + 18 * 60 * 60 * 1000),
-    tags: 'mobile,kotlin,compose',
-    featured: false,
-    posterUrl: 'https://placehold.co/800x1000/07111f/60a5fa?text=ANDROID+ZERO',
-  },
-  {
-    slug: 'founders-firechat',
-    title: 'Founders FireChat: Building in India',
-    description:
-      'Alumni founders on what actually happens after the demo day — funding, failure, and shipping for a billion users. Open Q&A.',
-    category: 'TALK',
-    venue: 'Seminar Hall A',
-    startsAt: new Date(now - 15 * day + 17 * 60 * 60 * 1000),
-    tags: 'startups,community,talk',
-    featured: false,
-    posterUrl: 'https://placehold.co/800x1000/07111f/60a5fa?text=FIRECHAT',
-  },
-  {
-    slug: 'open-source-sprint',
-    title: 'Open Source Ship Sprint',
-    description:
-      'Three days, open PRs, real impact. Building Rust/Go CLI utilities, optimizing open web libraries, and getting code merged into major repos.',
-    category: 'BUILD',
-    venue: 'Software Foundry Lab',
-    startsAt: new Date(now - 30 * day),
-    endsAt: new Date(now - 27 * day),
-    tags: 'opensource,rust,devtools,cli',
-    featured: false,
-    posterUrl: 'https://placehold.co/800x1000/07111f/60a5fa?text=OPEN+SOURCE+SPRINT',
+    posterUrl: null,
+    registrationLink: null,
   },
 ]
 
@@ -101,11 +95,24 @@ async function main() {
     await db.event.upsert({
       where: { slug: e.slug },
       update: {
-        posterUrl: e.posterUrl,
+        posterUrl: e.posterUrl ?? posterUrlFor(e.title),
         registrationLink: e.registrationLink ?? null,
       },
-      create: e,
+      create: {
+        ...e,
+        posterUrl: e.posterUrl ?? posterUrlFor(e.title),
+      },
     })
+  }
+
+  // Backfill events created outside this seed, and replace the old generic
+  // placeholder, so every event gets a title-specific poster URL.
+  const eventsNeedingPosters = await db.event.findMany({
+    where: { OR: [{ posterUrl: null }, { posterUrl: DEFAULT_GENERIC_POSTER_URL }] },
+    select: { id: true, title: true },
+  })
+  for (const event of eventsNeedingPosters) {
+    await db.event.update({ where: { id: event.id }, data: { posterUrl: posterUrlFor(event.title) } })
   }
 
   // apply run-of-show schedules (single source of truth: seed-schedules.ts)
