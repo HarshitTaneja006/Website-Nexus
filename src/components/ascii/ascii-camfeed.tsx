@@ -6,7 +6,7 @@ import { frameToPngBlob, paintAscii, renderAscii, frameToText, monoMetrics, RAMP
 import { useToast } from "@/hooks/use-toast";
 
 /**
- * AsciiCamFeed — the ASCILINE endgame: a live webcam piped through the same
+ * AsciiCamFeed - the ASCILINE endgame: a live webcam piped through the same
  * pixel→glyph pipeline as the gallery stills. Everything runs locally in the
  * browser (getUserMedia → canvas sampler → glyphs); no frame ever leaves
  * the machine. Permission-gated, ~12fps, degrade-safe when denied/absent.
@@ -34,14 +34,14 @@ export function AsciiCamFeed() {
 
   const live = state === "live";
 
-  // REC elapsed clock — mm:ss since the stream went live (reset in start())
+  // REC elapsed clock - mm:ss since the stream went live (reset in start())
   useEffect(() => {
     if (!live) return;
     const id = window.setInterval(() => setElapsed((s) => s + 1), 1000);
     return () => window.clearInterval(id);
   }, [live]);
 
-  // render loop — glyph-pipeline the camera at ~TARGET_FPS
+  // render loop - glyph-pipeline the camera at ~TARGET_FPS
   useEffect(() => {
     if (state !== "live") return;
     let raf = 0;
@@ -57,7 +57,7 @@ export function AsciiCamFeed() {
       if (now - last < 1000 / TARGET_FPS) return;
       last = now;
 
-      // exact-fit grid from measured metrics — canvas renders 1:1 (v2)
+      // exact-fit grid from measured metrics - canvas renders 1:1 (v2)
       const width = wrap.clientWidth;
       const height = wrap.clientHeight;
       if (!width || !height) return;
@@ -71,9 +71,9 @@ export function AsciiCamFeed() {
         rows,
         ramp: mode === "pixel" ? RAMPS.blocks : RAMPS.mid,
         mode: mode === "photo" ? "ascii" : mode,
-        gamma: 0.8, // slightly gentler than stills — webcams run dark
+        gamma: 0.8, // slightly gentler than stills - webcams run dark
         colorize: mode === "pixel",
-        supersample: 2, // live feed — lighter sampling, still moiré-free
+        supersample: 2, // live feed - lighter sampling, still moiré-free
         sharpen: 0.3,
       });
       frameRef.current = f;
@@ -130,17 +130,17 @@ export function AsciiCamFeed() {
       setStream(s);
       setElapsed(0);
       setState("live");
-      toast({ title: "CAM ONLINE", description: "glyph pipeline engaged — local only" });
+      toast({ title: "CAM ONLINE", description: "glyph pipeline engaged - local only" });
     } catch (err) {
       if (err instanceof DOMException && (err.name === "NotAllowedError" || err.name === "SecurityError")) {
         setState("denied");
-        setErrorMsg("permission denied — the grid respects your choice");
+        setErrorMsg("permission denied - the grid respects your choice");
       } else if (err instanceof DOMException && err.name === "NotFoundError") {
         setState("unavailable");
         setErrorMsg("no camera detected on this device");
       } else {
         setState("unavailable");
-        setErrorMsg("camera fault — try again");
+        setErrorMsg("camera fault - try again");
       }
     }
   }, [state, toast]);
@@ -269,8 +269,8 @@ export function AsciiCamFeed() {
                 <>
                   <div className="font-mono text-[10px] leading-relaxed tracking-wider text-muted-foreground">
                     {state === "idle"
-                      ? "OFFLINE — pipe your camera through the glyph engine"
-                      : "FEED HALTED — reconnect when ready"}
+                      ? "OFFLINE - pipe your camera through the glyph engine"
+                      : "FEED HALTED - reconnect when ready"}
                   </div>
                   <button
                     onClick={start}
@@ -316,8 +316,8 @@ export function AsciiCamFeed() {
       <div className="flex items-center justify-between gap-3 border-t border-border/70 bg-secondary/30 px-3 py-2">
         <span className="truncate font-mono text-[10px] text-muted-foreground">
           {live
-            ? `GRID ${grid.cols || "—"}×${grid.rows || "—"} · ${fps} FPS · LOCAL ONLY`
-            : "ALL PROCESSING LOCAL — NOTHING IS UPLOADED"}
+            ? `GRID ${grid.cols || "-"}×${grid.rows || "-"} · ${fps} FPS · LOCAL ONLY`
+            : "ALL PROCESSING LOCAL - NOTHING IS UPLOADED"}
         </span>
         <div className="flex shrink-0 items-center gap-2">
           {live && (

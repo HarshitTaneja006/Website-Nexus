@@ -13,18 +13,18 @@ import { useReveal } from "@/components/site/use-reveal";
 import { useToast } from "@/hooks/use-toast";
 
 /**
- * GlyphForge — the scroll-flight's replacement, improvised around one idea:
+ * GlyphForge - the scroll-flight's replacement, improvised around one idea:
  * the club's words are not written, they are FORGED from glyphs.
  *
  * A field of ~2k glyph particles lives on a terminal grid and cycles through
- * three acts (no scroll-jacking, no sticky, no video — nothing browser-
+ * three acts (no scroll-jacking, no sticky, no video - nothing browser-
  * specific, which is exactly why the old flight was dropped):
  *
- *   FORGE   — every particle springs toward a cell of the current word
+ *   FORGE   - every particle springs toward a cell of the current word
  *             (rasterized offscreen, sampled at glyph resolution; edge cells
  *             get light glyphs, the interior gets dense hot ones);
- *   HOLD    — the word breathes while assembled;
- *   SCATTER — a curl-ish flow field blasts the field apart and the next
+ *   HOLD    - the word breathes while assembled;
+ *   SCATTER - a curl-ish flow field blasts the field apart and the next
  *             word condenses out of the chaos.
  *
  * Interactivity is the point: the pointer is a physical stirrer (particles
@@ -34,11 +34,11 @@ import { useToast } from "@/hooks/use-toast";
  *
  * Engine notes:
  * - physics runs in CELL space (floats, cells/second); painting snaps to the
- *   grid and writes into a brightness/char buffer — the same run-length
+ *   grid and writes into a brightness/char buffer - the same run-length
  *   grouped fillText strategy as the hero engine (~4 fillStyle per row);
  * - particle speed maps to a 4-bucket heat palette (cool phosphor → hot
  *   amber), so motion itself becomes the shading;
- * - HUD state is React but updated at ~4 Hz from refs — zero re-renders per
+ * - HUD state is React but updated at ~4 Hz from refs - zero re-renders per
  *   physics frame;
  * - prefers-reduced-motion: no loop; the field settles into one static
  *   assembled frame, controls still re-forge on demand.
@@ -54,7 +54,7 @@ const EDGE_CHARS = "·:=+*";
 const CORE_CHARS = "x%#@&8";
 const DUST_CHARS = "01<>[]{}#$%&*+=/\\|;:~^";
 
-/** painter/dump palette — index-parallel with HEAT colors per cell */
+/** painter/dump palette - index-parallel with HEAT colors per cell */
 const PARTICLE_CHARS: string[] = [
   ...DUST_CHARS.split(""),
   ...EDGE_CHARS.split(""),
@@ -108,10 +108,10 @@ export function GlyphForge() {
     word: DEFAULT_WORDS[0],
     particles: 0,
     fps: 60,
-    grid: "—",
+    grid: "-",
   });
 
-  // engine-only state — refs, never re-rendered per frame
+  // engine-only state - refs, never re-rendered per frame
   const engine = useRef({
     paused: false,
     phase: "forge" as Phase,
@@ -143,7 +143,7 @@ export function GlyphForge() {
     const e = engine.current;
     const { cols, rows } = e;
     if (!cols || !rows) return [];
-    const S = 8; // raster px per glyph cell — supersampled for AA edges
+    const S = 8; // raster px per glyph cell - supersampled for AA edges
     const W = cols * S;
     const H = rows * S;
     const off = document.createElement("canvas");
@@ -154,16 +154,16 @@ export function GlyphForge() {
     ctx.fillStyle = "#000";
     ctx.fillRect(0, 0, W, H);
 
-    // canvas ctx.font cannot resolve CSS var() — explicit heavy sans stack.
+    // canvas ctx.font cannot resolve CSS var() - explicit heavy sans stack.
     // NOTE the weight MUST precede the size in a ctx.font string ("900 48px
-    // Arial"), so the stack is applied via setFont() — a pre-weighted stack
+    // Arial"), so the stack is applied via setFont() - a pre-weighted stack
     // concatenated after the size ("48px 900 Arial") is silently INVALID and
     // canvas falls back to 10px sans (the "PARTICLES: 0" bug).
     const setFont = (fs: number) => {
       ctx.font = `900 ${fs}px Arial, 'Helvetica Neue', 'Liberation Sans', sans-serif`;
     };
 
-    // width of a line when drawn per-letter with explicit tracking —
+    // width of a line when drawn per-letter with explicit tracking -
     // per-letter advance + pad keeps inter-letter gaps alive at glyph-cell
     // resolution (plain fillText kerning merges letters into blobs)
     const trackOf = (fs: number) => fs * 0.12;
@@ -194,7 +194,7 @@ export function GlyphForge() {
       }
     }
 
-    // shrink-to-fit, starting tall — tall letters read best on a grid
+    // shrink-to-fit, starting tall - tall letters read best on a grid
     let fs = fitFs(lines);
 
     const track = trackOf(fs);
@@ -258,13 +258,13 @@ export function GlyphForge() {
     return targets;
   }, []);
 
-  /** (re)cast the field around a word — called by the cycle and by the UI */
+  /** (re)cast the field around a word - called by the cycle and by the UI */
   const forgeWord = useCallback(
     (text: string) => {
       const e = engine.current;
       const targets = sampleWord(text);
       if (!targets.length) return;
-      // grow the field: TWO particles per target cell (oversampled strike —
+      // grow the field: TWO particles per target cell (oversampled strike -
       // if one jitters off its cell the other still marks it) capped for perf
       const want = Math.max(e.particles.length, Math.min(4600, targets.length * 2));
       const ps = e.particles;
@@ -326,7 +326,7 @@ export function GlyphForge() {
       canvas.height = Math.round(h * e.dpr);
       canvas.style.width = `${w}px`;
       canvas.style.height = `${h}px`;
-      // density scales with viewport — small screens get chunkier cells
+      // density scales with viewport - small screens get chunkier cells
       e.fontSize = fontSizeFor(w);
       const m = monoMetrics(e.fontSize);
       e.charW = m.charW;
@@ -335,7 +335,7 @@ export function GlyphForge() {
       e.rows = Math.floor(h / e.lineH);
       e.cellB = new Float32Array(e.cols * e.rows);
       e.cellC = new Int16Array(e.cols * e.rows).fill(-1);
-      // respawn field — re-forge the current word into the new grid
+      // respawn field - re-forge the current word into the new grid
       e.particles = [];
       forgeWord(e.custom ?? DEFAULT_WORDS[e.wordIdx % DEFAULT_WORDS.length]);
     };
@@ -343,7 +343,7 @@ export function GlyphForge() {
     const detonate = () => {
       e.phase = "scatter";
       e.phaseT = 0;
-      // radial impulse from the field center — instant chaos
+      // radial impulse from the field center - instant chaos
       const cx = e.cols / 2;
       const cy = e.rows / 2;
       for (const p of e.particles) {
@@ -446,17 +446,17 @@ export function GlyphForge() {
         const anchored = p.tx >= 0 && (forging || holding);
 
         if (anchored) {
-          // damped spring toward the target cell — under-damped enough to
+          // damped spring toward the target cell - under-damped enough to
           // overshoot a hair (molten metal settling into the mold)
           p.vx += ((p.tx + 0.5 - p.x) * w2 - p.vx * z2w) * dt;
           p.vy += ((p.ty + 0.5 - p.y) * w2 - p.vy * z2w) * dt;
           if (holding) {
-            // barely-there shimmer while the word is assembled — crisp first
+            // barely-there shimmer while the word is assembled - crisp first
             p.vx += (Math.random() - 0.5) * 4 * dt;
             p.vy += (Math.random() - 0.5) * 4 * dt;
           }
         } else {
-          // curl-ish flow field — layered sines, cheap and smooth
+          // curl-ish flow field - layered sines, cheap and smooth
           const a =
             Math.sin(p.x * 0.11 + t * 0.9) +
             Math.cos(p.y * 0.13 - t * 0.7) +
@@ -473,7 +473,7 @@ export function GlyphForge() {
           else if (p.y > rows + 2) p.y -= rows + 4;
         }
 
-        // pointer repulsion — the stirrer (y weighted: cells are tall)
+        // pointer repulsion - the stirrer (y weighted: cells are tall)
         if (hasPointer) {
           const dx = p.x - px;
           const dy = (p.y - py) * 1.9;
@@ -490,7 +490,7 @@ export function GlyphForge() {
         p.x += p.vx * dt;
         p.y += p.vy * dt;
 
-        // paint into the cell buffer — brighter (faster) wins the cell
+        // paint into the cell buffer - brighter (faster) wins the cell
         const cx = Math.round(p.x);
         const cy = Math.round(p.y);
         if (cx < 0 || cy < 0 || cx >= cols || cy >= rows) continue;
@@ -530,7 +530,7 @@ export function GlyphForge() {
     };
 
     // reduced motion: settle the spring with a burst of fixed steps, then
-    // paint exactly one assembled frame — no loop at all
+    // paint exactly one assembled frame - no loop at all
     const settleStatic = () => {
       for (let i = 0; i < 90; i++) tick(1 / 30);
       paint();
@@ -565,7 +565,7 @@ export function GlyphForge() {
     };
     document.addEventListener("visibilitychange", onVis);
 
-    // pointer — the stirrer; a click also fires a one-shot shockwave
+    // pointer - the stirrer; a click also fires a one-shot shockwave
     const cellFromEvent = (ev: PointerEvent) => {
       const rect = wrap.getBoundingClientRect();
       const m = monoMetrics(fontSizeFor(rect.width));
@@ -608,7 +608,7 @@ export function GlyphForge() {
     window.addEventListener("pointerup", onUp);
     wrap.addEventListener("pointerleave", onLeave);
 
-    // site-wide keys (D detonate / P pause) — ignored while typing
+    // site-wide keys (D detonate / P pause) - ignored while typing
     const onKey = (ev: KeyboardEvent) => {
       if (ev.metaKey || ev.ctrlKey || ev.altKey || ev.repeat) return;
       const tg = ev.target as HTMLElement | null;
@@ -654,7 +654,7 @@ export function GlyphForge() {
     }
     engine.current.custom = w;
     forgeWord(w);
-    toast({ title: "FORGING", description: `"${w}" — watch the field re-cast` });
+    toast({ title: "FORGING", description: `"${w}" - watch the field re-cast` });
   }, [word, forgeWord, toast]);
 
   const castChip = useCallback(
@@ -738,7 +738,7 @@ export function GlyphForge() {
               </h2>
             </div>
             <p className="max-w-sm font-mono text-[10px] leading-relaxed tracking-wider text-muted-foreground">
-              THE FLIGHT IS GROUNDED — WORDS ARE FORGED HERE NOW. THOUSANDS OF
+              THE FLIGHT IS GROUNDED - WORDS ARE FORGED HERE NOW. THOUSANDS OF
               GLYPHS CONDENSE INTO A WORD, HOLD, THEN DETONATE INTO THE FLOW
               FIELD AND RE-CAST. STIR THE FIELD WITH YOUR POINTER, CLICK TO
               SHOCKWAVE, OR FORGE YOUR OWN WORD INTO THE GRID.
@@ -755,7 +755,7 @@ export function GlyphForge() {
               className="relative h-[46svh] min-h-[340px] w-full cursor-crosshair touch-none md:h-[56svh]"
             >
               <canvas ref={canvasRef} className="block" aria-hidden="true" />
-              {/* corner HUD — DOM overlays stay crisper than canvas text */}
+              {/* corner HUD - DOM overlays stay crisper than canvas text */}
               <div className="pointer-events-none absolute left-3 top-3 font-mono text-[9px] leading-relaxed tracking-[0.2em] text-primary/50">
                 <p>
                   STATE:{" "}
@@ -829,7 +829,7 @@ export function GlyphForge() {
 
               <span className="mx-1 hidden h-5 w-px bg-border sm:block" aria-hidden="true" />
 
-              {/* domain chips — forge the club's domains on demand */}
+              {/* domain chips - forge the club's domains on demand */}
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="font-mono text-[9px] tracking-[0.25em] text-muted-foreground/70">
                   DOMAINS:

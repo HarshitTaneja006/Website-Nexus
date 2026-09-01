@@ -36,17 +36,17 @@ export default function Page() {
 }
 
 export const metadata: Metadata = {
-  title: "NEXUS — Student Tech Collective, VIT Chennai",
+  title: "NEXUS - Student Tech Collective, VIT Chennai",
   description:
-    "Innovate. Lead. Build. The terminal-grade home of NEXUS — live ASCII engines, the glyph foundry, events, news and more.",
+    "Innovate. Lead. Build. The terminal-grade home of NEXUS - live ASCII engines, the glyph foundry, events, news and more.",
   openGraph: {
-    title: "NEXUS — Student Tech Collective, VIT Chennai",
+    title: "NEXUS - Student Tech Collective, VIT Chennai",
     description: "Innovate. Lead. Build. Live ASCII engines, events and a community of builders.",
-    images: [{ url: "/api/og", width: 1200, height: 630, alt: "NEXUS — Student Tech Collective" }],
+    images: [{ url: "/api/og", width: 1200, height: 630, alt: "NEXUS - Student Tech Collective" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "NEXUS — Student Tech Collective, VIT Chennai",
+    title: "NEXUS - Student Tech Collective, VIT Chennai",
     images: ["/api/og"],
   },
 };

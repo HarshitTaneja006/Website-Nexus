@@ -16,7 +16,7 @@ import { OPS_EVENT } from "@/components/site/ops-console";
 import { SHORTCUTS_EVENT } from "@/components/site/shortcuts-dialog";
 
 /**
- * CommandPalette — a terminal-styled ⌘K launcher.
+ * CommandPalette - a terminal-styled ⌘K launcher.
  * Navigate sections, switch the hero ASCII engine, or run quick actions.
  * Hero engine switching rides on a CustomEvent so components stay decoupled.
  */
@@ -25,7 +25,7 @@ export const ENGINE_EVENT = "nexus:engine";
 
 const SECTIONS = [
   { href: "#top", label: "TOP", hint: "back to the surface" },
-  { href: "#forge", label: "FOUNDRY", hint: "ascii particle forge — words from glyphs" },
+  { href: "#forge", label: "FOUNDRY", hint: "ascii particle forge - words from glyphs" },
   { href: "#about", label: "MANIFESTO", hint: "what nexus compiles" },
   { href: "#events", label: "EVENTS", hint: "transmit schedule + rsvp" },
   { href: "#news", label: "NEWS", hint: "live uplink" },
@@ -217,7 +217,7 @@ export function CommandPalette({
           <CommandItem
             value="open source github"
             onSelect={() =>
-              run(() => window.open("https://github.com/pranav-2399/nexus-website", "_blank", "noopener"))
+              run(() => window.open("https://github.com/harshittaneja006/nexus-website", "_blank", "noopener"))
             }
             className="gap-3 text-xs"
           >

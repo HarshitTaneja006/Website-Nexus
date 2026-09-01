@@ -1,5 +1,5 @@
 /**
- * deep-link.ts — client-side builders for the site's shareable deep links.
+ * deep-link.ts - client-side builders for the site's shareable deep links.
  * Every important surface is addressable:
  *   ?event=<slug>#events   → RSVP dialog (upcoming) / full brief (past)
  *   #frame-<n>             → gallery lightbox on frame n (1-based)
@@ -27,7 +27,7 @@ export function replaceUrl(url: string): void {
   try {
     window.history.replaceState(null, "", url);
   } catch {
-    /* older browsers / sandboxed iframes — non-fatal */
+    /* older browsers / sandboxed iframes - non-fatal */
   }
 }
 

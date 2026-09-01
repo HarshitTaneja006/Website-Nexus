@@ -7,7 +7,7 @@ import { BadgeCheck, ChevronDown, Copy, KeyRound, Lock, Radio, RefreshCcw, Thumb
 import { useToast } from "@/hooks/use-toast";
 
 /**
- * OpsConsole — restricted shell for the core team, opened from the ⌘K
+ * OpsConsole - restricted shell for the core team, opened from the ⌘K
  * palette ("OPS CONSOLE") or via the `nexus:ops` CustomEvent.
  * Key-gated stats: RSVP counts, join requests, presence peak.
  */
@@ -45,7 +45,7 @@ interface Stats {
   joinStatus: { pending: number; approved: number; rejected: number };
 }
 
-/** unmasked records returned by approve — keyed for the welcome packet */
+/** unmasked records returned by approve - keyed for the welcome packet */
 type Unmasked = { id: string; name: string; email: string; branch: string; year: string; interest: string };
 
 export const OPS_EVENT = "nexus:ops";
@@ -90,7 +90,7 @@ export function OpsConsole() {
           cache: "no-store",
         });
         if (res.status === 401) {
-          setError("ACCESS DENIED — wrong key");
+          setError("ACCESS DENIED - wrong key");
           setStats(null);
           return;
         }
@@ -98,7 +98,7 @@ export function OpsConsole() {
         setStats((await res.json()) as Stats);
         toast({ title: "OPS UPLINK LIVE", description: "restricted shell unlocked" });
       } catch {
-        setError("UPLINK FAILURE — try again");
+        setError("UPLINK FAILURE - try again");
       } finally {
         setLoading(false);
       }
@@ -139,16 +139,16 @@ export function OpsConsole() {
         `Hi ${rec.name},`,
         "",
         `Your join request (${rec.interest} · ${rec.branch} Y${rec.year}) was APPROVED on ${reviewed}.`,
-        "Welcome to the collective — VIT Chennai's student tech grid.",
+        "Welcome to the collective - VIT Chennai's student tech grid.",
         "",
         "NEXT STEPS",
         "1. RSVP to what looks fun  → #events on the site",
         "2. Pick a build crew: ai/ml · web · cloud/devops · open source · mobile",
         "3. Watch the wire for transmits (RSS in the footer)",
-        ...(next ? ["", `FLAGSHIP INCOMING: ${next.title} — ${next.when}`] : []),
+        ...(next ? ["", `FLAGSHIP INCOMING: ${next.title} - ${next.when}`] : []),
         "",
         "Innovate. Lead. Build.",
-        "— NEXUS core team · nexusvitc@gmail.com",
+        "- NEXUS core team · nexusvitc@gmail.com",
         "────────────────────────────────────",
       ].join("\n");
     },
@@ -180,7 +180,7 @@ export function OpsConsole() {
         return ok;
       };
       const done = () =>
-        toast({ title: "WELCOME COPIED", description: `${rec.name} · ${rec.email} — paste into the mail client` });
+        toast({ title: "WELCOME COPIED", description: `${rec.name} · ${rec.email} - paste into the mail client` });
       const blocked = () => toast({ title: "CLIPBOARD BLOCKED", variant: "destructive" });
       if (navigator.clipboard) {
         navigator.clipboard.writeText(text).then(done).catch(() => (legacyCopy() ? done() : blocked()));
@@ -209,12 +209,12 @@ export function OpsConsole() {
         }
         if (!res.ok) throw new Error(String(res.status));
         const data = (await res.json()) as { request: Unmasked & { status: string } };
-        // cache the unmasked record that approve returns — the welcome
+        // cache the unmasked record that approve returns - the welcome
         // packet needs the real address
         if (action === "approve") {
           welcomeCache.current.set(id, data.request);
         }
-        // optimistic local patch — no full re-sync needed
+        // optimistic local patch - no full re-sync needed
         setStats((prev) =>
           prev
             ? {
@@ -235,7 +235,7 @@ export function OpsConsole() {
             action === "approve" ? "RECRUIT APPROVED ✓" : action === "reject" ? "REQUEST REJECTED" : "MOVED BACK TO PENDING",
           description:
             action === "approve"
-              ? `${data.request.name} — copy the welcome packet and hit send`
+              ? `${data.request.name} - copy the welcome packet and hit send`
               : `${data.request.name}`,
         });
       } catch {
@@ -253,7 +253,7 @@ export function OpsConsole() {
         <DialogHeader className="border-b border-border/70 bg-secondary/40 px-5 py-3">
           <DialogTitle className="flex items-center gap-2 text-sm tracking-[0.25em] text-primary">
             <Lock className="h-3.5 w-3.5" />
-            NEXUS//OPS — RESTRICTED SHELL
+            NEXUS//OPS - RESTRICTED SHELL
           </DialogTitle>
           <DialogDescription className="text-[10px] tracking-widest text-muted-foreground">
             rsvp ledger · attendee names · join review + welcome packets · wire subscribers · presence peak
@@ -307,7 +307,7 @@ export function OpsConsole() {
                 { label: "WIRE SUBS", value: stats.totals.subscribers },
                 {
                   label: "PEAK GRID",
-                  value: stats.totals.presence.peak == null ? "—" : stats.totals.presence.peak,
+                  value: stats.totals.presence.peak == null ? "-" : stats.totals.presence.peak,
                 },
               ].map((t) => (
                 <div
@@ -392,7 +392,7 @@ export function OpsConsole() {
               </p>
               {stats.subscribers.length === 0 ? (
                 <p className="mt-2 border border-dashed border-border/60 px-3 py-4 text-center text-[10px] tracking-widest text-muted-foreground/60">
-                  wire silent — drop the footer signup link
+                  wire silent - drop the footer signup link
                 </p>
               ) : (
                 <ul className="thin-scroll mt-2 max-h-36 space-y-1 overflow-y-auto pr-1">
@@ -451,7 +451,7 @@ export function OpsConsole() {
                 if (stats.joinRequests.length === 0) {
                   return (
                     <p className="mt-2 border border-dashed border-border/60 px-3 py-4 text-center text-[10px] tracking-widest text-muted-foreground/60">
-                      inbox empty — share the JOIN form link
+                      inbox empty - share the JOIN form link
                     </p>
                   );
                 }

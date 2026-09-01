@@ -32,7 +32,7 @@ export function Footer() {
             <div className="flex items-center gap-4">
               <img
                 src="/logo.svg"
-                alt="NEXUS club logo — navy hexagon with white isometric N"
+                alt="NEXUS club logo - navy hexagon with white isometric N"
                 className="h-12 w-12 shrink-0 opacity-95 transition-opacity duration-300 hover:opacity-100"
               />
               <pre
@@ -43,7 +43,7 @@ export function Footer() {
               </pre>
             </div>
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
-              The student tech collective of VIT Chennai — empowering the next
+              The student tech collective of VIT Chennai - empowering the next
               generation of innovators through collaboration, learning and
               cutting-edge projects.
             </p>

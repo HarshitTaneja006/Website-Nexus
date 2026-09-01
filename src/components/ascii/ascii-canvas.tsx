@@ -5,12 +5,12 @@ import { useToast } from "@/hooks/use-toast";
 import { frameToPngBlob, frameToText, monoFontStack, monoMetrics, RAMPS, type AsciiFrame } from "@/lib/ascii";
 
 /**
- * AsciiCanvas — real-time animated ASCII scenes on a plain canvas.
+ * AsciiCanvas - real-time animated ASCII scenes on a plain canvas.
  * ASCILINE (https://github.com/YusufB5/ASCILINE) homage: the browser canvas
- * becomes a typographic display surface — every pixel you see is a glyph.
+ * becomes a typographic display surface - every pixel you see is a glyph.
  *
  * v2: fonts resolve to the real Geist Mono family (canvas ctx.font cannot
- * read CSS var() — v1 silently rendered 10px sans-serif), cell metrics are
+ * read CSS var() - v1 silently rendered 10px sans-serif), cell metrics are
  * MEASURED per resize, and the donut runs the canonical donut.c math:
  * rigid rotate-X(A)→rotate-Z(B) applied to BOTH point and normal, so the
  * torus no longer wobbles/deforms and the shading tracks the surface.
@@ -18,11 +18,11 @@ import { frameToPngBlob, frameToText, monoFontStack, monoMetrics, RAMPS, type As
  * Presets:
  *  - rain  : phosphor glyph rain (terminal default)
  *  - donut : the classic spinning torus (donut.c math), live in ASCII
- *  - wave  : interference field — sine waves carved into characters
+ *  - wave  : interference field - sine waves carved into characters
  *  - cam   : LIVE FEED → ASCII. Dual-source signal chain:
  *            ① real webcam (getUserMedia, permission-gated, mirrored)
  *            ② on ANY failure (denied / no API / insecure context / no
- *               device) it auto-falls back to the SYNTH feed — the
+ *               device) it auto-falls back to the SYNTH feed - the
  *               blob-loaded hero-flight fly-through looped through the
  *               same glyph sampler, so the backdrop ALWAYS moves
  *            ③ phosphor-noise screen only if both sources die
@@ -71,10 +71,10 @@ export function AsciiCanvas({
     let cols = 0;
     let rows = 0;
     let dpr = 1;
-    // measured metrics — recomputed on resize (never assume 0.6em)
+    // measured metrics - recomputed on resize (never assume 0.6em)
     let charW = monoMetrics(fontSize).charW;
     let lineH = monoMetrics(fontSize).lineH;
-    // cell aspect (width/height) — compensates tall terminal cells so the
+    // cell aspect (width/height) - compensates tall terminal cells so the
     // donut renders geometrically round (re-measured on resize, fonts may
     // land after mount)
     let yScale = charW / lineH;
@@ -108,7 +108,7 @@ export function AsciiCanvas({
       );
     };
 
-    // snapshot support — remembers which buffer the last paint used so a
+    // snapshot support - remembers which buffer the last paint used so a
     // FRAME DUMP can serialize the exact grid on screen (zero per-frame cost)
     type LastPaint =
       | { kind: "grid" }
@@ -306,7 +306,7 @@ export function AsciiCanvas({
      * The canonical donut.c projection, in cell space:
      *   point  P(θ,φ) = ((R2+R1·cosθ)·cosφ, (R2+R1·cosθ)·sinφ, R1·sinθ)
      *   normal N(θ,φ) = (cosθ·cosφ, cosθ·sinφ, sinθ)
-     * then rotate about X by A, about Z by B — the SAME rigid transform for
+     * then rotate about X by A, about Z by B - the SAME rigid transform for
      * point and normal (v1 mixed cosA/sinA between them → wobbly deformed
      * torus). Light L = (0,1,−1)/√2 · N. yScale (measured cell aspect)
      * keeps the silhouette round on tall terminal cells, and K1 fits BOTH
@@ -348,7 +348,7 @@ export function AsciiCanvas({
           const cp = cosPh[i];
           const sp = sinPh[i];
 
-          // point — rotate about X by A, then about Z by B
+          // point - rotate about X by A, then about Z by B
           const px = cx * cp;
           const py = cx * sp;
           const pz = cy;
@@ -358,12 +358,12 @@ export function AsciiCanvas({
           const y2 = px * sinB + py1 * cosB;
           const z2 = pz1;
 
-          // normal — the same two rotations
+          // normal - the same two rotations
           const ny1 = ny0 * sp * cosA - nz0 * sinA;
           const nz1 = ny0 * sp * sinA + nz0 * cosA;
           const ny2 = nx0 * cp * sinB + ny1 * cosB;
 
-          // light (0, 1, -1)/√2 — top-front lit, classic donut.c shading
+          // light (0, 1, -1)/√2 - top-front lit, classic donut.c shading
           const L = (ny2 - nz1) * invSqrt2;
 
           const ooz = 1 / (K2 + z2);
@@ -373,7 +373,7 @@ export function AsciiCanvas({
           const idx = yp * cols + xp;
           if (ooz <= zbuf[idx]) continue;
           zbuf[idx] = ooz;
-          // tonal curve biases toward mid-dark — back edges stay readable
+          // tonal curve biases toward mid-dark - back edges stay readable
           const b = L * 0.5 + 0.5;
           lbuf[idx] = Math.max(0, Math.min(11, Math.round(Math.pow(b, 1.35) * 11)));
         }
@@ -411,7 +411,7 @@ export function AsciiCanvas({
       const v = activeSource === "cam" ? camVideo : synthVideo;
       if (!v || !camOff || !camOffCtx) return;
       if (v.readyState < 2 || v.videoWidth === 0) return;
-      // downsample the active source into the glyph grid — center-crop
+      // downsample the active source into the glyph grid - center-crop
       // (object-cover math) so nothing stretches; webcam is mirrored
       camOff.width = cols;
       camOff.height = rows;
@@ -459,19 +459,19 @@ export function AsciiCanvas({
 
     /* --------------------------------------------------------------
      * Cross-browser camera plumbing.
-     * "Works on some browsers, not others" — the usual culprits, each
+     * "Works on some browsers, not others" - the usual culprits, each
      * handled explicitly below:
      *   1. insecure context (http / sandboxed preview iframe without
      *      allow="camera") → getUserMedia missing or SecurityError;
      *   2. permission hard-denied in browser settings (Chrome resolves
      *      instantly, Safari just hangs) → Permissions pre-check;
-     *   3. camera held by another app (NotReadableError — Zoom/Meet);
+     *   3. camera held by another app (NotReadableError - Zoom/Meet);
      *   4. Safari/iOS play() quirks: detached <video> may reject with
      *      AbortError or simply never start → race loadeddata, then
      *      attach to the DOM as a last resort;
      *   5. strict constraints on laptops without exact camera modes
      *      → a fallback constraint chain (ideal → any → facingMode).
-     * Every failure path funnels into the SYNTH feed — the backdrop
+     * Every failure path funnels into the SYNTH feed - the backdrop
      * always shows a live glyph stream, whatever the browser decided.
      * ------------------------------------------------------------ */
     function waitVideoReady(v: HTMLVideoElement, timeoutMs: number): Promise<boolean> {
@@ -498,10 +498,10 @@ export function AsciiCanvas({
       try {
         await v.play();
       } catch {
-        /* AbortError / NotAllowedError — the readiness poll decides */
+        /* AbortError / NotAllowedError - the readiness poll decides */
       }
       if (await waitVideoReady(v, 2500)) return true;
-      // Safari last resort: detached videos sometimes refuse to start —
+      // Safari last resort: detached videos sometimes refuse to start -
       // mount one off-screen and try once more
       if (!v.isConnected) {
         v.style.cssText =
@@ -510,7 +510,7 @@ export function AsciiCanvas({
         try {
           await v.play();
         } catch {
-          /* ignored — the readiness poll decides */
+          /* ignored - the readiness poll decides */
         }
         if (await waitVideoReady(v, 2500)) return true;
       }
@@ -521,23 +521,23 @@ export function AsciiCanvas({
       camState = "requesting";
       announce("requesting", null, "REQUESTING CAMERA");
       if (window.isSecureContext === false) {
-        void startSynth("INSECURE CONTEXT — SYNTH ENGAGED");
+        void startSynth("INSECURE CONTEXT - SYNTH ENGAGED");
         return;
       }
       if (!navigator.mediaDevices?.getUserMedia) {
-        void startSynth("NO CAMERA API — SYNTH ENGAGED");
+        void startSynth("NO CAMERA API - SYNTH ENGAGED");
         return;
       }
       // Chrome answers permissions.query instantly; Safari/Firefox throw
-      // on the name — either way the fallback chain below still runs
+      // on the name - either way the fallback chain below still runs
       try {
         const perm = await navigator.permissions?.query?.({ name: "camera" as PermissionName });
         if (perm?.state === "denied") {
-          void startSynth("CAMERA BLOCKED IN BROWSER SETTINGS — SYNTH ENGAGED");
+          void startSynth("CAMERA BLOCKED IN BROWSER SETTINGS - SYNTH ENGAGED");
           return;
         }
       } catch {
-        /* unsupported permission name — keep going */
+        /* unsupported permission name - keep going */
       }
 
       // fallback chain: preferred shape → any camera → user-facing only
@@ -554,7 +554,7 @@ export function AsciiCanvas({
           break;
         } catch (e) {
           lastErr = e;
-          // hard permission denial won't heal by re-asking — stop hammering
+          // hard permission denial won't heal by re-asking - stop hammering
           if (e instanceof DOMException && e.name === "NotAllowedError") break;
         }
       }
@@ -562,16 +562,16 @@ export function AsciiCanvas({
         const name = lastErr instanceof DOMException ? lastErr.name : "";
         const reason =
           name === "NotAllowedError"
-            ? "PERMISSION DENIED — SYNTH ENGAGED"
+            ? "PERMISSION DENIED - SYNTH ENGAGED"
             : name === "SecurityError"
-              ? "BLOCKED BY BROWSER POLICY — SYNTH ENGAGED"
+              ? "BLOCKED BY BROWSER POLICY - SYNTH ENGAGED"
               : name === "NotFoundError"
-                ? "NO CAMERA FOUND — SYNTH ENGAGED"
+                ? "NO CAMERA FOUND - SYNTH ENGAGED"
                 : name === "NotReadableError"
-                  ? "CAMERA BUSY (OTHER APP?) — SYNTH ENGAGED"
+                  ? "CAMERA BUSY (OTHER APP?) - SYNTH ENGAGED"
                   : name === "OverconstrainedError"
-                    ? "NO MATCHING CAMERA — SYNTH ENGAGED"
-                    : "CAMERA OFFLINE — SYNTH ENGAGED";
+                    ? "NO MATCHING CAMERA - SYNTH ENGAGED"
+                    : "CAMERA OFFLINE - SYNTH ENGAGED";
         void startSynth(reason);
         return;
       }
@@ -579,7 +579,7 @@ export function AsciiCanvas({
       camStream = stream;
       const v = document.createElement("video");
       v.muted = true;
-      v.setAttribute("muted", ""); // attribute form — iOS Safari honor
+      v.setAttribute("muted", ""); // attribute form - iOS Safari honor
       v.playsInline = true;
       v.setAttribute("playsinline", "");
       v.autoplay = true;
@@ -590,7 +590,7 @@ export function AsciiCanvas({
         v.remove();
         camStream.getTracks().forEach((tr) => tr.stop());
         camStream = null;
-        void startSynth("CAMERA FEED TIMEOUT — SYNTH ENGAGED");
+        void startSynth("CAMERA FEED TIMEOUT - SYNTH ENGAGED");
         return;
       }
       camVideo = v;
@@ -602,7 +602,7 @@ export function AsciiCanvas({
     }
 
     /**
-     * Synth feed — the hero-flight fly-through, blob-loaded and looped,
+     * Synth feed - the hero-flight fly-through, blob-loaded and looped,
      * pushed through the exact same glyph sampler as the webcam. This is
      * why the cam backdrop now works EVERYWHERE: permission-less preview
      * iframes, insecure contexts, machines without cameras.
@@ -760,9 +760,9 @@ export function AsciiCanvas({
     window.addEventListener("pointerup", onUp);
     wrap2.addEventListener("pointerleave", onLeave);
 
-    // ---- FRAME DUMP — serialize the exact glyph grid on screen ----
+    // ---- FRAME DUMP - serialize the exact glyph grid on screen ----
     // hero.tsx dispatches nexus:hero-dump {format}; the engine answers with a
-    // .txt artifact (or a PNG typographic print). Works for every preset —
+    // .txt artifact (or a PNG typographic print). Works for every preset -
     // rain/wave sample `bright`, donut re-uses the last z/l buffers, and the
     // offline cam politely refuses.
     const buildFrame = (): AsciiFrame | null => {
@@ -812,8 +812,8 @@ export function AsciiCanvas({
           title: "NO SIGNAL",
           description:
             preset === "cam"
-              ? "the feed is still spooling — try again in a second."
-              : "engine still warming up — try again in a second.",
+              ? "the feed is still spooling - try again in a second."
+              : "engine still warming up - try again in a second.",
           variant: "destructive",
         });
         return;

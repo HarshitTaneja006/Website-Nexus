@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 
 /**
- * usePresence — live "builders on grid" counter powered by Supabase Realtime Presence.
+ * usePresence - live "builders on grid" counter powered by Supabase Realtime Presence.
  * Broadcasts and synchronizes active visitor counts globally with zero server overhead.
  */
 export function usePresence(): { online: number | null; connected: boolean } {
@@ -100,5 +100,3 @@ export function usePresence(): { online: number | null; connected: boolean } {
 
   return { online, connected };
 }
-
-

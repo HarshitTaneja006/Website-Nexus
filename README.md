@@ -1,4 +1,4 @@
-# NEXUS — Terminal & Club Operations Hub
+# NEXUS - Terminal & Club Operations Hub
 
 <div align="center">
 

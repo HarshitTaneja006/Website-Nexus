@@ -14,9 +14,9 @@ function xesc(text: string): string {
 }
 
 /**
- * GET /api/feed.xml — RSS 2.0 wire feed. Carries every transmit (event)
+ * GET /api/feed.xml - RSS 2.0 wire feed. Carries every transmit (event)
  * as an item so readers/IFTTT/Slack RSS can mirror the schedule. Item
- * links are ?event=slug deep links — feed readers land straight on the
+ * links are ?event=slug deep links - feed readers land straight on the
  * RSVP dialog (upcoming) or full brief (past). Pair it with the
  * Signal.WIRE newsletter: one is pull, the other is push.
  */
@@ -60,7 +60,7 @@ export async function GET(req: Request) {
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>NEXUS WIRE — VIT Chennai</title>
+    <title>NEXUS WIRE - VIT Chennai</title>
     <link>${xesc(link)}</link>
     <description>The NEXUS transmit schedule as a wire feed. Innovate. Lead. Build.</description>
     <language>en-in</language>

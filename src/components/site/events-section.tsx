@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CalendarDays, CalendarPlus, CalendarRange, ClipboardCopy, Link2, ListOrdered, MapPin, Rss, ScanLine, Share2, Timer, Users } from "lucide-react";
+import { CalendarDays, CalendarPlus, CalendarRange, ClipboardCopy, Link2, ListOrdered, MapPin, Rss, ScanLine, Share2, Timer } from "lucide-react";
 import { AsciiBanner } from "@/components/ascii/ascii-banner";
 import { AsciiImage } from "@/components/ascii/ascii-image";
 import { Button } from "@/components/ui/button";
@@ -63,13 +63,10 @@ function parseSchedule(raw: string | null | undefined): ScheduleItem[] {
 
 const fmtDay = new Intl.DateTimeFormat("en-GB", { day: "2-digit", timeZone: "Asia/Calcutta" });
 const fmtMonth = new Intl.DateTimeFormat("en-GB", { month: "short", timeZone: "Asia/Calcutta" });
-const fmtFull = new Intl.DateTimeFormat("en-GB", {
+const fmtDate = new Intl.DateTimeFormat("en-GB", {
   weekday: "short",
   day: "2-digit",
   month: "short",
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false,
   timeZone: "Asia/Calcutta",
 });
 
@@ -134,7 +131,7 @@ function NearestEventCountdown({ target, title, slug }: { target: string; title:
   );
 }
 
-/** RUN OF SHOW — terminal timeline rendered inside the full-brief dialog. */
+/** RUN OF SHOW - terminal timeline rendered inside the full-brief dialog. */
 function ScheduleTimeline({ items }: { items: ScheduleItem[] }) {
   return (
     <div className="mt-5">
@@ -234,10 +231,7 @@ function EventCard({
               ★ FLAGSHIP
             </span>
           )}
-          <span className="ml-auto flex items-center gap-1 font-mono text-[10px] text-muted-foreground">
-            <Users className="h-3 w-3" />
-            {ev.rsvpCount} {isPast ? "attended" : "going"}
-          </span>
+
         </div>
 
         <h3 className="font-display mt-3 text-lg font-bold text-foreground sm:text-xl">
@@ -257,7 +251,7 @@ function EventCard({
         <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 font-mono text-[10px] text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <CalendarDays className="h-3 w-3 text-primary/60" />
-            {fmtFull.format(d)} IST
+            {fmtDate.format(d)}
           </span>
           <span className="flex items-center gap-1.5">
             <MapPin className="h-3 w-3 text-primary/60" />
@@ -311,7 +305,7 @@ function EventCard({
                     });
                     toast({
                       title: "CALENDAR PATCHED",
-                      description: `${ev.slug}.ics downloaded — see you there.`,
+                      description: `${ev.slug}.ics downloaded - see you there.`,
                     });
                   }}
                   className="h-8 px-2.5 font-mono text-[10px] tracking-widest text-muted-foreground hover:bg-primary/10 hover:text-primary"
@@ -338,7 +332,7 @@ function EventCard({
 }
 
 /**
- * MY.RSVP — self-service lookup. Enter the email you RSVP'd with and the
+ * MY.RSVP - self-service lookup. Enter the email you RSVP'd with and the
  * grid echoes back every transmit you're on the list for.
  */
 function MyRsvpLookup() {
@@ -376,7 +370,7 @@ function MyRsvpLookup() {
           className="flex items-center gap-2 text-[10px] tracking-[0.3em] text-primary"
         >
           <ScanLine className="h-3.5 w-3.5" />
-          MY.RSVP — AM I ON THE LIST?
+          MY.RSVP - AM I ON THE LIST?
         </label>
         <div className="flex min-w-[240px] flex-1 items-center gap-2">
           <span className="shrink-0 text-sm text-amber-300">$</span>
@@ -405,12 +399,12 @@ function MyRsvpLookup() {
 
       {state === "error" && (
         <p className="mt-3 text-[10px] tracking-widest text-destructive" role="alert">
-          uplink fault — check the email and retry.
+          uplink fault - check the email and retry.
         </p>
       )}
       {state === "done" && rsvps.length === 0 && (
         <p className="mt-3 text-[10px] tracking-widest text-muted-foreground">
-          no transmits found for that address — RSVP to something below ↓
+          no transmits found for that address - RSVP to something below ↓
         </p>
       )}
       {rsvps.length > 0 && (
@@ -423,7 +417,7 @@ function MyRsvpLookup() {
             >
               {r.featured && <span className="led led-amber shrink-0" title="flagship" />}
               <span className="font-bold tracking-wider text-foreground">{r.title}</span>
-              <span className="text-muted-foreground">{fmtFull.format(new Date(r.startsAt))} IST</span>
+              <span className="text-muted-foreground">{fmtDate.format(new Date(r.startsAt))}</span>
               <span className="flex items-center gap-1 text-muted-foreground">
                 <MapPin className="h-2.5 w-2.5 text-primary/60" />
                 {r.venue}
@@ -480,7 +474,7 @@ export function EventsSection() {
     // re-assert the #events hash once the jump's scroll events have flushed
     window.setTimeout(() => replaceUrl(`${window.location.pathname}#events`), 160);
     toast({
-      title: upcoming ? "DEEP LINK — RSVP PRESELECTED" : "DEEP LINK — ARCHIVE BRIEF",
+      title: upcoming ? "DEEP LINK - RSVP PRESELECTED" : "DEEP LINK - ARCHIVE BRIEF",
       description: ev.title,
     });
   }, [events, toast]);
@@ -499,10 +493,10 @@ export function EventsSection() {
   }, [events]);
 
   const shown = tab === "upcoming" ? upcoming : past;
-  // the full-brief dialog serves BOTH tabs — past transmits are read-only
+  // the full-brief dialog serves BOTH tabs - past transmits are read-only
   const detailIsPast = detailEv ? new Date(detailEv.startsAt).getTime() < Date.now() : false;
 
-  // manual-copy fallback text — shown when the viewport blocks every
+  // manual-copy fallback text - shown when the viewport blocks every
   // programmatic clipboard path (restricted iframes / webviews)
   const [manualShare, setManualShare] = useState<string | null>(null);
 
@@ -513,7 +507,7 @@ export function EventsSection() {
       setManualShare(res.text);
       toast({
         title: "CLIPBOARD LOCKED",
-        description: "manual copy panel opened — select the invite and Ctrl+C.",
+        description: "manual copy panel opened - select the invite and Ctrl+C.",
       });
       return;
     }
@@ -588,7 +582,7 @@ export function EventsSection() {
               <a
                 href="/api/calendar.ics"
                 download="nexus-transmit-schedule.ics"
-                title="subscribe — every event, any calendar app"
+                title="subscribe - every event, any calendar app"
                 className="flex items-center gap-1.5 rounded-sm border border-border px-3 py-2 font-mono text-[10px] tracking-[0.2em] text-muted-foreground transition-all hover:border-primary/50 hover:text-primary hover:shadow-[0_0_12px_rgba(96,165,250,0.15)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
                 <CalendarRange className="h-3.5 w-3.5" />
@@ -723,7 +717,7 @@ export function EventsSection() {
         </DialogContent>
       </Dialog>
 
-      {/* MANUAL.COPY — last-resort share panel for viewports that block every
+      {/* MANUAL.COPY - last-resort share panel for viewports that block every
           programmatic clipboard path (preview iframes, restricted webviews).
           Our own DOM is the one copy channel no permissions policy can take. */}
       <Dialog open={manualShare !== null} onOpenChange={(o) => !o && setManualShare(null)}>
@@ -731,7 +725,7 @@ export function EventsSection() {
           <DialogHeader className="gap-1 sm:gap-2 text-left">
             <DialogTitle className="font-display text-lg sm:text-xl text-foreground">MANUAL.COPY</DialogTitle>
             <DialogDescription className="font-mono text-[10px] sm:text-[11px] text-muted-foreground">
-              this viewport blocks clipboard writes — click the field (auto-selects) and press Ctrl+C.
+              this viewport blocks clipboard writes - click the field (auto-selects) and press Ctrl+C.
             </DialogDescription>
           </DialogHeader>
           <textarea
@@ -795,7 +789,7 @@ export function EventsSection() {
           </DialogHeader>
           {detailEv && (
             <div className="min-w-0 px-3.5 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
-              {/* ASCII banner header — typeset by the same glyph engine */}
+              {/* ASCII banner header - typeset by the same glyph engine */}
               <div className="overflow-x-auto rounded-sm border border-border/60 bg-[#070d16] p-2 sm:p-3">
                 <AsciiBanner text={detailEv.title} />
               </div>
@@ -820,10 +814,7 @@ export function EventsSection() {
                     ★ FLAGSHIP
                   </span>
                 )}
-                <span className="ml-auto flex items-center gap-1 font-mono text-[10px] text-muted-foreground">
-                  <Users className="h-3 w-3" />
-                  {detailEv.rsvpCount} {detailIsPast ? "attended" : "going"}
-                </span>
+
               </div>
 
               <p className="mt-3 sm:mt-4 text-xs sm:text-sm leading-relaxed text-foreground/85">
@@ -833,7 +824,7 @@ export function EventsSection() {
               <div className="mt-3 sm:mt-4 grid gap-2 rounded-sm border border-border/60 bg-secondary/30 p-2.5 sm:p-3 font-mono text-[10px] sm:text-[11px]">
                 <span className="flex items-center gap-2 text-foreground/80">
                   <CalendarDays className="h-3.5 w-3.5 text-primary/70 shrink-0" />
-                  {fmtFull.format(new Date(detailEv.startsAt))} IST
+                  {fmtDate.format(new Date(detailEv.startsAt))}
                 </span>
                 <span className="flex items-center gap-2 text-foreground/80">
                   <MapPin className="h-3.5 w-3.5 text-primary/70 shrink-0" />
@@ -841,7 +832,7 @@ export function EventsSection() {
                 </span>
               </div>
 
-              {/* LIVE.POSTER — this event's still through the glyph engine,
+              {/* LIVE.POSTER - this event's still through the glyph engine,
                   parked on the gallery default (photo, blend 50); read-only
                   here on purpose: no EXPAND, no mode tabs */}
               {detailEv.posterUrl && (
@@ -897,7 +888,7 @@ export function EventsSection() {
                         });
                         toast({
                           title: "CALENDAR PATCHED",
-                          description: `${detailEv.slug}.ics downloaded — see you there.`,
+                          description: `${detailEv.slug}.ics downloaded - see you there.`,
                         });
                       }}
                       className="h-8 flex-1 sm:flex-none px-3 font-mono text-[10px] tracking-widest text-muted-foreground hover:bg-primary/10 hover:text-primary"

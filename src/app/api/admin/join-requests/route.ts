@@ -23,7 +23,7 @@ export async function PATCH(req: NextRequest) {
   const auth = verifyAdminAuth(req);
   if (!auth.ok) {
     return NextResponse.json(
-      { error: auth.error || "ACCESS DENIED — invalid ops credentials" },
+      { error: auth.error || "ACCESS DENIED - invalid ops credentials" },
       { status: 401, headers: { "cache-control": "no-store" } }
     );
   }

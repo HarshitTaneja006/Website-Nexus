@@ -10,24 +10,24 @@ import type { AsciiMode } from "@/lib/ascii";
 
 const SHOTS: LightboxShot[] = [
   {
-    src: "/media/gallery-1.png",
-    label: "HACK_NIGHT.RAW",
-    caption: "Students coding at long tables during a hackathon night",
+    src: "/media/gallery-1.jpg",
+    label: "EXPO_BOOTH.RAW",
+    caption: "Students gathering at a club booth to collect stickers and connect with members",
   },
   {
-    src: "/media/gallery-2.png",
-    label: "BENCH_04.RAW",
-    caption: "Engineers code reviewing and software pairing on a workbench",
+    src: "/media/gallery-2.jpg",
+    label: "BUILD_NIGHT.RAW",
+    caption: "A packed house of student teams hacking and prototyping projects live at Nexathon '25",
   },
   {
-    src: "/media/gallery-3.png",
-    label: "TALK_S9.RAW",
-    caption: "A speaker on stage presenting to a packed auditorium",
+    src: "/media/gallery-3.jpg",
+    label: "CODE_NEXUS.RAW",
+    caption: "High-focus moments as students optimize data structures and code under time constraints",
   },
   {
-    src: "/media/gallery-4.png",
-    label: "WIN_STATE.RAW",
-    caption: "A team of students celebrating with a trophy on stage",
+    src: "/media/gallery-4.jpeg",
+    label: "NEXUS_COMMUNITY.RAW",
+    caption: "The crew behind the scenes celebrating after executing another campus event",
   },
 ];
 
@@ -67,14 +67,14 @@ export function AsciiGallery() {
     }, 160);
     return () => {
       // StrictMode's simulated remount tears this timer down before it can
-      // fire — the effect re-run must be allowed to schedule it again, so
+      // fire - the effect re-run must be allowed to schedule it again, so
       // only clear while the opener has not yet fired.
       if (!linked.current) window.clearTimeout(id);
     };
   }, []);
 
   // keep the hash in sync with the open frame; strip it when closed.
-  // `init` rides along only on card EXPAND — arrow-key navigation keeps
+  // `init` rides along only on card EXPAND - arrow-key navigation keeps
   // whatever mode/blend the viewer already had.
   const openFrame = useCallback(
     (i: number, init?: { mode: AsciiMode; mix: number }) => {
@@ -105,10 +105,10 @@ export function AsciiGallery() {
               </h2>
             </div>
             <p className="max-w-sm font-mono text-[10px] leading-relaxed tracking-wider text-muted-foreground">
-              EVERY FRAME IS RENDERED AS TEXT — NO CODEC, NO GPU, JUST GLYPHS.
+              EVERY FRAME IS RENDERED AS TEXT - NO CODEC, NO GPU, JUST GLYPHS.
               SWITCH MODES, BLEND THE SLIDER, DUMP OR PRINT ANY FRAME (.TXT / .PNG),
               OR GO LIVE: PIPE YOUR OWN CAMERA THROUGH THE ENGINE AND CAPTURE THE
-              GLYPHS. CLICK A FRAME FOR THE FULL-RES TERMINAL VIEW — EACH ONE HAS A
+              GLYPHS. CLICK A FRAME FOR THE FULL-RES TERMINAL VIEW - EACH ONE HAS A
               SHAREABLE #frame-N LINK.
             </p>
           </div>

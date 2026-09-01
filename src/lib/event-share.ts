@@ -1,5 +1,5 @@
 /**
- * event-share.ts — client-side helpers for the event cards:
+ * event-share.ts - client-side helpers for the event cards:
  *  - buildIcs(): RFC 5545 .ics blob so students can add events to any calendar
  *  - shareEvent(): Web Share API → clipboard API → execCommand → manual-copy
  *    payload. Every failure mode degrades; the caller can never crash.
@@ -15,7 +15,7 @@ export type IcsEvent = IcsEventInput & { slug?: string };
 
 export function buildIcs(ev: IcsEvent): string {
   return buildVCalendar([ev], {
-    name: "NEXUS — VIT Chennai",
+    name: "NEXUS - VIT Chennai",
     description: "Single event transmit from the NEXUS schedule",
   });
 }
@@ -42,7 +42,7 @@ export interface ShareResult {
   via: "share" | "clipboard" | "manual";
   message: string;
   /**
-   * The composed invite line — returned ONLY when every programmatic
+   * The composed invite line - returned ONLY when every programmatic
    * write path is blocked (cross-origin iframes / restricted webviews).
    * The caller should open a manual-copy panel with it; our own DOM is
    * the one copy channel no permissions policy can take away.
@@ -53,7 +53,7 @@ export interface ShareResult {
 /** The exact invite text shared/copied, so callers can render it for manual copy. */
 export function buildShareText(ev: SharePayload & { slug: string }): string {
   const url = buildEventDeepLink(ev.slug);
-  return `▸ ${ev.title} — ${ev.description.slice(0, 120)}\n${url}`;
+  return `▸ ${ev.title} - ${ev.description.slice(0, 120)}\n${url}`;
 }
 
 /**
@@ -86,11 +86,11 @@ function legacyCopy(text: string): boolean {
 /**
  * Native share sheet when available; otherwise copy a styled invite line
  * to the clipboard. Returns a toast descriptor for the caller.
- * The shared URL is a true deep link (?event=slug#events) — opening it
+ * The shared URL is a true deep link (?event=slug#events) - opening it
  * scrolls to the schedule and pre-opens this event's dialog.
  *
  * Hardened for restricted contexts (preview iframes, kiosk webviews):
- * a rejected navigator.share is NOT terminal — it falls through to the
+ * a rejected navigator.share is NOT terminal - it falls through to the
  * clipboard stages, and if those are permission-blocked too the full
  * invite text comes back via `text` for a manual-copy panel.
  */
@@ -100,7 +100,7 @@ export async function shareEvent(
   const text = buildShareText(ev);
   const url = buildEventDeepLink(ev.slug);
 
-  // 1) native share sheet — iframes without the `share` permission get
+  // 1) native share sheet - iframes without the `share` permission get
   //    NotAllowedError (share may still be DEFINED there), so failure
   //    must continue down the chain, not surface as an error.
   if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
@@ -112,7 +112,7 @@ export async function shareEvent(
         return { ok: true, via: "share", message: `${ev.title} beamed to your share target.` };
       }
     } catch (err) {
-      // AbortError = user dismissed the sheet — not a failure
+      // AbortError = user dismissed the sheet - not a failure
       if (err instanceof DOMException && err.name === "AbortError") {
         return { ok: false, via: "share", message: "share cancelled." };
       }
@@ -136,7 +136,7 @@ export async function shareEvent(
     return { ok: true, via: "clipboard", message: "invite copied to clipboard." };
   }
 
-  // 4) every programmatic path is blocked — hand back the invite text so
+  // 4) every programmatic path is blocked - hand back the invite text so
   //    the UI can offer an always-works manual copy panel.
-  return { ok: false, via: "manual", message: "clipboard blocked — copy manually.", text };
+  return { ok: false, via: "manual", message: "clipboard blocked - copy manually.", text };
 }

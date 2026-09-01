@@ -24,7 +24,7 @@ const people = [
 
 async function main() {
   const events = await db.event.findMany({ select: { id: true, slug: true, startsAt: true }, orderBy: { startsAt: 'asc' } })
-  if (events.length === 0) throw new Error('no events — run the main seed first')
+  if (events.length === 0) throw new Error('no events - run the main seed first')
 
   let added = 0
   // spread people across events deterministically (i*7 modulo spreading)

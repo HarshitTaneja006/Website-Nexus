@@ -29,7 +29,7 @@ export function BootLoader() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    // ?noboot skips the sequence entirely — QA runs and demo replays
+    // ?noboot skips the sequence entirely - QA runs and demo replays
     // shouldn't wait for (or double-fire) the boot animation
     const noBoot = new URLSearchParams(window.location.search).has("noboot");
     if (reduced || noBoot || sessionStorage.getItem("nexus-booted")) {

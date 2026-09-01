@@ -1,7 +1,7 @@
 /**
- * ShipLog — a GitHub-style contribution heatmap, rendered as pure ASCII blocks.
+ * ShipLog - a GitHub-style contribution heatmap, rendered as pure ASCII blocks.
  * Activity is seeded deterministically (Math.sin hash), so SSR markup matches
- * the client exactly — no state, no hydration risk, no effect.
+ * the client exactly - no state, no hydration risk, no effect.
  */
 
 const WEEKS = 52;
@@ -41,7 +41,7 @@ export function ShipLog() {
     <div className="mt-10 rounded-md border border-border/70 bg-card/50 p-4 sm:p-5">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2 font-mono text-[9px] tracking-[0.25em] text-muted-foreground">
         <span>
-          SHIP_LOG<span className="text-primary/60">.ascii</span> — LAST {WEEKS} WEEKS
+          SHIP_LOG<span className="text-primary/60">.ascii</span> - LAST {WEEKS} WEEKS
         </span>
         <span className="tabular-nums">{total} COMMITS LOGGED</span>
       </div>

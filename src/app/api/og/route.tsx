@@ -1,10 +1,10 @@
 import { ImageResponse } from "next/og";
 
 /**
- * GET /api/og — the site's social card. A phosphor-terminal share image
- * rendered with next/og (satori) — no headless browser, cached hard by the CDN.
+ * GET /api/og - the site's social card. A phosphor-terminal share image
+ * rendered with next/og (satori) - no headless browser, cached hard by the CDN.
  *
- * NOTE: satori is flexbox-only (no CSS grid) — all layout below is flex.
+ * NOTE: satori is flexbox-only (no CSS grid) - all layout below is flex.
  */
 
 export const runtime = "nodejs";
@@ -96,7 +96,7 @@ export async function GET() {
             Innovate. Lead. Build.
           </span>
           <span style={{ fontSize: 22, lineHeight: 1.4, color: "rgba(231,240,250,0.66)", maxWidth: 860, display: "flex" }}>
-            The student tech collective of VIT Chennai — every word on this site is forged from glyphs.
+            The student tech collective of VIT Chennai - every word on this site is forged from glyphs.
           </span>
         </div>
 

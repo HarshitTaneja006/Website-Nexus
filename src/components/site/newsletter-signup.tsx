@@ -5,10 +5,10 @@ import { Radio, Send, Unlink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 /**
- * SignalWire — footer newsletter signup. One email in, an idempotent
+ * SignalWire - footer newsletter signup. One email in, an idempotent
  * subscription out; the panel echoes the live wire total.
  * Opt-out: the LINK ACTIVE state offers a one-tap sever, and ?unsub=<email>
- * deep links (from real transmissions) auto-fire the same DELETE endpoint —
+ * deep links (from real transmissions) auto-fire the same DELETE endpoint -
  * genuine one-click unsubscribe, then the param is scrubbed from the URL.
  */
 
@@ -29,7 +29,7 @@ export function NewsletterSignup() {
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) {
       toast({
         title: "INVALID FREQUENCY",
-        description: "that email won't parse — check it and retry.",
+        description: "that email won't parse - check it and retry.",
         variant: "destructive",
       });
       return;
@@ -49,7 +49,7 @@ export function NewsletterSignup() {
       toast({
         title: data.already ? "ALREADY ON THE WIRE" : "WIRE TAPPED",
         description: data.already
-          ? "you're subscribed — first ping lands with the next event."
+          ? "you're subscribed - first ping lands with the next event."
           : `subscribed · you are node #${data.total} on the wire`,
       });
     } catch (err) {
@@ -78,13 +78,13 @@ export function NewsletterSignup() {
         setState("severed");
         setNotice(
           data.removed
-            ? `${target} removed — zero further transmissions.`
-            : `${target} wasn't on the wire — nothing to remove.`
+            ? `${target} removed - zero further transmissions.`
+            : `${target} wasn't on the wire - nothing to remove.`
         );
         toast({
           title: data.removed ? "LINK SEVERED" : "NOT ON THE WIRE",
           description: data.removed
-            ? "unsubscribed — the grid respects your frequency."
+            ? "unsubscribed - the grid respects your frequency."
             : "that address has no active subscription.",
         });
       } catch (err) {
@@ -126,10 +126,10 @@ export function NewsletterSignup() {
           <span aria-hidden="true" className={`led ${linked ? "led-amber" : ""}`} />
           <Radio className="h-3.5 w-3.5" />
           {linked
-            ? "SIGNAL.WIRE — LINK ACTIVE"
+            ? "SIGNAL.WIRE - LINK ACTIVE"
             : state === "severed"
-              ? "SIGNAL.WIRE — LINK SEVERED"
-              : "SIGNAL.WIRE — EVENT PINGS, NO SPAM"}
+              ? "SIGNAL.WIRE - LINK SEVERED"
+              : "SIGNAL.WIRE - EVENT PINGS, NO SPAM"}
         </p>
         <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
           one transmission per event: launch announcements, hackathon calls and

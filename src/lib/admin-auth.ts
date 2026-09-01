@@ -70,7 +70,7 @@ export function verifyAdminAuth(req: NextRequest): { ok: boolean; error?: string
     const b = createHash("sha256").update(expectedSecret).digest();
     const matches = timingSafeEqual(a, b);
     if (!matches) {
-      return { ok: false, error: "ACCESS DENIED — invalid admin credentials" };
+      return { ok: false, error: "ACCESS DENIED - invalid admin credentials" };
     }
     return { ok: true };
   } catch (err) {

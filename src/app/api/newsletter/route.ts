@@ -8,7 +8,7 @@ const EMAIL_RE = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0
 
 /**
  * POST /api/newsletter { email }
- * Signal.Wire subscription — idempotent (email unique).
+ * Signal.Wire subscription - idempotent (email unique).
  */
 export async function POST(req: NextRequest) {
   let body: { email?: unknown };

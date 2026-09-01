@@ -6,19 +6,19 @@ import { monoMetrics, paintAscii, RAMPS, renderAscii, frameToText, frameToPngBlo
 import { useToast } from "@/hooks/use-toast";
 
 /**
- * AsciiLightbox — fullscreen viewer that re-renders a gallery shot as
+ * AsciiLightbox - fullscreen viewer that re-renders a gallery shot as
  * high-resolution ASCII (ASCILINE-style mapper pushed to 60–260 cols).
  * Arrow keys navigate shots, Esc closes, slider dials the glyph density.
  *
  * v2 (continuity round):
- *   - opens in the CARD's render state (initialMode/initialMix) — expanded
+ *   - opens in the CARD's render state (initialMode/initialMix) - expanded
  *     frames no longer silently reset to ascii;
  *   - PHOTO mode now actually shows the photo: a real <img> underlay sits
  *     behind the glyph canvas (v1 painted glyphs on a transparent bg with
- *     nothing behind — "photo" mode was just sparse glyphs on black);
+ *     nothing behind - "photo" mode was just sparse glyphs on black);
  *   - BLEND slider (same semantics as the cards: 100 = full ascii,
  *     0 = full photo) drives the underlay/canvas crossfade;
- *   - canvas gets an explicit CSS px size after every paint — v1 left the
+ *   - canvas gets an explicit CSS px size after every paint - v1 left the
  *     style size unset, so on retina the bitmap (w×dpr) laid out at dpr×
  *     CSS px and object-contain resampled it (the big-view blur);
  *   - repaints once webfonts settle (metrics vs fallback-face drift).
@@ -59,13 +59,13 @@ export function AsciiLightbox({
   const { toast } = useToast();
 
   const [ready, setReady] = useState(false);
-  // open exactly where the card was — photo/50 by default, never a hard reset
+  // open exactly where the card was - photo/50 by default, never a hard reset
   const [mode, setMode] = useState<AsciiMode>(initialMode);
   const [mix, setMix] = useState(initialMix); // 100 = full ascii, 0 = full photo
   const [zoom, setZoom] = useState(150); // target column count
   const [grid, setGrid] = useState({ cols: 0, rows: 0 });
 
-  // reset readiness when the shot changes — state-adjust-during-render pattern
+  // reset readiness when the shot changes - state-adjust-during-render pattern
   const [prevSrc, setPrevSrc] = useState(shot.src);
   if (prevSrc !== shot.src) {
     setPrevSrc(shot.src);
@@ -98,7 +98,7 @@ export function AsciiLightbox({
     const maxH = window.innerHeight - 190;
     const aspect = img.naturalHeight / img.naturalWidth;
 
-    // cell geometry from MEASURED metrics — v1 hardcoded 0.6em/1.06em and
+    // cell geometry from MEASURED metrics - v1 hardcoded 0.6em/1.06em and
     // drifted against the painted font
     const fontSize = 13;
     const { charW, lineH } = monoMetrics(fontSize, 600);
@@ -128,7 +128,7 @@ export function AsciiLightbox({
       fontWeight: 600,
       dpr: Math.min(3, window.devicePixelRatio || 1),
     });
-    // explicit CSS size — without it the bitmap (css×dpr device px) lays out
+    // explicit CSS size - without it the bitmap (css×dpr device px) lays out
     // at dpr× css px on retina and object-contain resamples it into blur
     if (size.width && size.height) {
       canvas.style.width = `${size.width}px`;
@@ -172,7 +172,7 @@ export function AsciiLightbox({
 
   // keyboard controls + scroll lock
   // capture-phase: when the lightbox sits ABOVE a Radix dialog (event-brief
-  // poster), Escape/Arrows must be consumed here — otherwise the dialog
+  // poster), Escape/Arrows must be consumed here - otherwise the dialog
   // beneath would close in the same keystroke.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -248,7 +248,7 @@ export function AsciiLightbox({
       { fontSize: mode === "pixel" ? 12 : 14 }
     );
     if (!blob) {
-      toast({ title: "PRINT FAILED", description: "frame unavailable — retry", variant: "destructive" });
+      toast({ title: "PRINT FAILED", description: "frame unavailable - retry", variant: "destructive" });
       return;
     }
     const url = URL.createObjectURL(blob);
@@ -264,7 +264,7 @@ export function AsciiLightbox({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={`ASCII lightbox — ${shot.label}`}
+      aria-label={`ASCII lightbox - ${shot.label}`}
       className="fixed inset-0 z-[90] flex flex-col bg-[#03060c]/97 backdrop-blur-sm"
     >
       {/* top chrome */}
@@ -344,7 +344,7 @@ export function AsciiLightbox({
         </div>
       </div>
 
-      {/* canvas stage — photo underlay + glyph canvas share one shrink-wrap
+      {/* canvas stage - photo underlay + glyph canvas share one shrink-wrap
           box so the blend aligns with the frame */}
       <div className="scanlines relative flex flex-1 items-center justify-center overflow-hidden p-4">
         {!ready && (
@@ -391,7 +391,7 @@ export function AsciiLightbox({
       {/* bottom readout + zoom */}
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-border/70 bg-[#050a12]/90 px-4 py-2.5 font-mono text-[10px] tracking-widest text-muted-foreground sm:px-6">
         <span className="tabular-nums">
-          GRID {grid.cols || "—"}×{grid.rows || "—"} GLYPHS
+          GRID {grid.cols || "-"}×{grid.rows || "-"} GLYPHS
         </span>
         <div className="flex items-center gap-2.5">
           <Blend className="h-3.5 w-3.5 text-primary/70" />
