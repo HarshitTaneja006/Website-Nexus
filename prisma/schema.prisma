@@ -16,8 +16,10 @@ model Event {
   venue       String
   startsAt    DateTime
   endsAt      DateTime?
-  tags        String   // comma separated
-  featured    Boolean  @default(false)
+  tags            String   // comma separated
+  featured        Boolean  @default(false) // flagship event marker
+  posterUrl       String?
+  registrationLink String?
   schedule    String?  // JSON array of { time, title, detail? } — run-of-show timeline
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

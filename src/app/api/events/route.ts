@@ -25,6 +25,8 @@ export async function GET() {
           endsAt: e.endsAt ? e.endsAt.toISOString() : null,
           tags: e.tags,
           featured: e.featured,
+          posterUrl: e.posterUrl,
+          registrationLink: e.registrationLink,
           schedule: e.schedule,
           rsvpCount: e._count.rsvps,
         })),

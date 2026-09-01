@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { CalendarDays, CalendarPlus, CalendarRange, ClipboardCopy, Link2, ListOrdered, MapPin, Rss, ScanLine, Share2, Timer, Users } from "lucide-react";
 import { AsciiBanner } from "@/components/ascii/ascii-banner";
 import { AsciiImage } from "@/components/ascii/ascii-image";
-import type { LightboxShot } from "@/components/ascii/ascii-lightbox";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -33,6 +32,8 @@ export interface EventDTO {
   endsAt: string | null;
   tags: string;
   featured: boolean;
+  posterUrl: string | null;
+  registrationLink: string | null;
   schedule?: string | null;
   rsvpCount: number;
 }
@@ -43,58 +44,6 @@ interface ScheduleItem {
   detail?: string;
 }
 
-/**
- * Per-event ASCII poster — every event gets its own photo piped through the
- * glyph engine inside the full-brief dialog (ASCII.POSTER panel). Falls back
- * gracefully for slugs without a poster yet.
- */
-const POSTERS: Record<string, LightboxShot> = {
-  "nexus-hack-5.0": {
-    src: "/media/poster-hack.png",
-    label: "NEXUS_HACK_5.0.POSTER",
-    caption: "the hackathon arena at midnight",
-  },
-  "open-source-sprint": {
-    src: "/media/poster-rover.png",
-    label: "OS_SPRINT.POSTER",
-    caption: "collaborative git graph and cli terminal pairing",
-  },
-  "rover-build-sprint": {
-    src: "/media/poster-rover.png",
-    label: "OS_SPRINT.POSTER",
-    caption: "collaborative git graph and cli terminal pairing",
-  },
-  "intro-to-transformers": {
-    src: "/media/poster-transformers.png",
-    label: "TRANSFORMERS.POSTER",
-    caption: "attention maps on the whiteboard",
-  },
-  "cloud-native-sunday": {
-    src: "/media/poster-k8s.png",
-    label: "K8S_PLAYGROUND.POSTER",
-    caption: "orchestration dashboards on the projector",
-  },
-  "founders-firechat": {
-    src: "/media/poster-firechat.png",
-    label: "FIRECHAT.POSTER",
-    caption: "founders fireside, warm amber",
-  },
-  "android-from-zero": {
-    src: "/media/poster-android.png",
-    label: "ANDROID_ZERO.POSTER",
-    caption: "jetpack compose live build",
-  },
-  "fullstack-showdown": {
-    src: "/media/poster-ctf.png",
-    label: "DEV_SHOWDOWN.POSTER",
-    caption: "the fullstack live arena — code editors everywhere",
-  },
-  "cyber-night-ctf": {
-    src: "/media/poster-ctf.png",
-    label: "DEV_SHOWDOWN.POSTER",
-    caption: "the fullstack live arena — code editors everywhere",
-  },
-};
 
 /** Parse the DB-backed run-of-show JSON defensively. */
 function parseSchedule(raw: string | null | undefined): ScheduleItem[] {
@@ -124,8 +73,8 @@ const fmtFull = new Intl.DateTimeFormat("en-GB", {
   timeZone: "Asia/Calcutta",
 });
 
-/** Live T-minus ticker to the flagship upcoming event (IST). */
-function FlagshipCountdown({ target, title, slug }: { target: string; title: string; slug: string }) {
+/** Live T-minus ticker to the nearest upcoming event (IST). */
+function NearestEventCountdown({ target, title, slug }: { target: string; title: string; slug: string }) {
   const [now, setNow] = useState<number | null>(null);
   const { toast } = useToast();
 
@@ -169,17 +118,17 @@ function FlagshipCountdown({ target, title, slug }: { target: string; title: str
         onClick={async () => {
           try {
             await navigator.clipboard.writeText(buildEventDeepLink(slug));
-            toast({ title: "FLAGSHIP LINK COPIED", description: "opens straight on the RSVP dialog" });
+            toast({ title: "EVENT LINK COPIED", description: "opens straight on the RSVP dialog" });
           } catch {
             toast({ title: "CLIPBOARD BLOCKED", description: "link: /?event=nexus-hack-5.0", variant: "destructive" });
           }
         }}
-        aria-label="Copy deep link to the flagship event"
-        title="copy flagship deep link"
+        aria-label="Copy deep link to the nearest upcoming event"
+        title="copy nearest event deep link"
         className="ml-auto flex items-center gap-1.5 rounded-sm border border-amber-300/25 bg-amber-300/5 px-2 py-1 font-mono text-[9px] tracking-[0.25em] text-amber-300/80 transition-all hover:border-amber-300/60 hover:text-amber-300 hover:shadow-[0_0_12px_rgba(251,191,36,0.15)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
       >
         <Link2 className="h-3 w-3" />
-        FLAGSHIP LINK
+        EVENT LINK
       </button>
     </div>
   );
@@ -370,14 +319,15 @@ function EventCard({
                   <CalendarPlus className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">.ICS</span>
                 </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => onRsvp(ev)}
-                  className="h-8 border-primary/40 px-4 font-mono text-[10px] tracking-widest text-primary hover:bg-primary/15 hover:text-primary"
-                >
-                  RSVP_
-                </Button>
+                {ev.registrationLink ? (
+                  <Button asChild size="sm" variant="outline" className="h-8 border-amber-300/40 px-4 font-mono text-[10px] tracking-widest text-amber-300 hover:bg-amber-300/15 hover:text-amber-200">
+                    <a href={ev.registrationLink} target="_blank" rel="noopener noreferrer">REGISTER_</a>
+                  </Button>
+                ) : (
+                  <Button size="sm" variant="outline" onClick={() => onRsvp(ev)} className="h-8 border-primary/40 px-4 font-mono text-[10px] tracking-widest text-primary hover:bg-primary/15 hover:text-primary">
+                    RSVP_
+                  </Button>
+                )}
               </>
             )}
           </div>
@@ -535,7 +485,7 @@ export function EventsSection() {
     });
   }, [events, toast]);
 
-  const { upcoming, past, featured } = useMemo(() => {
+  const { upcoming, past, flagship, nearest } = useMemo(() => {
     const now = Date.now();
     const list = events ?? [];
     const up = list.filter((e) => new Date(e.startsAt).getTime() >= now);
@@ -543,7 +493,8 @@ export function EventsSection() {
     return {
       upcoming: up.sort((a, b) => +new Date(a.startsAt) - +new Date(b.startsAt)),
       past: pa.sort((a, b) => +new Date(b.startsAt) - +new Date(a.startsAt)),
-      featured: up.find((e) => e.featured) ?? null,
+      flagship: up.find((e) => e.featured) ?? null,
+      nearest: up[0] ?? null,
     };
   }, [events]);
 
@@ -670,15 +621,15 @@ export function EventsSection() {
             </div>
           </div>
 
-          {/* flagship countdown */}
-          {tab === "upcoming" && featured && (
-            <FlagshipCountdown target={featured.startsAt} title={featured.title} slug={featured.slug} />
+          {/* countdown always follows the nearest upcoming event, not the flagship */}
+          {tab === "upcoming" && nearest && (
+            <NearestEventCountdown target={nearest.startsAt} title={nearest.title} slug={nearest.slug} />
           )}
 
-          {/* featured */}
-          {tab === "upcoming" && featured && (
+          {/* flagship */}
+          {tab === "upcoming" && flagship && (
             <div className="mt-8">
-              <EventCard ev={featured} onRsvp={setDialogEv} onShare={doShare} onDetail={setDetailEv} featured />
+              <EventCard ev={flagship} onRsvp={setDialogEv} onShare={doShare} onDetail={setDetailEv} featured />
             </div>
           )}
 
@@ -694,7 +645,7 @@ export function EventsSection() {
                   </div>
                 ))
               : shown
-                  .filter((e) => e.id !== featured?.id || tab === "past")
+                  .filter((e) => e.id !== flagship?.id || tab === "past")
                   .map((ev) => (
                     <EventCard key={ev.id} ev={ev} onRsvp={setDialogEv} onShare={doShare} onDetail={setDetailEv} />
                   ))}
@@ -893,20 +844,18 @@ export function EventsSection() {
               {/* LIVE.POSTER — this event's still through the glyph engine,
                   parked on the gallery default (photo, blend 50); read-only
                   here on purpose: no EXPAND, no mode tabs */}
-              {(() => {
-                const poster = POSTERS[detailEv.slug];
-                if (!poster) return null;
-                return (
-                  <div className="poster-frame mt-3 sm:mt-4 overflow-hidden rounded-md">
-                    <AsciiImage
-                      {...poster}
-                      compact
-                      initialMode="photo"
-                      initialMix={50}
-                    />
-                  </div>
-                );
-              })()}
+              {detailEv.posterUrl && (
+                <div className="poster-frame mt-3 sm:mt-4 overflow-hidden rounded-md">
+                  <AsciiImage
+                    src={detailEv.posterUrl}
+                    label={`${detailEv.slug.toUpperCase()}.POSTER`}
+                    caption={`${detailEv.title} event poster`}
+                    compact
+                    initialMode="photo"
+                    initialMix={50}
+                  />
+                </div>
+              )}
 
               {(() => {
                 const items = parseSchedule(detailEv.schedule);
@@ -956,16 +905,22 @@ export function EventsSection() {
                       <CalendarPlus className="h-3.5 w-3.5" />
                       .ICS
                     </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        setDetailEv(null);
-                        setDialogEv(detailEv);
-                      }}
-                      className="h-8 flex-1 sm:flex-none border border-primary/40 bg-primary/10 px-4 font-mono text-[10px] tracking-widest text-primary hover:bg-primary/20"
-                    >
-                      RSVP_
-                    </Button>
+                    {detailEv.registrationLink ? (
+                      <Button asChild size="sm" className="h-8 flex-1 sm:flex-none border border-amber-300/40 bg-amber-300/10 px-4 font-mono text-[10px] tracking-widest text-amber-300 hover:bg-amber-300/20">
+                        <a href={detailEv.registrationLink} target="_blank" rel="noopener noreferrer">REGISTER_</a>
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setDetailEv(null);
+                          setDialogEv(detailEv);
+                        }}
+                        className="h-8 flex-1 sm:flex-none border border-primary/40 bg-primary/10 px-4 font-mono text-[10px] tracking-widest text-primary hover:bg-primary/20"
+                      >
+                        RSVP_
+                      </Button>
+                    )}
                   </>
                 )}
               </div>
