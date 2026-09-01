@@ -17,6 +17,8 @@ const events = [
     endsAt: new Date(now + 13 * day + 12 * 60 * 60 * 1000),
     tags: 'hackathon,fullstack,cloud,ai',
     featured: true,
+    posterUrl: 'https://placehold.co/800x1000/07111f/60a5fa?text=NEXUS+HACK+5.0',
+    registrationLink: 'https://example.com/register/nexus-hack-5',
   },
   {
     slug: 'intro-to-transformers',
@@ -28,6 +30,7 @@ const events = [
     startsAt: new Date(now + 4 * day + 18 * 60 * 60 * 1000),
     tags: 'ai/ml,python,pytorch',
     featured: false,
+    posterUrl: 'https://placehold.co/800x1000/07111f/60a5fa?text=TRANSFORMERS',
   },
   {
     slug: 'cloud-native-sunday',
@@ -39,6 +42,8 @@ const events = [
     startsAt: new Date(now + 9 * day + 10 * 60 * 60 * 1000),
     tags: 'cloud,docker,kubernetes',
     featured: false,
+    posterUrl: 'https://placehold.co/800x1000/07111f/60a5fa?text=K8S+PLAYGROUND',
+    registrationLink: 'https://example.com/register/cloud-native-sunday',
   },
   {
     slug: 'fullstack-showdown',
@@ -50,6 +55,7 @@ const events = [
     startsAt: new Date(now + 20 * day + 19 * 60 * 60 * 1000),
     tags: 'web,fullstack,typescript,realtime',
     featured: false,
+    posterUrl: 'https://placehold.co/800x1000/07111f/60a5fa?text=DEV+SHOWDOWN',
   },
   {
     slug: 'android-from-zero',
@@ -61,6 +67,7 @@ const events = [
     startsAt: new Date(now - 6 * day + 18 * 60 * 60 * 1000),
     tags: 'mobile,kotlin,compose',
     featured: false,
+    posterUrl: 'https://placehold.co/800x1000/07111f/60a5fa?text=ANDROID+ZERO',
   },
   {
     slug: 'founders-firechat',
@@ -72,6 +79,7 @@ const events = [
     startsAt: new Date(now - 15 * day + 17 * 60 * 60 * 1000),
     tags: 'startups,community,talk',
     featured: false,
+    posterUrl: 'https://placehold.co/800x1000/07111f/60a5fa?text=FIRECHAT',
   },
   {
     slug: 'open-source-sprint',
@@ -84,6 +92,7 @@ const events = [
     endsAt: new Date(now - 27 * day),
     tags: 'opensource,rust,devtools,cli',
     featured: false,
+    posterUrl: 'https://placehold.co/800x1000/07111f/60a5fa?text=OPEN+SOURCE+SPRINT',
   },
 ]
 
@@ -91,7 +100,10 @@ async function main() {
   for (const e of events) {
     await db.event.upsert({
       where: { slug: e.slug },
-      update: {},
+      update: {
+        posterUrl: e.posterUrl,
+        registrationLink: e.registrationLink ?? null,
+      },
       create: e,
     })
   }

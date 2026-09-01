@@ -126,6 +126,9 @@ export function AsciiImage({ src, label, caption, onExpand, compact = false, ini
   useEffect(() => {
     const img = new Image();
     img.decoding = "async";
+    // Poster URLs may be hosted outside the app; request CORS access before
+    // drawing the image to the ASCII canvas.
+    img.crossOrigin = "anonymous";
     img.src = src;
     img.onload = () => {
       imgRef.current = img;
