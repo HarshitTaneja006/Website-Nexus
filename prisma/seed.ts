@@ -10,12 +10,12 @@ const events = [
     slug: 'nexus-hack-5.0',
     title: 'NEXUS HACK 5.0',
     description:
-      'Our flagship 36-hour hackathon. 200+ builders, real industry problem statements, hardware lab access, and a prize pool worth ₹1L. Ships demo or it didn\'t happen.',
+      'Our flagship 36-hour hackathon. 200+ builders, real industry problem statements, cloud compute clusters & AI credits, and a prize pool worth ₹1L. Ships demo or it didn\'t happen.',
     category: 'HACKATHON',
     venue: 'Tech Park Auditorium, VIT Chennai',
     startsAt: new Date(now + 12 * day),
     endsAt: new Date(now + 13 * day + 12 * 60 * 60 * 1000),
-    tags: 'hackathon,fullstack,hardware,48h',
+    tags: 'hackathon,fullstack,cloud,ai',
     featured: true,
   },
   {
@@ -41,14 +41,14 @@ const events = [
     featured: false,
   },
   {
-    slug: 'cyber-night-ctf',
-    title: 'CyberNight CTF',
+    slug: 'fullstack-showdown',
+    title: 'Full-Stack DevShowdown',
     description:
-      'Jeopardy-style capture the flag. Web, crypto, forensics and rev — beginner friendly boxes alongside sweaty ones. Teams of up to 3.',
+      'Real-time frontend and backend speed build. 4 hours to architect, code and ship a full-stack product with live webhooks and websocket feeds.',
     category: 'COMPETITION',
-    venue: 'Security Lab + Online',
+    venue: 'Computing Lab 3 + Online',
     startsAt: new Date(now + 20 * day + 19 * 60 * 60 * 1000),
-    tags: 'cybersecurity,ctf,linux',
+    tags: 'web,fullstack,typescript,realtime',
     featured: false,
   },
   {
@@ -74,15 +74,15 @@ const events = [
     featured: false,
   },
   {
-    slug: 'rover-build-sprint',
-    title: 'Rover Build Sprint',
+    slug: 'open-source-sprint',
+    title: 'Open Source Ship Sprint',
     description:
-      'Three days, one autonomous rover. Chassis, vision, and a line-following finale on the campus track.',
+      'Three days, open PRs, real impact. Building Rust/Go CLI utilities, optimizing open web libraries, and getting code merged into major repos.',
     category: 'BUILD',
-    venue: 'Robotics Bay',
+    venue: 'Software Foundry Lab',
     startsAt: new Date(now - 30 * day),
     endsAt: new Date(now - 27 * day),
-    tags: 'robotics,embedded,cv',
+    tags: 'opensource,rust,devtools,cli',
     featured: false,
   },
 ]

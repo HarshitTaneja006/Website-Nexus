@@ -54,10 +54,15 @@ const POSTERS: Record<string, LightboxShot> = {
     label: "NEXUS_HACK_5.0.POSTER",
     caption: "the hackathon arena at midnight",
   },
+  "open-source-sprint": {
+    src: "/media/poster-rover.png",
+    label: "OS_SPRINT.POSTER",
+    caption: "collaborative git graph and cli terminal pairing",
+  },
   "rover-build-sprint": {
     src: "/media/poster-rover.png",
-    label: "ROVER_SPRINT.POSTER",
-    caption: "rover on the mini obstacle course",
+    label: "OS_SPRINT.POSTER",
+    caption: "collaborative git graph and cli terminal pairing",
   },
   "intro-to-transformers": {
     src: "/media/poster-transformers.png",
@@ -79,12 +84,17 @@ const POSTERS: Record<string, LightboxShot> = {
     label: "ANDROID_ZERO.POSTER",
     caption: "jetpack compose live build",
   },
+  "fullstack-showdown": {
+    src: "/media/poster-ctf.png",
+    label: "DEV_SHOWDOWN.POSTER",
+    caption: "the fullstack live arena — code editors everywhere",
+  },
   "cyber-night-ctf": {
     src: "/media/poster-ctf.png",
-    label: "CYBERNIGHT_CTF.POSTER",
-    caption: "the ctf lab — green terminals everywhere",
+    label: "DEV_SHOWDOWN.POSTER",
+    caption: "the fullstack live arena — code editors everywhere",
   },
-}
+};
 
 /** Parse the DB-backed run-of-show JSON defensively. */
 function parseSchedule(raw: string | null | undefined): ScheduleItem[] {
@@ -236,7 +246,7 @@ function EventCard({
   const { toast } = useToast();
   return (
     <article
-      className={`group relative flex flex-col overflow-hidden rounded-md border bg-card transition-all duration-300 hover:border-primary/40 hover:shadow-[0_0_30px_rgba(74,222,128,0.08)] ${
+      className={`group relative flex flex-col overflow-hidden rounded-md border bg-card transition-all duration-300 hover:border-primary/40 hover:shadow-[0_0_30px_rgba(96,165,250,0.08)] ${
         featured ? "border-primary/35 sm:flex-row" : "border-border sm:flex-row"
       }`}
     >
@@ -612,7 +622,7 @@ export function EventsSection() {
   };
 
   return (
-    <section id="events" className="relative border-b border-border/60 bg-[#060a07]">
+    <section id="events" className="relative border-b border-border/60 bg-[#060a12]">
       <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:py-28">
         <div ref={ref} className={`reveal ${seen ? "is-visible" : ""}`}>
           <div className="flex flex-wrap items-end justify-between gap-4">
@@ -628,7 +638,7 @@ export function EventsSection() {
                 href="/api/calendar.ics"
                 download="nexus-transmit-schedule.ics"
                 title="subscribe — every event, any calendar app"
-                className="flex items-center gap-1.5 rounded-sm border border-border px-3 py-2 font-mono text-[10px] tracking-[0.2em] text-muted-foreground transition-all hover:border-primary/50 hover:text-primary hover:shadow-[0_0_12px_rgba(74,222,128,0.15)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="flex items-center gap-1.5 rounded-sm border border-border px-3 py-2 font-mono text-[10px] tracking-[0.2em] text-muted-foreground transition-all hover:border-primary/50 hover:text-primary hover:shadow-[0_0_12px_rgba(96,165,250,0.15)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
                 <CalendarRange className="h-3.5 w-3.5" />
                 ALL.ICS
@@ -835,7 +845,7 @@ export function EventsSection() {
           {detailEv && (
             <div className="min-w-0 px-3.5 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
               {/* ASCII banner header — typeset by the same glyph engine */}
-              <div className="overflow-x-auto rounded-sm border border-border/60 bg-[#070d08] p-2 sm:p-3">
+              <div className="overflow-x-auto rounded-sm border border-border/60 bg-[#070d16] p-2 sm:p-3">
                 <AsciiBanner text={detailEv.title} />
               </div>
 

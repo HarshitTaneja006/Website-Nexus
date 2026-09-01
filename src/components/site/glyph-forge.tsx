@@ -47,7 +47,7 @@ import { useToast } from "@/hooks/use-toast";
 type Phase = "forge" | "hold" | "scatter";
 
 const DEFAULT_WORDS = ["INNOVATE", "LEAD", "BUILD", "NEXUS", "SHIP IT"];
-const DOMAIN_CHIPS = ["AI/ML", "WEB", "ROBOTICS", "CLOUD", "CYBER"];
+const DOMAIN_CHIPS = ["AI/ML", "WEB", "MOBILE", "CLOUD", "DEVTOOLS"];
 
 /** per-particle glyph vocabulary */
 const EDGE_CHARS = "·:=+*";
@@ -64,9 +64,9 @@ const charIndexOf = (ch: string) => Math.max(0, PARTICLE_CHARS.indexOf(ch));
 
 /** heat buckets (by cell brightness): dim phosphor → white-hot */
 const HEAT_COLORS = [
-  "rgba(74,222,128,0.38)",
-  "rgba(74,222,128,0.78)",
-  "rgba(167,243,208,0.92)",
+  "rgba(96,165,250,0.38)",
+  "rgba(96,165,250,0.78)",
+  "rgba(147,197,253,0.92)",
   "rgba(253,230,138,0.95)",
 ];
 const heatIndex = (b: number) => (b < 0.28 ? 0 : b < 0.55 ? 1 : b < 0.85 ? 2 : 3);
@@ -726,7 +726,7 @@ export function GlyphForge() {
   const phasePct = Math.min(100, (engine.current.phaseT / PHASE_DUR[hud.phase]) * 100);
 
   return (
-    <section id="forge" className="relative border-b border-border/60 bg-[#060a07]">
+    <section id="forge" className="relative border-b border-border/60 bg-[#060a12]">
       <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:py-24">
         <div ref={revealRef} className={`reveal ${seen ? "is-visible" : ""}`}>
           {/* header */}
@@ -747,7 +747,7 @@ export function GlyphForge() {
 
           {/* stage */}
           <div
-            className="hud-corners relative mt-8 overflow-hidden rounded-md border border-primary/20 bg-[#050806]"
+            className="hud-corners relative mt-8 overflow-hidden rounded-md border border-primary/20 bg-[#05080d]"
             data-qa="forge-stage"
           >
             <div
@@ -784,7 +784,7 @@ export function GlyphForge() {
               {/* phase progress */}
               <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[2px] bg-secondary/60">
                 <div
-                  className="h-full bg-gradient-to-r from-primary via-[#a7f3d0] to-amber-300"
+                  className="h-full bg-gradient-to-r from-primary via-[#93c5fd] to-amber-300"
                   style={{ width: `${paused ? 0 : phasePct}%` }}
                 />
               </div>
@@ -817,11 +817,11 @@ export function GlyphForge() {
                 maxLength={14}
                 placeholder="TYPE A WORD…"
                 aria-label="Word to forge"
-                className="h-9 w-40 rounded-sm border border-border bg-[#050806] px-2.5 font-mono text-xs uppercase tracking-widest text-primary placeholder:text-muted-foreground/50 focus-visible:border-primary/60 focus-visible:outline-none sm:w-48"
+                className="h-9 w-40 rounded-sm border border-border bg-[#05080d] px-2.5 font-mono text-xs uppercase tracking-widest text-primary placeholder:text-muted-foreground/50 focus-visible:border-primary/60 focus-visible:outline-none sm:w-48"
               />
               <button
                 onClick={submitWord}
-                className="inline-flex h-9 items-center gap-1.5 rounded-sm bg-primary px-3.5 font-mono text-[10px] font-bold tracking-widest text-primary-foreground transition-all hover:shadow-[0_0_18px_rgba(74,222,128,0.4)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="inline-flex h-9 items-center gap-1.5 rounded-sm bg-primary px-3.5 font-mono text-[10px] font-bold tracking-widest text-primary-foreground transition-all hover:shadow-[0_0_18px_rgba(96,165,250,0.4)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
                 <Sparkles className="h-3.5 w-3.5" />
                 CAST

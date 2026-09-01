@@ -11,7 +11,7 @@ export const runtime = "nodejs";
 export const revalidate = 3600;
 
 export async function GET() {
-  const accent = "#4ade80";
+  const accent = "#60a5fa";
 
   return new ImageResponse(
     (
@@ -22,11 +22,11 @@ export async function GET() {
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          backgroundColor: "#050806",
-          color: "#e7f5ea",
+          backgroundColor: "#05080d",
+          color: "#e7f0fa",
           padding: 56,
           backgroundImage:
-            "linear-gradient(rgba(74,222,128,0.055) 1px, transparent 1px), linear-gradient(90deg, rgba(74,222,128,0.055) 1px, transparent 1px)",
+            "linear-gradient(rgba(96,165,250,0.055) 1px, transparent 1px), linear-gradient(90deg, rgba(96,165,250,0.055) 1px, transparent 1px)",
           backgroundSize: "48px 48px",
         }}
       >
@@ -40,8 +40,8 @@ export async function GET() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                border: "2px solid rgba(74,222,128,0.45)",
-                backgroundColor: "rgba(74,222,128,0.10)",
+                border: "2px solid rgba(96,165,250,0.45)",
+                backgroundColor: "rgba(96,165,250,0.10)",
                 color: accent,
                 fontSize: 30,
                 fontWeight: 700,
@@ -50,10 +50,10 @@ export async function GET() {
               N
             </div>
             <div style={{ display: "flex", flexDirection: "column" }}>
-              <span style={{ fontSize: 30, fontWeight: 700, letterSpacing: 10, color: "#e7f5ea" }}>
+              <span style={{ fontSize: 30, fontWeight: 700, letterSpacing: 10, color: "#e7f0fa" }}>
                 NEXUS_
               </span>
-              <span style={{ fontSize: 15, letterSpacing: 6, color: "rgba(231,245,234,0.5)" }}>
+              <span style={{ fontSize: 15, letterSpacing: 6, color: "rgba(231,240,250,0.5)" }}>
                 VIT CHENNAI · EST. 2019
               </span>
             </div>
@@ -63,7 +63,7 @@ export async function GET() {
               display: "flex",
               alignItems: "center",
               gap: 12,
-              border: "1px solid rgba(74,222,128,0.30)",
+              border: "1px solid rgba(96,165,250,0.30)",
               padding: "10px 18px",
               color: accent,
               fontSize: 16,
@@ -88,14 +88,14 @@ export async function GET() {
               fontWeight: 700,
               lineHeight: 1.02,
               letterSpacing: -1,
-              color: "#f2fbf4",
+              color: "#f2f7ff",
               textShadow: `0 0 32px ${accent}55`,
               display: "flex",
             }}
           >
             Innovate. Lead. Build.
           </span>
-          <span style={{ fontSize: 22, lineHeight: 1.4, color: "rgba(231,245,234,0.66)", maxWidth: 860, display: "flex" }}>
+          <span style={{ fontSize: 22, lineHeight: 1.4, color: "rgba(231,240,250,0.66)", maxWidth: 860, display: "flex" }}>
             The student tech collective of VIT Chennai — every word on this site is forged from glyphs.
           </span>
         </div>
@@ -107,12 +107,12 @@ export async function GET() {
               <span
                 key={t}
                 style={{
-                  border: "1px solid rgba(74,222,128,0.35)",
+                  border: "1px solid rgba(96,165,250,0.35)",
                   backgroundColor: "rgba(0,0,0,0.45)",
                   padding: "8px 16px",
                   fontSize: 15,
                   letterSpacing: 4,
-                  color: "rgba(231,245,234,0.75)",
+                  color: "rgba(231,240,250,0.75)",
                 }}
               >
                 {t}
@@ -120,7 +120,7 @@ export async function GET() {
             ))}
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: 15, letterSpacing: 5, color: "rgba(231,245,234,0.4)" }}>
+            <span style={{ fontSize: 15, letterSpacing: 5, color: "rgba(231,240,250,0.4)" }}>
               12.9066° N, 80.0406° E · NODE: VIT-CHENNAI
             </span>
             <span style={{ fontSize: 15, letterSpacing: 5, color: accent }}>
@@ -134,7 +134,7 @@ export async function GET() {
               height: 6,
               display: "flex",
               backgroundImage:
-                "repeating-linear-gradient(90deg, rgba(74,222,128,0.8) 0 3px, transparent 3px 7px)",
+                "repeating-linear-gradient(90deg, rgba(96,165,250,0.8) 0 3px, transparent 3px 7px)",
             }}
           />
         </div>

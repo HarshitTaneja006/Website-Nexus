@@ -18,7 +18,7 @@ import { useReveal } from "@/components/site/use-reveal";
 
 const BRANCHES = ["CSE Core", "CSE Spec.", "IT", "ECE", "EEE", "Mech", "Civil", "Other"];
 const YEARS = ["1st Year", "2nd Year", "3rd Year", "4th Year", "PG"];
-const INTERESTS = ["AI / ML", "Web", "Mobile", "Cloud", "Cybersecurity", "Robotics"];
+const INTERESTS = ["AI / ML", "Web Engineering", "Cloud & DevOps", "Open Source & DevTools", "Mobile Apps", "Full-Stack"];
 
 const SOCIALS = [
   { icon: Github, label: "GitHub", href: "https://github.com/" },
@@ -78,7 +78,7 @@ export function Join() {
   };
 
   return (
-    <section id="join" className="relative bg-[#070b08]">
+    <section id="join" className="relative bg-[#070b14]">
       <div className="grid-bg pointer-events-none absolute inset-0 opacity-30" />
       <div className="relative mx-auto grid max-w-7xl gap-10 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:py-28">
         {/* info */}
@@ -136,7 +136,7 @@ export function Join() {
 
         {/* form */}
         <div className={`reveal ${seen ? "is-visible" : ""}`} style={{ transitionDelay: "100ms" }}>
-          <div className="hud-corners overflow-hidden rounded-md border border-border bg-[#050806]">
+          <div className="hud-corners overflow-hidden rounded-md border border-border bg-[#05080d]">
             <div className="flex items-center justify-between border-b border-border/70 bg-secondary/40 px-4 py-2.5">
               <span className="font-mono text-[11px] text-muted-foreground">nexus@vitc: ~/join</span>
               <span className="flex items-center gap-1.5 font-mono text-[9px] text-primary/70">
@@ -230,7 +230,7 @@ export function Join() {
                   id="j-msg"
                   value={form.message}
                   onChange={(e) => set("message")(e.target.value)}
-                  placeholder="an app that… / a rover that… / a model that…"
+                  placeholder="a web platform that… / a devtool that… / a neural model that…"
                   rows={4}
                   className="resize-none border-border bg-secondary/40 font-mono text-sm"
                 />

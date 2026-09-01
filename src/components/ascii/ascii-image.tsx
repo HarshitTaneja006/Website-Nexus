@@ -113,9 +113,9 @@ export function AsciiImage({ src, label, caption, onExpand, compact = false, ini
     setGrid({ cols: frame.cols, rows: frame.rows });
 
     paintAscii(canvas, frame, {
-      fg: "#4ade80",
-      bright: "#eaffef",
-      bg: "#070d08",
+      fg: "#60a5fa",
+      bright: "#eaf3ff",
+      bg: "#070d16",
       fontSize,
       fontWeight: 700,
       dpr: Math.min(3, window.devicePixelRatio || 1),
@@ -217,7 +217,7 @@ export function AsciiImage({ src, label, caption, onExpand, compact = false, ini
       </figcaption>
 
       {/* render surface */}
-      <div ref={wrapRef} className="relative aspect-[4/3] min-h-0 flex-1 overflow-hidden bg-[#070d08]">
+      <div ref={wrapRef} className="relative aspect-[4/3] min-h-0 flex-1 overflow-hidden bg-[#070d16]">
         {/* photo underlay */}
         <img
           src={src}
@@ -251,7 +251,7 @@ export function AsciiImage({ src, label, caption, onExpand, compact = false, ini
           <button
             onClick={() => onExpand({ mode, mix })}
             aria-label={`Open ${label} in full-res viewer`}
-            className="absolute bottom-2.5 right-2.5 z-10 flex items-center gap-1.5 rounded-sm border border-primary/30 bg-[#050a06]/85 px-2.5 py-1.5 font-mono text-[9px] tracking-[0.2em] text-primary/90 opacity-0 backdrop-blur-sm transition-all duration-200 hover:border-primary/60 hover:bg-primary/15 hover:text-primary focus-visible:opacity-100 group-hover:opacity-100"
+            className="absolute bottom-2.5 right-2.5 z-10 flex items-center gap-1.5 rounded-sm border border-primary/30 bg-[#050a12]/85 px-2.5 py-1.5 font-mono text-[9px] tracking-[0.2em] text-primary/90 opacity-0 backdrop-blur-sm transition-all duration-200 hover:border-primary/60 hover:bg-primary/15 hover:text-primary focus-visible:opacity-100 group-hover:opacity-100"
           >
             <Expand className="h-3 w-3" />
             EXPAND
@@ -285,7 +285,7 @@ export function AsciiImage({ src, label, caption, onExpand, compact = false, ini
               value={mix}
               onChange={(e) => setMix(Number(e.target.value))}
               aria-label={`ASCII to photo blend for ${label}`}
-              className="h-1 w-24 cursor-pointer appearance-none rounded bg-border accent-[#4ade80]"
+              className="h-1 w-24 cursor-pointer appearance-none rounded bg-border accent-[#60a5fa]"
             />
           )}
         </div>

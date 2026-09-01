@@ -94,7 +94,7 @@ export function TechNews() {
   }, []);
 
   return (
-    <section id="news" className="relative border-b border-border/60 bg-[#070b08]">
+    <section id="news" className="relative border-b border-border/60 bg-[#070b14]">
       <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:py-24">
         <div ref={ref} className={`reveal ${seen ? "is-visible" : ""}`}>
           <div className="flex flex-wrap items-end justify-between gap-4">
@@ -142,7 +142,7 @@ export function TechNews() {
                     href={safeExternalUrl(n.url)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group relative flex flex-col overflow-hidden rounded-md border border-border bg-card p-4 pl-5 transition-all duration-300 hover:border-primary/40 hover:bg-secondary/30 hover:shadow-[0_0_24px_rgba(74,222,128,0.07)]"
+                    className="group relative flex flex-col overflow-hidden rounded-md border border-border bg-card p-4 pl-5 transition-all duration-300 hover:border-primary/40 hover:bg-secondary/30 hover:shadow-[0_0_24px_rgba(96,165,250,0.07)]"
                   >
                     {/* left accent rail — lights up on hover */}
                     <span

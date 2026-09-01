@@ -27,11 +27,11 @@ export const metadata: Metadata = {
   keywords: [
     "NEXUS",
     "VIT Chennai",
-    "tech club",
-    "hackathon",
-    "AI",
-    "robotics",
-    "cybersecurity",
+    "software engineering",
+    "web development",
+    "AI / ML",
+    "cloud devops",
+    "open source",
   ],
   authors: [{ name: "NEXUS Club, VIT Chennai" }],
   icons: {

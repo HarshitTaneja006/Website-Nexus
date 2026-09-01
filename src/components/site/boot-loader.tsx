@@ -77,7 +77,7 @@ export function BootLoader() {
 
   return (
     <div
-      className="crt-power scanlines fixed inset-0 z-[100] flex cursor-pointer flex-col items-center justify-center bg-[#050806] transition-opacity duration-500"
+      className="crt-power scanlines fixed inset-0 z-[100] flex cursor-pointer flex-col items-center justify-center bg-[#05080d] transition-opacity duration-500"
       onClick={() => {
         doneRef.current = true;
         document.body.style.overflow = "";
@@ -107,7 +107,7 @@ export function BootLoader() {
         </div>
         <div className="h-[3px] w-full overflow-hidden rounded bg-secondary">
           <div
-            className="h-full bg-gradient-to-r from-primary via-[#a7f3d0] to-amber-300 shadow-[0_0_12px_rgba(74,222,128,0.55)] transition-[width] duration-100"
+            className="h-full bg-gradient-to-r from-primary via-[#93c5fd] to-amber-300 shadow-[0_0_12px_rgba(96,165,250,0.55)] transition-[width] duration-100"
             style={{ width: `${Math.min(progress, 100)}%` }}
           />
         </div>
