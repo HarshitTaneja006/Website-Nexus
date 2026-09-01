@@ -19,23 +19,23 @@ const PILLARS = [
 ];
 
 const DOMAINS = [
-  { name: "AI & ML", load: 92 },
-  { name: "Web Engineering", load: 88 },
-  { name: "Mobile", load: 74 },
-  { name: "Cloud & DevOps", load: 81 },
-  { name: "Cybersecurity", load: 69 },
+  { name: "AI & Machine Learning", load: 94 },
+  { name: "Web Engineering", load: 90 },
+  { name: "Cloud & DevOps", load: 85 },
+  { name: "Open Source & DevTools", load: 82 },
+  { name: "Mobile Applications", load: 76 },
 ];
 
 export function Manifesto() {
   const { ref, seen } = useReveal<HTMLDivElement>();
 
   return (
-    <section id="about" className="relative border-b border-border/60 bg-[#070b08]">
+    <section id="about" className="relative border-b border-border/60 bg-[#070b14]">
       <div className="grid-bg pointer-events-none absolute inset-0 opacity-40" />
       <div className="relative mx-auto grid max-w-7xl gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[1fr_1.2fr] lg:gap-16 lg:py-28">
         {/* donut panel */}
         <div ref={ref} className={`reveal ${seen ? "is-visible" : ""} relative order-2 lg:order-1`}>
-          <div className="hud-corners relative overflow-hidden rounded-md border border-border bg-[#050806]">
+          <div className="hud-corners relative overflow-hidden rounded-md border border-border bg-[#05080d]">
             <AsciiCanvas preset="donut" className="h-[320px] sm:h-[420px] lg:h-[480px]" fontSize={12} />
             <div className="scanlines absolute inset-0" />
             {/* HUD overlays */}

@@ -165,7 +165,7 @@ export function NewsletterSignup() {
             <button
               onClick={subscribe}
               disabled={busy}
-              className="flex h-9 shrink-0 items-center gap-1.5 rounded-sm border border-primary/40 bg-primary/10 px-4 font-mono text-[10px] tracking-[0.2em] text-primary transition-all hover:bg-primary/20 hover:shadow-[0_0_14px_rgba(74,222,128,0.25)] focus-visible:ring-1 focus-visible:ring-primary disabled:opacity-50"
+              className="flex h-9 shrink-0 items-center gap-1.5 rounded-sm border border-primary/40 bg-primary/10 px-4 font-mono text-[10px] tracking-[0.2em] text-primary transition-all hover:bg-primary/20 hover:shadow-[0_0_14px_rgba(96,165,250,0.25)] focus-visible:ring-1 focus-visible:ring-primary disabled:opacity-50"
             >
               <Send className="h-3 w-3" />
               {state === "severed" && !busy ? "RE-TAP" : busy ? "SENDING…" : "SUBSCRIBE"}

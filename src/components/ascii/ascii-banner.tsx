@@ -65,8 +65,8 @@ export function AsciiBanner({ text, className = "" }: { text: string; className?
             fontSize: `${layout.fontSize}px`,
             lineHeight: 1,
             whiteSpace: "pre",
-            color: "#4ade80",
-            textShadow: "0 0 12px rgba(74,222,128,0.3)",
+            color: "#60a5fa",
+            textShadow: "0 0 12px rgba(96,165,250,0.3)",
           }}
         >
           {layout.rows.join("\n")}

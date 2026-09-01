@@ -17,7 +17,7 @@ const SHOTS: LightboxShot[] = [
   {
     src: "/media/gallery-2.png",
     label: "BENCH_04.RAW",
-    caption: "Hands assembling a small robot on a workbench",
+    caption: "Engineers code reviewing and software pairing on a workbench",
   },
   {
     src: "/media/gallery-3.png",
@@ -94,7 +94,7 @@ export function AsciiGallery() {
   }, []);
 
   return (
-    <section id="gallery" className="relative border-b border-border/60 bg-[#070b08]">
+    <section id="gallery" className="relative border-b border-border/60 bg-[#070b14]">
       <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:py-28">
         <div ref={ref} className={`reveal ${seen ? "is-visible" : ""}`}>
           <div className="flex flex-wrap items-end justify-between gap-4">

@@ -80,9 +80,9 @@ export function AsciiCamFeed() {
       setGrid({ cols: f.cols, rows: f.rows });
 
       paintAscii(canvas, f, {
-        fg: "#4ade80",
-        bright: "#eaffef",
-        bg: "#070d08",
+        fg: "#60a5fa",
+        bright: "#eaf3ff",
+        bg: "#070d16",
         fontSize,
         dpr: Math.min(3, window.devicePixelRatio || 1),
       });
@@ -241,7 +241,7 @@ export function AsciiCamFeed() {
       {/* render surface */}
       <div
         ref={wrapRef}
-        className="relative aspect-[4/3] min-h-0 flex-1 overflow-hidden bg-[#070d08]"
+        className="relative aspect-[4/3] min-h-0 flex-1 overflow-hidden bg-[#070d16]"
       >
         {/* raw video passthrough for photo mode (kept mounted for the sampler) */}
         <video
@@ -305,7 +305,7 @@ export function AsciiCamFeed() {
         <div className="scanlines pointer-events-none absolute inset-0" />
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(0,0,0,0.55))]" />
         {live && (
-          <span className="pointer-events-none absolute left-2.5 top-2.5 flex items-center gap-1.5 rounded-sm bg-[#050a06]/80 px-1.5 py-1 font-mono text-[9px] tracking-[0.2em] text-primary/90 backdrop-blur-sm">
+          <span className="pointer-events-none absolute left-2.5 top-2.5 flex items-center gap-1.5 rounded-sm bg-[#050a12]/80 px-1.5 py-1 font-mono text-[9px] tracking-[0.2em] text-primary/90 backdrop-blur-sm">
             <CircleDot className="h-2.5 w-2.5 animate-pulse" />
             REC {String(Math.floor(elapsed / 60)).padStart(2, "0")}:{String(elapsed % 60).padStart(2, "0")}
           </span>

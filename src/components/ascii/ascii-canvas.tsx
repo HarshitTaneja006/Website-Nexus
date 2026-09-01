@@ -35,7 +35,7 @@ export type AsciiPreset = "rain" | "donut" | "wave" | "cam";
 interface AsciiCanvasProps {
   preset?: AsciiPreset;
   className?: string;
-  /** rgb triplet string, e.g. "74,222,128" */
+  /** rgb triplet string, e.g. "96,165,250" */
   fg?: string;
   accent?: string;
   /** base font size in px (controls grid density) */
@@ -49,8 +49,8 @@ const DONUT_CHARS = RAMPS.donut.split("");
 export function AsciiCanvas({
   preset = "rain",
   className = "",
-  fg = "74,222,128",
-  accent = "167,243,208",
+  fg = "96,165,250",
+  accent = "147,197,253",
   fontSize = 11,
   speed = 1,
 }: AsciiCanvasProps) {

@@ -121,9 +121,9 @@ export function AsciiLightbox({
     setGrid({ cols: frame.cols, rows: frame.rows });
 
     const size = paintAscii(canvas, frame, {
-      fg: "#4ade80",
-      bright: "#eaffef",
-      bg: mode === "photo" ? null : "#050a06",
+      fg: "#60a5fa",
+      bright: "#eaf3ff",
+      bg: mode === "photo" ? null : "#050a12",
       fontSize,
       fontWeight: 600,
       dpr: Math.min(3, window.devicePixelRatio || 1),
@@ -265,10 +265,10 @@ export function AsciiLightbox({
       role="dialog"
       aria-modal="true"
       aria-label={`ASCII lightbox — ${shot.label}`}
-      className="fixed inset-0 z-[90] flex flex-col bg-[#030604]/97 backdrop-blur-sm"
+      className="fixed inset-0 z-[90] flex flex-col bg-[#03060c]/97 backdrop-blur-sm"
     >
       {/* top chrome */}
-      <div className="flex items-center justify-between gap-3 border-b border-border/70 bg-[#050a06]/90 px-4 py-2.5 sm:px-6">
+      <div className="flex items-center justify-between gap-3 border-b border-border/70 bg-[#050a12]/90 px-4 py-2.5 sm:px-6">
         <div className="flex min-w-0 items-center gap-3">
           <span className="led led-amber shrink-0" />
           <span className="truncate font-mono text-[11px] uppercase tracking-[0.25em] text-primary">
@@ -375,21 +375,21 @@ export function AsciiLightbox({
         <button
           onClick={() => step(-1)}
           aria-label="Previous frame"
-          className="absolute left-3 top-1/2 -translate-y-1/2 rounded-sm border border-border bg-[#050a06]/80 p-2 text-muted-foreground transition-all hover:border-primary/50 hover:text-primary"
+          className="absolute left-3 top-1/2 -translate-y-1/2 rounded-sm border border-border bg-[#050a12]/80 p-2 text-muted-foreground transition-all hover:border-primary/50 hover:text-primary"
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
         <button
           onClick={() => step(1)}
           aria-label="Next frame"
-          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-sm border border-border bg-[#050a06]/80 p-2 text-muted-foreground transition-all hover:border-primary/50 hover:text-primary"
+          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-sm border border-border bg-[#050a12]/80 p-2 text-muted-foreground transition-all hover:border-primary/50 hover:text-primary"
         >
           <ChevronRight className="h-5 w-5" />
         </button>
       </div>
 
       {/* bottom readout + zoom */}
-      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-border/70 bg-[#050a06]/90 px-4 py-2.5 font-mono text-[10px] tracking-widest text-muted-foreground sm:px-6">
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-border/70 bg-[#050a12]/90 px-4 py-2.5 font-mono text-[10px] tracking-widest text-muted-foreground sm:px-6">
         <span className="tabular-nums">
           GRID {grid.cols || "—"}×{grid.rows || "—"} GLYPHS
         </span>
@@ -403,7 +403,7 @@ export function AsciiLightbox({
             value={mix}
             onChange={(e) => setMix(Number(e.target.value))}
             aria-label="ASCII to photo blend"
-            className="h-1 w-20 cursor-pointer appearance-none rounded bg-border accent-[#4ade80] sm:w-32"
+            className="h-1 w-20 cursor-pointer appearance-none rounded bg-border accent-[#60a5fa] sm:w-32"
           />
           <span className="w-8 tabular-nums text-primary/80">{mix}%</span>
         </div>
@@ -418,7 +418,7 @@ export function AsciiLightbox({
             value={zoom}
             onChange={(e) => setZoom(Number(e.target.value))}
             aria-label="ASCII glyph density"
-            className="h-1 w-40 cursor-pointer appearance-none rounded bg-border accent-[#4ade80] sm:w-56"
+            className="h-1 w-40 cursor-pointer appearance-none rounded bg-border accent-[#60a5fa] sm:w-56"
           />
           <span className="w-9 tabular-nums text-primary/80">{zoom}c</span>
         </div>

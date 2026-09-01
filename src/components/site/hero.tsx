@@ -21,11 +21,11 @@ const STATS = [
 const TICKER = [
   "AI / ML",
   "WEB ENGINEERING",
-  "MOBILE",
   "CLOUD & DEVOPS",
-  "CYBERSECURITY",
-  "ROBOTICS",
+  "MOBILE DEV",
   "OPEN SOURCE",
+  "DEVTOOLS & SYSTEMS",
+  "FULL STACK",
   "HACKATHONS",
 ];
 
@@ -135,7 +135,7 @@ export function Hero() {
         />
       </div>
       <div className="grid-bg pointer-events-none absolute inset-0 -z-10 opacity-60" />
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(5,8,6,0.88)_92%)]" />
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(5,8,13,0.88)_92%)]" />
       <div className="scanlines pointer-events-none absolute inset-0 -z-10" />
 
       {/* top corner readouts */}
@@ -242,14 +242,15 @@ export function Hero() {
         </p>
 
         <p className="mt-6 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-          One club, five domains, zero spectator mode. We build robots, break
-          clouds, train models and ship products — together.
+          One club, five software domains, zero spectator mode. We architect web
+          platforms, train neural models, build scalable backends and ship
+          open-source software together.
         </p>
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <a
             href="#forge"
-            className="group inline-flex items-center gap-2 rounded-sm bg-primary px-6 py-3 font-mono text-xs font-bold tracking-widest text-primary-foreground transition-all hover:shadow-[0_0_28px_rgba(74,222,128,0.45)]"
+            className="group inline-flex items-center gap-2 rounded-sm bg-primary px-6 py-3 font-mono text-xs font-bold tracking-widest text-primary-foreground transition-all hover:shadow-[0_0_28px_rgba(96,165,250,0.45)]"
           >
             ENTER THE FOUNDRY
             <ArrowDown className="h-3.5 w-3.5 transition-transform group-hover:translate-y-0.5" />
@@ -282,7 +283,7 @@ export function Hero() {
       </div>
 
       {/* ticker */}
-      <div className="relative z-10 overflow-hidden border-t border-border/60 bg-[#070d08]/80 py-2.5 backdrop-blur-sm">
+      <div className="relative z-10 overflow-hidden border-t border-border/60 bg-[#070d16]/80 py-2.5 backdrop-blur-sm">
         <div className="marquee-track">
           {[0, 1].map((half) => (
             <div key={half} className="flex shrink-0 items-center" aria-hidden={half === 1}>

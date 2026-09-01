@@ -9,7 +9,7 @@ const DOMAINS = [
     name: "AI & Machine Learning",
     cmd: "aiml",
     desc: "From notebooks to deployed inference. We fine-tune, quantize and ship models that do useful things on campus-sized budgets.",
-    tools: ["PyTorch", "HuggingFace", "LangChain", "ONNX", "scikit-learn"],
+    tools: ["PyTorch", "HuggingFace", "LangChain", "ONNX", "vLLM"],
   },
   {
     name: "Web Engineering",
@@ -18,34 +18,34 @@ const DOMAINS = [
     tools: ["Next.js", "React", "Tailwind", "tRPC", "WebSockets"],
   },
   {
-    name: "Mobile Apps",
-    cmd: "mobile",
-    desc: "Native feel, student budgets. Compose-first Android, Swift study groups, and Flutter for the speedruns.",
-    tools: ["Kotlin", "Jetpack Compose", "Swift", "Flutter", "Expo"],
-  },
-  {
-    name: "Cloud Computing",
+    name: "Cloud & DevOps",
     cmd: "cloud",
-    desc: "Clusters on Sundays. Kubernetes in the lab, serverless in production, and a homelab rack that hums in the corner.",
-    tools: ["Docker", "Kubernetes", "AWS", "Terraform", "Linux"],
+    desc: "Clusters on Sundays. Kubernetes in the lab, serverless in production, and CI/CD pipelines that deploy on green tests.",
+    tools: ["Docker", "Kubernetes", "AWS", "Terraform", "GitHub Actions"],
   },
   {
-    name: "Cybersecurity",
-    cmd: "cyber",
-    desc: "CTF nights, forensic labs and a healthy paranoia. Learn to break things so you can build them properly.",
-    tools: ["Burp Suite", "Wireshark", "Metasploit", "Ghidra", "nmap"],
+    name: "Open Source & DevTools",
+    cmd: "os",
+    desc: "CLI tools, compilers, libraries and developer tooling. We build and contribute to open software that empowers engineers.",
+    tools: ["Rust", "Go", "Git", "TUI Engines", "Linux", "Bun"],
+  },
+  {
+    name: "Mobile Applications",
+    cmd: "mobile",
+    desc: "Native feel, seamless performance. Jetpack Compose Android, Swift iOS groups, and Flutter / React Native speedruns.",
+    tools: ["Kotlin", "Jetpack Compose", "Swift", "Flutter", "React Native"],
   },
 ];
 
 const TECH_TICKS = [
   "<react />",
   "git commit -m 'ship'",
-  "kubectl apply -f dream.yaml",
+  "kubectl apply -f app.yaml",
   "model.fit(world)",
-  "nmap -sV future",
+  "cargo build --release",
   "SELECT * FROM ideas;",
   "docker run nexus",
-  "npm run build",
+  "bun run dev",
 ];
 
 export function TechStack() {
@@ -53,7 +53,7 @@ export function TechStack() {
   const { ref, seen } = useReveal<HTMLDivElement>();
 
   return (
-    <section id="stack" className="relative border-b border-border/60 bg-[#060a07]">
+    <section id="stack" className="relative border-b border-border/60 bg-[#060a12]">
       <div className="grid-bg pointer-events-none absolute inset-0 opacity-30" />
       <div className="relative mx-auto grid max-w-7xl gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[0.9fr_1.4fr] lg:gap-14 lg:py-28">
         {/* copy */}
@@ -74,7 +74,7 @@ export function TechStack() {
           </p>
 
           {/* ascii divider */}
-          <div className="mt-8 overflow-hidden rounded-md border border-border/60 bg-[#050806] py-2">
+          <div className="mt-8 overflow-hidden rounded-md border border-border/60 bg-[#05080d] py-2">
             <div className="marquee-track-fast">
               {[0, 1].map((h) => (
                 <div key={h} className="flex shrink-0" aria-hidden={h === 1}>
@@ -91,7 +91,7 @@ export function TechStack() {
 
         {/* terminal */}
         <div className={`reveal ${seen ? "is-visible" : ""} min-w-0`} style={{ transitionDelay: "100ms" }}>
-          <div className="overflow-hidden rounded-md border border-border bg-[#050806] shadow-[0_0_50px_rgba(74,222,128,0.05)]">
+          <div className="overflow-hidden rounded-md border border-border bg-[#05080d] shadow-[0_0_50px_rgba(96,165,250,0.05)]">
             {/* title bar */}
             <div className="flex items-center gap-2 border-b border-border/70 bg-secondary/40 px-4 py-2.5">
               <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]/70" />

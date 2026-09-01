@@ -23,7 +23,7 @@ const LINKS = [
 
 export function Footer() {
   return (
-    <footer className="relative mt-auto border-t border-border/60 bg-[#050806]">
+    <footer className="relative mt-auto border-t border-border/60 bg-[#05080d]">
       <div className="scanlines pointer-events-none absolute inset-0 opacity-60" />
       <div className="relative mx-auto max-w-7xl px-4 pb-8 pt-14 sm:px-6">
         <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr]">

@@ -74,7 +74,7 @@ export function KonamiEgg() {
   return (
     <div
       aria-hidden="true"
-      className="scanlines fixed inset-0 z-[95] grid place-items-center bg-[#030604]/95 backdrop-blur-[2px] duration-300 animate-in fade-in zoom-in-95"
+      className="scanlines fixed inset-0 z-[95] grid place-items-center bg-[#03060c]/95 backdrop-blur-[2px] duration-300 animate-in fade-in zoom-in-95"
       onClick={() => setShow(false)}
     >
       <div className="px-4 text-center">

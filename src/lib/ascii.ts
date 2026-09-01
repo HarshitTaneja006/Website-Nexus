@@ -548,9 +548,9 @@ export function frameToPngBlob(
   meta?: { label?: string; mode?: string },
   o?: { fg?: string; bright?: string; bg?: string; fontSize?: number }
 ): Promise<Blob | null> {
-  const fg = o?.fg ?? "#4ade80";
-  const bright = o?.bright ?? "#d9ffe4";
-  const bg = o?.bg ?? "#050a06";
+  const fg = o?.fg ?? "#60a5fa";
+  const bright = o?.bright ?? "#d9eaff";
+  const bg = o?.bg ?? "#050a12";
   const fontSize = o?.fontSize ?? 14;
 
   const m = monoMetrics(fontSize);
@@ -571,7 +571,7 @@ export function frameToPngBlob(
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, width, height);
   const glow = ctx.createRadialGradient(width / 2, height / 2, 0, width / 2, height / 2, Math.max(width, height) * 0.7);
-  glow.addColorStop(0, "rgba(74, 222, 128, 0.045)");
+  glow.addColorStop(0, "rgba(96, 165, 250, 0.045)");
   glow.addColorStop(1, "rgba(0, 0, 0, 0)");
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, width, height);
@@ -610,7 +610,7 @@ export function frameToPngBlob(
 
   // footer strip
   const stamp = new Date().toISOString().replace("T", " ").slice(0, 16);
-  ctx.fillStyle = "rgba(148, 224, 168, 0.25)";
+  ctx.fillStyle = "rgba(147, 197, 253, 0.25)";
   ctx.fillRect(pad, height - footerH - 8, width - pad * 2, 1);
   ctx.fillStyle = fg;
   ctx.font = `${Math.max(9, Math.round(fontSize * 0.62))}px ${monoFontStack()}`;

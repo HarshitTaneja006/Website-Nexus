@@ -99,7 +99,7 @@ export function ShortcutsDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="thin-scroll max-h-[85vh] overflow-y-auto border-primary/25 bg-[#070c08] p-0 font-mono sm:max-w-xl">
+      <DialogContent className="thin-scroll max-h-[85vh] overflow-y-auto border-primary/25 bg-[#070c15] p-0 font-mono sm:max-w-xl">
         <DialogHeader className="border-b border-border/70 bg-secondary/40 px-5 py-3">
           <DialogTitle className="flex items-center gap-2 text-sm tracking-[0.25em] text-primary">
             <Keyboard className="h-3.5 w-3.5" />

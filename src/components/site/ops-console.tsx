@@ -143,7 +143,7 @@ export function OpsConsole() {
         "",
         "NEXT STEPS",
         "1. RSVP to what looks fun  → #events on the site",
-        "2. Pick a build crew: robotics · ai/ml · web · cloud · cyber",
+        "2. Pick a build crew: ai/ml · web · cloud/devops · open source · mobile",
         "3. Watch the wire for transmits (RSS in the footer)",
         ...(next ? ["", `FLAGSHIP INCOMING: ${next.title} — ${next.when}`] : []),
         "",
@@ -249,7 +249,7 @@ export function OpsConsole() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="thin-scroll max-h-[85vh] overflow-y-auto border-primary/25 bg-[#070c08] p-0 font-mono sm:max-w-xl">
+      <DialogContent className="thin-scroll max-h-[85vh] overflow-y-auto border-primary/25 bg-[#070c15] p-0 font-mono sm:max-w-xl">
         <DialogHeader className="border-b border-border/70 bg-secondary/40 px-5 py-3">
           <DialogTitle className="flex items-center gap-2 text-sm tracking-[0.25em] text-primary">
             <Lock className="h-3.5 w-3.5" />
@@ -312,7 +312,7 @@ export function OpsConsole() {
               ].map((t) => (
                 <div
                   key={t.label}
-                  className="hud-corners border border-border/70 bg-secondary/30 px-3 py-2.5 transition-all duration-300 hover:border-primary/40 hover:shadow-[0_0_16px_rgba(74,222,128,0.08)]"
+                  className="hud-corners border border-border/70 bg-secondary/30 px-3 py-2.5 transition-all duration-300 hover:border-primary/40 hover:shadow-[0_0_16px_rgba(96,165,250,0.08)]"
                 >
                   <p className="text-[9px] tracking-[0.25em] text-muted-foreground">{t.label}</p>
                   <p className="mt-1 text-xl font-bold tabular-nums text-primary text-glow">{t.value}</p>
@@ -505,7 +505,7 @@ export function OpsConsole() {
                               <button
                                 onClick={() => reviewJoin(j.id, "approve")}
                                 disabled={busyJoin === j.id}
-                                className="flex items-center gap-1 rounded-sm border border-primary/40 bg-primary/10 px-2 py-0.5 text-[9px] tracking-widest text-primary transition-all hover:bg-primary/20 hover:shadow-[0_0_10px_rgba(74,222,128,0.25)] disabled:opacity-50"
+                                className="flex items-center gap-1 rounded-sm border border-primary/40 bg-primary/10 px-2 py-0.5 text-[9px] tracking-widest text-primary transition-all hover:bg-primary/20 hover:shadow-[0_0_10px_rgba(96,165,250,0.25)] disabled:opacity-50"
                               >
                                 <BadgeCheck className="h-3 w-3" />
                                 {busyJoin === j.id ? "…" : "APPROVE"}
@@ -524,7 +524,7 @@ export function OpsConsole() {
                             <>
                               <button
                                 onClick={() => copyWelcome(j.id)}
-                                className="flex items-center gap-1 rounded-sm border border-primary/40 bg-primary/10 px-2 py-0.5 text-[9px] tracking-widest text-primary transition-all hover:bg-primary/20 hover:shadow-[0_0_10px_rgba(74,222,128,0.25)]"
+                                className="flex items-center gap-1 rounded-sm border border-primary/40 bg-primary/10 px-2 py-0.5 text-[9px] tracking-widest text-primary transition-all hover:bg-primary/20 hover:shadow-[0_0_10px_rgba(96,165,250,0.25)]"
                                 title="copy the welcome packet to the clipboard"
                               >
                                 <Copy className="h-3 w-3" />
