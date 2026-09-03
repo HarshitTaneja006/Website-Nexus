@@ -66,11 +66,18 @@ export async function POST(
       );
     }
 
-    await db.rsvp.upsert({
-      where: { eventId_email: { eventId: event.id, email } },
-      update: { name },
-      create: { eventId: event.id, email, name },
+    // The live Supabase schema no longer has the old compound unique key, so
+    // use an explicit lookup instead of querying the removed Prisma key.
+    const existingRsvp = await db.rsvp.findFirst({
+      where: { eventId: event.id, email },
+      select: { id: true },
     });
+
+    if (existingRsvp) {
+      await db.rsvp.update({ where: { id: existingRsvp.id }, data: { name } });
+    } else {
+      await db.rsvp.create({ data: { eventId: event.id, email, name } });
+    }
 
     const rsvpCount = await db.rsvp.count({ where: { eventId: event.id } });
     return NextResponse.json(
