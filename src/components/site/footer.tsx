@@ -12,13 +12,13 @@ const ASCII_MARK = String.raw`███╗   ██╗███████╗�
 ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝`;
 
 const LINKS = [
-  { href: "#forge", label: "The Foundry" },
-  { href: "#about", label: "Manifesto" },
-  { href: "#events", label: "Events" },
-  { href: "#stack", label: "Stack" },
-  { href: "#gallery", label: "Gallery" },
-  { href: "#team", label: "Crew" },
-  { href: "#join", label: "Join" },
+  { href: "#forge", label: "The Foundry", external: false },
+  { href: "#about", label: "Manifesto", external: false },
+  { href: "#events", label: "Events", external: false },
+  { href: "#stack", label: "Stack", external: false },
+  { href: "#gallery", label: "Gallery", external: false },
+  { href: "#team", label: "Crew", external: false },
+  { href: "https://nexusrecruitment.vercel.app", label: "Join", external: true },
 ];
 
 export function Footer() {
@@ -81,6 +81,7 @@ export function Footer() {
                 <li key={l.href}>
                   <a
                     href={l.href}
+                    {...(l.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                     className="group font-mono text-xs text-foreground/75 transition-colors hover:text-primary"
                   >
                     <span className="text-primary/40 group-hover:text-primary">▸ </span>

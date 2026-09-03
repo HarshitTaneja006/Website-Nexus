@@ -35,19 +35,6 @@ model Rsvp {
   event     Event    @relation(fields: [eventId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
-model JoinRequest {
-  id         String    @id @default(cuid())
-  name       String
-  email      String
-  branch     String
-  year       String
-  interest   String
-  message    String?
-  status     String    @default("pending")
-  reviewedAt DateTime?
-  createdAt  DateTime  @default(now())
-}
-
 model Subscriber {
   id        String   @id @default(cuid())
   email     String   @unique

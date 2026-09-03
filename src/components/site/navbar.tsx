@@ -172,7 +172,7 @@ export function Navbar() {
               <span className="tabular-nums">{time}</span>
             </div>
             <Button asChild size="sm" className="hidden h-9 px-4 font-mono text-xs tracking-widest sm:inline-flex">
-              <a href="#join">JOIN_US</a>
+              <a href="https://nexusrecruitment.vercel.app" target="_blank" rel="noopener noreferrer">JOIN_US</a>
             </Button>
             <button
               onClick={() => setPaletteOpen(true)}
@@ -244,7 +244,9 @@ export function Navbar() {
             </a>
           ))}
           <a
-            href="#join"
+            href="https://nexusrecruitment.vercel.app"
+            target="_blank"
+            rel="noopener noreferrer"
             onClick={() => setOpen(false)}
             className="mt-6 inline-flex items-center justify-center rounded-sm bg-primary px-6 py-3 font-mono text-sm font-bold tracking-widest text-primary-foreground"
           >
