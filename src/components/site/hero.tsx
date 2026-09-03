@@ -256,7 +256,9 @@ export function Hero() {
             <ArrowDown className="h-3.5 w-3.5 transition-transform group-hover:translate-y-0.5" />
           </a>
           <a
-            href="#join"
+            href="https://nexusrecruitment.vercel.app"
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded-sm border border-primary/40 bg-primary/5 px-6 py-3 font-mono text-xs font-bold tracking-widest text-primary transition-colors hover:bg-primary/15"
           >
             JOIN NEXUS

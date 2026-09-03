@@ -68,24 +68,31 @@ export function Join() {
           </div>
         </div>
 
-        {/* join form disabled until the next intake window */}
+        {/* recruitment moved to the dedicated external portal */}
         <div className={`reveal ${seen ? "is-visible" : ""}`} style={{ transitionDelay: "100ms" }}>
           <div className="hud-corners overflow-hidden rounded-md border border-border bg-[#05080d]">
             <div className="flex items-center justify-between border-b border-border/70 bg-secondary/40 px-4 py-2.5">
               <span className="font-mono text-[11px] text-muted-foreground">nexus@vitc: ~/join</span>
-              <span className="flex items-center gap-1.5 font-mono text-[9px] text-amber-300/80">
-                <span className="led led-amber" /> INTAKE PAUSED
+              <span className="flex items-center gap-1.5 font-mono text-[9px] text-primary/80">
+                <span className="led" /> EXTERNAL PORTAL
               </span>
             </div>
             <div className="flex min-h-64 flex-col items-center justify-center p-6 text-center sm:p-10">
-              <p className="font-mono text-[10px] tracking-[0.3em] text-amber-300">UPLINK STANDBY</p>
+              <p className="font-mono text-[10px] tracking-[0.3em] text-primary">RECRUITMENT LIVE</p>
               <h3 className="font-display mt-4 text-2xl font-bold text-foreground sm:text-3xl">
-                Applications coming soon
+                Apply for NEXUS Crew
               </h3>
               <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">
-                The next crew intake is being prepared. Follow our channels or check back soon to transmit your application.
+                Recruitment has moved to our dedicated portal at nexusrecruitment.vercel.app. Transmit your application there to join the collective.
               </p>
-              <span className="mt-6 font-mono text-[10px] tracking-[0.25em] text-primary/70">STATUS: AWAITING_NEXT_WINDOW</span>
+              <a
+                href="https://nexusrecruitment.vercel.app"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-6 inline-flex items-center gap-2 rounded-sm bg-primary px-6 py-3 font-mono text-xs font-bold tracking-widest text-primary-foreground transition-all hover:shadow-[0_0_28px_rgba(96,165,250,0.45)]"
+              >
+                LAUNCH RECRUITMENT PORTAL ↗
+              </a>
             </div>
           </div>
         </div>

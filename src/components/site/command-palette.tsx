@@ -32,7 +32,7 @@ const SECTIONS = [
   { href: "#stack", label: "STACK", hint: "five domains, one workbench" },
   { href: "#gallery", label: "GALLERY", hint: "ascii cam feed" },
   { href: "#team", label: "CREW", hint: "the bridge crew" },
-  { href: "#join", label: "JOIN", hint: "transmit application" },
+  { href: "https://nexusrecruitment.vercel.app", label: "RECRUITMENT", hint: "external portal - apply for crew", external: true },
 ];
 
 const ENGINES = ["rain", "wave", "donut", "cam"] as const;
@@ -134,7 +134,11 @@ export function CommandPalette({
             <CommandItem
               key={s.href}
               value={`go ${s.label} ${s.hint}`}
-              onSelect={() => jump(s.href)}
+              onSelect={() =>
+                "external" in s && s.external
+                  ? run(() => window.open("https://nexusrecruitment.vercel.app", "_blank", "noopener,noreferrer"))
+                  : jump(s.href)
+              }
               className="gap-3 text-xs"
             >
               <span className="text-primary/60">→</span>
@@ -193,7 +197,7 @@ export function CommandPalette({
             <span className="ml-auto text-[10px] text-muted-foreground/60">./nexusvitc@gmail.com</span>
           </CommandItem>
           <CommandItem
-            value="ops console admin stats rsvp join"
+            value="ops console admin stats rsvp subscriber"
             onSelect={() =>
               run(() => window.dispatchEvent(new CustomEvent(OPS_EVENT)))
             }
@@ -201,7 +205,7 @@ export function CommandPalette({
           >
             <span className="text-amber-300/80">#</span>
             <span className="font-bold tracking-widest">OPS CONSOLE</span>
-            <span className="ml-auto text-[10px] text-muted-foreground/60">./rsvp + join ledger</span>
+            <span className="ml-auto text-[10px] text-muted-foreground/60">./rsvp + subscriber ledger</span>
           </CommandItem>
           <CommandItem
             value="shortcuts manual keys help man deep links"
