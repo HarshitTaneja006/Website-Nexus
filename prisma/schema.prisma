@@ -8,7 +8,7 @@ datasource db {
 }
 
 model Event {
-  id               String    @id @default(cuid())
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid @map("ID")
   slug             String    @unique
   title            String
   description      String
@@ -28,13 +28,11 @@ model Event {
 
 model Rsvp {
   id        String   @id @default(cuid())
-  eventId   String
   name      String
   email     String
   createdAt DateTime @default(now())
-  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-
-  @@unique([eventId, email])
+  eventId   String   @db.Uuid @map("eventid")
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model JoinRequest {

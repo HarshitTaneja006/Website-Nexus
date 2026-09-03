@@ -31,13 +31,14 @@ async function main() {
   for (let i = 0; i < people.length; i++) {
     const [name, email] = people[i]
     const ev = events[(i * 7) % events.length]
-    const r = await db.rsvp.upsert({
-      where: { eventId_email: { eventId: ev.id, email } },
-      update: {},
-      create: { eventId: ev.id, name, email },
+    const existing = await db.rsvp.findFirst({
+      where: { eventId: ev.id, email },
+      select: { id: true },
     })
-    added++
-    void r
+    if (!existing) {
+      await db.rsvp.create({ data: { eventId: ev.id, name, email } })
+      added++
+    }
   }
 
   const subs = [

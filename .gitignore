@@ -71,3 +71,5 @@ next-env.d.ts
 /upload/
 /tests/
 /skills/
+
+.agents/*
