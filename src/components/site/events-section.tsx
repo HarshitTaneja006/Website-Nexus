@@ -70,6 +70,9 @@ const fmtDate = new Intl.DateTimeFormat("en-GB", {
   timeZone: "Asia/Calcutta",
 });
 
+// Kept opt-in while the self-service RSVP lookup is unavailable.
+const RSVP_LOOKUP_ENABLED = process.env.NEXT_PUBLIC_RSVP_LOOKUP_ENABLED === "true";
+
 /** Live T-minus ticker to the nearest upcoming event (IST). */
 function NearestEventCountdown({ target, title, slug }: { target: string; title: string; slug: string }) {
   const [now, setNow] = useState<number | null>(null);
@@ -662,8 +665,8 @@ export function EventsSection() {
             </div>
           )}
 
-          {/* self-service rsvp lookup */}
-          <MyRsvpLookup />
+          {/* self-service RSVP lookup is temporarily opt-in */}
+          {RSVP_LOOKUP_ENABLED && <MyRsvpLookup />}
         </div>
       </div>
 

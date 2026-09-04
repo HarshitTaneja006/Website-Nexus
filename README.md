@@ -347,6 +347,18 @@ cp .env.example .env.local
 # Populate DATABASE_URL, ADMIN_SECRET, NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 ```
 
+### Optional: Enable the My RSVP Lookup
+
+The **MY.RSVP – AM I ON THE LIST?** self-service lookup is disabled by default. Its UI and API implementation are retained for future use.
+
+To enable it, add the following to `.env.local` (or configure the same environment variable in your hosting provider) and restart or redeploy the application:
+
+```bash
+NEXT_PUBLIC_RSVP_LOOKUP_ENABLED=true
+```
+
+Remove the variable or set it to any value other than `true` to hide the option again.
+
 ### 3. Synchronize Database Schema
 
 Push the Prisma models directly to your Supabase PostgreSQL instance:
