@@ -32,7 +32,7 @@ const SECTIONS = [
   { href: "#stack", label: "STACK", hint: "five domains, one workbench" },
   { href: "#gallery", label: "GALLERY", hint: "ascii cam feed" },
   { href: "#team", label: "CREW", hint: "the bridge crew" },
-  { href: "https://nexusrecruitment.vercel.app", label: "RECRUITMENT", hint: "external portal - apply for crew", external: true },
+  { href: "#join", label: "JOIN", hint: "recruitment currently closed" },
 ];
 
 const ENGINES = ["rain", "wave", "donut", "cam"] as const;
@@ -134,11 +134,7 @@ export function CommandPalette({
             <CommandItem
               key={s.href}
               value={`go ${s.label} ${s.hint}`}
-              onSelect={() =>
-                "external" in s && s.external
-                  ? run(() => window.open("https://nexusrecruitment.vercel.app", "_blank", "noopener,noreferrer"))
-                  : jump(s.href)
-              }
+              onSelect={() => jump(s.href)}
               className="gap-3 text-xs"
             >
               <span className="text-primary/60">→</span>
